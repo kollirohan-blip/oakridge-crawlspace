@@ -35,5 +35,44 @@
     };
   }
 
-  return { inView: inView, createLookWatcher: createLookWatcher };
+  // Does the 2D segment a->b cross the box's footprint? (slab method)
+  function segmentHitsBox(a, b, box) {
+    var tmin = 0;
+    var tmax = 1;
+    var dims = [
+      [a.x, b.x - a.x, box.x0, box.x1],
+      [a.z, b.z - a.z, box.z0, box.z1],
+    ];
+    for (var i = 0; i < dims.length; i++) {
+      var o = dims[i][0];
+      var d = dims[i][1];
+      var lo = dims[i][2];
+      var hi = dims[i][3];
+      if (Math.abs(d) < 1e-12) {
+        if (o < lo || o > hi) return false;
+      } else {
+        var t1 = (lo - o) / d;
+        var t2 = (hi - o) / d;
+        if (t1 > t2) { var s = t1; t1 = t2; t2 = s; }
+        tmin = Math.max(tmin, t1);
+        tmax = Math.min(tmax, t2);
+        if (tmin > tmax) return false;
+      }
+    }
+    return true;
+  }
+
+  // Can something at eye height y see from `from` to `to`? Glass is see-through; boxes that sit
+  // wholly above or below y (sills, lintels) do not block.
+  function lineOfSight(boxes, from, to, y) {
+    for (var i = 0; i < boxes.length; i++) {
+      var b = boxes[i];
+      if (b.kind === 'glass') continue;
+      if (typeof b.y0 === 'number' && (y < b.y0 || y > b.y1)) continue;
+      if (segmentHitsBox(from, to, b)) return false;
+    }
+    return true;
+  }
+
+  return { inView: inView, createLookWatcher: createLookWatcher, lineOfSight: lineOfSight };
 });

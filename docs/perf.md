@@ -1,0 +1,26 @@
+# Performance notes
+
+What was measured, where, and what it does and does not tell you.
+
+## Task 2: walkable house (2026-11-15)
+
+Measured in headless Chromium (software WebGL, not the Vivobook's Iris Xe GPU) at a 480x270 internal
+resolution, 1280x720 window.
+
+| Scene | Draw calls | Triangles | JS work per frame |
+|---|---|---|---|
+| Living room, looking at the glass | 17 | about 2,200 | 0.4 to 1.8 ms |
+| Hallway with the phone light on | 17 | about 2,000 | 1.7 ms |
+| Porch, outside | 17 | about 2,200 | 0.4 ms |
+
+Before batching static geometry by texture (one mesh per wall piece), the same scenes took 154 to 375
+draw calls per frame. Merging everything that never moves into one mesh per texture cut that to 17,
+which is the number that matters on integrated graphics.
+
+**What this does not tell you:** GPU time. "JS work per frame" is the CPU time spent updating and
+submitting a frame, not how long the Vivobook's GPU takes to draw it. A real frame rate on the laptop
+has not been measured. The scene is small (a couple of thousand triangles, low internal resolution),
+so it should be comfortable, but that is a judgment, not a measurement. Check it once by playing.
+
+To see your own numbers: open the game, click to play, open the browser console and run
+`OC.debug.stats()`.

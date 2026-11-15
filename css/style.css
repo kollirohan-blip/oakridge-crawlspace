@@ -1,0 +1,109 @@
+:root {
+  --ink: #e8e6df;
+  --dim: #9a978e;
+  --red: #d8362b;
+  --mono: "Lucida Console", "Courier New", monospace;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  color: var(--ink);
+  font-family: var(--mono);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* The game renders at a low resolution and is scaled up with hard pixels. */
+#view {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+}
+
+/* VHS: scanlines, vignette, a slow tracking band, film grain. */
+#vhs, #grain { position: fixed; inset: 0; pointer-events: none; }
+#vhs {
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.20) 3px);
+  box-shadow: inset 0 0 18vmin rgba(0,0,0,0.85);
+  overflow: hidden;
+}
+#vhs::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: -14%;
+  height: 14%;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.045), transparent);
+  animation: track 9s linear infinite;
+}
+@keyframes track { from { top: -14%; } to { top: 112%; } }
+#grain { opacity: 0.05; mix-blend-mode: screen; }
+#grainCanvas { width: 100%; height: 100%; image-rendering: pixelated; }
+
+/* HUD */
+#hud { position: fixed; inset: 0; pointer-events: none; text-shadow: 0 0 4px #000, 1px 1px 0 #000; }
+#rec {
+  position: absolute; top: 3vmin; left: 3.5vmin;
+  font-size: clamp(14px, 2.6vmin, 26px);
+  letter-spacing: 0.08em;
+}
+#rec .dot {
+  display: inline-block; width: 1.4vmin; height: 1.4vmin; min-width: 9px; min-height: 9px;
+  border-radius: 50%; background: var(--red); margin-right: 0.8vmin;
+  animation: blink 1.6s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+#stamp { margin-left: 1.6vmin; color: var(--dim); }
+#crosshair {
+  position: absolute; left: 50%; top: 50%;
+  width: 4px; height: 4px; margin: -2px 0 0 -2px;
+  background: rgba(255,255,255,0.55); border-radius: 50%;
+}
+#prompt {
+  position: absolute; left: 50%; top: 56%; transform: translateX(-50%);
+  font-size: clamp(13px, 2.2vmin, 22px); color: var(--ink); opacity: 0; transition: opacity .12s;
+}
+#prompt.on { opacity: 1; }
+#subtitle {
+  position: absolute; left: 50%; bottom: 9vmin; transform: translateX(-50%);
+  width: min(88vw, 880px); text-align: center; line-height: 1.45;
+  font-size: clamp(14px, 2.5vmin, 26px); opacity: 0; transition: opacity .35s;
+}
+#subtitle.on { opacity: 1; }
+#toast {
+  position: absolute; left: 50%; top: 9vmin; transform: translateX(-50%);
+  font-size: clamp(13px, 2.2vmin, 22px); color: var(--dim); opacity: 0; transition: opacity .3s;
+}
+#toast.on { opacity: 1; }
+#battery {
+  position: absolute; left: 3.5vmin; bottom: 3.5vmin; width: 14vmin; min-width: 90px; height: 1.2vmin; min-height: 8px;
+  border: 1px solid rgba(255,255,255,0.5);
+}
+#batteryFill { height: 100%; width: 100%; background: rgba(232,230,223,0.85); transform-origin: left; }
+#battery.low #batteryFill { background: var(--red); }
+#batteryLabel {
+  position: absolute; left: 0; top: -2.6vmin; font-size: clamp(10px, 1.6vmin, 15px); color: var(--dim); letter-spacing: 0.1em;
+}
+
+/* Panels */
+#click-panel, #error-panel {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  background: rgba(0,0,0,0.78);
+}
+#click-panel { cursor: pointer; }
+#click-panel.hidden { display: none; }
+#click-panel h1 { font-weight: normal; letter-spacing: 0.35em; font-size: clamp(18px, 4vmin, 40px); margin: 0 0 4vmin; }
+#click-panel .big { font-size: clamp(16px, 3vmin, 30px); margin: 0 0 3vmin; animation: blink 1.6s steps(1) infinite; }
+#click-panel .keys { color: var(--dim); font-size: clamp(11px, 1.9vmin, 18px); margin: 0 0 2vmin; padding: 0 4vw; }
+#click-panel .small { color: var(--dim); font-size: clamp(10px, 1.6vmin, 15px); margin: 0; }
+#error-panel {
+  z-index: 20; background: #1a0705; color: #ffb8a8; white-space: pre-wrap; padding: 6vmin;
+  font-size: clamp(13px, 2vmin, 20px); text-align: left; align-items: flex-start;
+}
+#error-panel[hidden] { display: none; }

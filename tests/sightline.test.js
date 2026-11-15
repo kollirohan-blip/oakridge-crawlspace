@@ -1,6 +1,26 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { inView, createLookWatcher } = require('../js/engine/sightline.js');
+const { inView, createLookWatcher, lineOfSight } = require('../js/engine/sightline.js');
+
+const wall = { x0: 4, x1: 4.2, z0: -10, z1: 10, y0: 0, y1: 2.6, kind: 'wall' };
+
+test('lineOfSight is blocked by a wall that spans the eye height', () => {
+  assert.equal(lineOfSight([wall], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), false);
+});
+
+test('lineOfSight is clear when nothing stands between, and glass does not block', () => {
+  assert.equal(lineOfSight([], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), true);
+  assert.equal(lineOfSight([{ ...wall, kind: 'glass' }], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), true);
+});
+
+test('lineOfSight ignores boxes that are entirely below or above the eye height', () => {
+  assert.equal(lineOfSight([{ ...wall, y0: 0, y1: 0.9 }], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), true);
+  assert.equal(lineOfSight([{ ...wall, y0: 2.0, y1: 2.6 }], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), true);
+});
+
+test('lineOfSight is clear when the segment ends before reaching the wall', () => {
+  assert.equal(lineOfSight([wall], { x: 0, z: 0 }, { x: 3, z: 0 }, 1.5), true);
+});
 
 const cam = (x, z, yaw) => ({ x, z, yaw });
 const HALF = 0.6; // radians

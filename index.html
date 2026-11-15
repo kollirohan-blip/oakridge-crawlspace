@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oakridge Crawlspace</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="grain"><canvas id="grainCanvas" width="320" height="180"></canvas></div>
+<div id="vhs"></div>
+
+<div id="hud">
+  <div id="rec"><span class="dot"></span>REC <span id="stamp"></span></div>
+  <div id="crosshair"></div>
+  <div id="prompt"></div>
+  <div id="subtitle"></div>
+  <div id="toast"></div>
+  <div id="battery"><div id="batteryFill"></div><span id="batteryLabel">LIGHT</span></div>
+</div>
+
+<div id="click-panel">
+  <h1>OAKRIDGE CRAWLSPACE</h1>
+  <p class="big">Click to play</p>
+  <p class="keys">W A S D move &nbsp;·&nbsp; mouse look &nbsp;·&nbsp; F phone light &nbsp;·&nbsp; E use &nbsp;·&nbsp; Tab phone</p>
+  <p class="small">Headphones recommended. Esc pauses.</p>
+</div>
+
+<div id="error-panel" hidden></div>
+
+<script>
+  // Any failure becomes a visible message, never a blank screen.
+  window.OC = window.OC || {};
+  window.OC.showError = function (msg) {
+    var p = document.getElementById('error-panel');
+    if (!p) return;
+    p.hidden = false;
+    p.textContent = 'Something went wrong:\n\n' + msg;
+  };
+  window.addEventListener('error', function (e) {
+    window.OC.showError(e.message + (e.filename ? '\n(' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    window.OC.showError(String(e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+</script>
+
+<!-- Three.js r128: a local copy in vendor/ is used if present, otherwise the CDN. -->
+<script src="vendor/three.min.js" onerror="this.remove()"></script>
+<script>
+  window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+</script>
+
+<script src="js/engine/layout.js"></script>
+<script src="js/engine/collision.js"></script>
+<script src="js/engine/sightline.js"></script>
+<script src="js/engine/clock.js"></script>
+<script src="js/engine/director.js"></script>
+<script src="js/engine/content.js"></script>
+<script src="content/house.js"></script>
+<script src="js/textures.js"></script>
+<script src="js/render.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/controller.js"></script>
+<script src="js/world.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
