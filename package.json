@@ -1,0 +1,5 @@
+{
+  "name": "oakridge-crawlspace",
+  "private": true,
+  "scripts": { "test": "node --test tests/", "serve": "node tools/serve.js" }
+}
