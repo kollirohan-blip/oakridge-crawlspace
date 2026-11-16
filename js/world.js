@@ -189,10 +189,13 @@
 
     // ---- light: a faint moon, then warm pools where somebody left a lamp on -------------------
     scene.add(new THREE.HemisphereLight(0x33405e, 0x0a0a0e, 0.34));
+    var lightById = {};
     var lights = (house.lights || []).map(function (l) {
       var pl = new THREE.PointLight(l.color, l.intensity, l.distance, 2);
       pl.position.set(l.x, l.y, l.z);
+      pl.userData.base = l.intensity;
       scene.add(pl);
+      if (l.id) lightById[l.id] = pl;
       return pl;
     });
 
@@ -225,6 +228,8 @@
       anchors: house.anchors,
       group: group,
       lights: lights,
+      lightById: lightById,
+      material: materialFor,
       glassBoxes: glassBoxes,
       // furniture: a box of one texture on every face except the bottom
       box: function (x0, y0, z0, x1, y1, z1, tex, tile) {

@@ -69,6 +69,19 @@ html, body {
   font-size: clamp(13px, 2.2vmin, 22px); color: var(--ink); opacity: 0; transition: opacity .12s;
 }
 #prompt.on { opacity: 1; }
+#hold {
+  position: absolute; left: 50%; top: 61%; transform: translateX(-50%);
+  width: 14vmin; min-width: 90px; height: 0.8vmin; min-height: 6px;
+  border: 1px solid rgba(255,255,255,0.6); opacity: 0;
+}
+#hold.on { opacity: 1; }
+#holdFill { height: 100%; width: 100%; background: rgba(232,230,223,0.9); transform-origin: left; transform: scaleX(0); }
+#fade {
+  position: fixed; inset: 0; z-index: 8; background: #000; opacity: 0; pointer-events: none;
+  transition: opacity 1.4s; display: flex; align-items: center; justify-content: center;
+}
+#fade.on { opacity: 1; }
+#fadeText { letter-spacing: 0.3em; font-size: clamp(16px, 3.4vmin, 34px); color: var(--ink); text-align: center; padding: 0 6vw; }
 #subtitle {
   position: absolute; left: 50%; bottom: 9vmin; transform: translateX(-50%);
   width: min(88vw, 880px); text-align: center; line-height: 1.45;

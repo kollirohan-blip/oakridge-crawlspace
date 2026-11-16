@@ -115,6 +115,46 @@ test('the player cannot walk through a closed wall (kitchen into the office)', (
   assert.ok(p.z < 8, 'must stop at the wall between kitchen and office');
 });
 
+// --- furniture must not wall anything off ---------------------------------------------------------
+const solidFurniture = house.furniture
+  .filter((f) => f.solid)
+  .map((f) => ({ x0: f.b[0], y0: f.b[1], z0: f.b[2], x1: f.b[3], y1: f.b[4], z1: f.b[5], kind: 'furniture' }));
+const allBoxes = boxes.concat(house.solids, solidFurniture);
+
+function reachableFrom(start, step) {
+  const key = (i, j) => i + ',' + j;
+  const x0 = -6;
+  const z0 = -14;
+  const nx = Math.round(40 / step);
+  const nz = Math.round(48 / step);
+  const free = (i, j) => !blocked(x0 + i * step, z0 + j * step, R, allBoxes);
+  const si = Math.round((start.x - x0) / step);
+  const sj = Math.round((start.z - z0) / step);
+  const seen = new Set([key(si, sj)]);
+  const queue = [[si, sj]];
+  while (queue.length) {
+    const [i, j] = queue.pop();
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([di, dj]) => {
+      const a = i + di;
+      const b = j + dj;
+      if (a < 0 || b < 0 || a > nx || b > nz || seen.has(key(a, b)) || !free(a, b)) return;
+      seen.add(key(a, b));
+      queue.push([a, b]);
+    });
+  }
+  return { has: (p) => seen.has(key(Math.round((p.x - x0) / step), Math.round((p.z - z0) / step))) };
+}
+
+test('with the furniture in, every spawn and every spot you stand to use something is reachable from the front step', () => {
+  const reach = reachableFrom(house.spawns.porch, 0.1);
+  const targets = Object.assign({}, house.spawns, house.stand);
+  Object.keys(targets).forEach((name) => {
+    const t = targets[name];
+    assert.equal(blocked(t.x, t.z, R, allBoxes), false, `${name} is inside furniture or a wall`);
+    assert.ok(reach.has(t), `${name} cannot be reached on foot from the front step`);
+  });
+});
+
 test('from the living room the master window is in view and the line of sight is clear through the glass', () => {
   const cam = { x: 17, z: 3, yaw: 2.87 };
   const w = house.anchors.masterWindow;

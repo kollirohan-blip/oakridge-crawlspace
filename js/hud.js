@@ -49,6 +49,26 @@
         p.classList.remove('on');
       }
     },
+    // progress of a hold-to-use action: 0..1, or null to hide
+    setHold: function (frac) {
+      var h = el('hold');
+      if (frac === null || frac === undefined) {
+        h.classList.remove('on');
+        return;
+      }
+      h.classList.add('on');
+      el('holdFill').style.transform = 'scaleX(' + Math.max(0, Math.min(1, frac)) + ')';
+    },
+    // fade to black with a line of text; resolves the callback once the fade is complete
+    fadeOut: function (text, cb) {
+      var f = el('fade');
+      el('fadeText').textContent = text || '';
+      f.classList.add('on');
+      if (cb) setTimeout(cb, 1600);
+    },
+    fadeIn: function () {
+      el('fade').classList.remove('on');
+    },
     error: function (msg) {
       OC.showError(msg);
     },

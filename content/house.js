@@ -52,8 +52,65 @@
       { id: 'bathW', x: 0, z: 21.5, axis: 'z', width: 0.8, sill: 1.1, height: 0.8 },
       { id: 'guestW', x: 0, z: 16, axis: 'z', width: 1.2, sill: 0.9, height: 1.2 },
     ],
-    // furniture and interactables are added in the next task
-    props: [],
+    // Furniture as boxes: b = [x0, y0, z0, x1, y1, z1], a texture, and whether it blocks walking.
+    // (y0 matters only for looks; blocking is on the footprint.)
+    furniture: [
+      // kitchen
+      { b: [5.4, 0, 0.1, 12.0, 0.88, 0.75], tex: 'cabinet', solid: true },
+      { b: [5.35, 0.88, 0.1, 12.0, 0.92, 0.8], tex: 'counter' },
+      { b: [12.2, 0, 0.15, 12.9, 1.85, 0.85], tex: 'appliance', solid: true }, // fridge
+      { b: [5.9, 0.92, 0.2, 6.7, 1.2, 0.65], tex: 'appliance' }, // microwave
+      { b: [8.4, 0.72, 3.6, 10.4, 0.78, 5.0], tex: 'cabinet', solid: true }, // table
+      { b: [8.45, 0, 3.65, 8.55, 0.72, 3.75], tex: 'cabinet' },
+      { b: [10.25, 0, 3.65, 10.35, 0.72, 3.75], tex: 'cabinet' },
+      { b: [8.45, 0, 4.85, 8.55, 0.72, 4.95], tex: 'cabinet' },
+      { b: [10.25, 0, 4.85, 10.35, 0.72, 4.95], tex: 'cabinet' },
+      { b: [8.0, 0, 3.9, 8.35, 0.45, 4.3], tex: 'fabric', solid: true }, // chairs
+      { b: [10.45, 0, 3.9, 10.8, 0.45, 4.3], tex: 'fabric', solid: true },
+      { b: [12.0, 0, 6.6, 12.8, 0.7, 7.4], tex: 'metal', solid: true }, // kibble bin
+      { b: [10.95, 0, 6.65, 11.45, 0.1, 7.15], tex: 'metal' }, // Cooper's bowl
+      // living room
+      { b: [17.8, 0, 0.15, 21.2, 0.5, 0.65], tex: 'cabinet', solid: true }, // TV stand
+      { b: [18.3, 0.55, 0.25, 20.7, 1.35, 0.42], tex: 'black' }, // TV
+      { b: [17.5, 0, 3.6, 21.0, 0.45, 4.5], tex: 'fabric', solid: true }, // couch
+      { b: [17.5, 0.45, 4.2, 21.0, 0.95, 4.5], tex: 'fabric' },
+      { b: [17.5, 0.45, 3.6, 17.8, 0.7, 4.5], tex: 'fabric' },
+      { b: [20.7, 0.45, 3.6, 21.0, 0.7, 4.5], tex: 'fabric' },
+      { b: [18.2, 0, 2.0, 20.3, 0.4, 2.8], tex: 'cabinet', solid: true }, // coffee table
+      { b: [14.0, 0, 1.0, 15.0, 0.5, 2.0], tex: 'fabric2', solid: true }, // armchair
+      { b: [14.0, 0.5, 0.9, 15.0, 0.95, 1.2], tex: 'fabric2' },
+      { b: [25.5, 0, 2.0, 25.9, 1.9, 5.5], tex: 'cabinet', solid: true }, // bookshelf
+      { b: [15.95, 0, 2.95, 16.05, 1.6, 3.05], tex: 'metal', solid: true }, // lamp pole (the glowing shade is in props.js)
+      // foyer
+      { b: [0.2, 0, 5.5, 1.6, 0.45, 6.4], tex: 'cabinet', solid: true },
+      { b: [0.4, 0.45, 5.7, 1.0, 0.85, 6.2], tex: 'fabric2' }, // Mason's backpack
+      { b: [3.6, 0, 0.2, 4.8, 0.8, 0.7], tex: 'cabinet', solid: true },
+      // laundry room
+      { b: [0.1, 0, 8.15, 0.75, 0.95, 9.0], tex: 'appliance', solid: true },
+      { b: [0.1, 0, 9.1, 0.75, 0.95, 9.95], tex: 'appliance', solid: true },
+      { b: [3.8, 0, 8.1, 4.9, 1.8, 8.6], tex: 'cabinet', solid: true },
+      // guest bedroom
+      { b: [0.1, 0, 14.85, 2.1, 0.35, 16.35], tex: 'cabinet', solid: true },
+      { b: [0.1, 0.35, 14.85, 2.1, 0.55, 16.35], tex: 'sheets' },
+      { b: [0.12, 0.55, 15.0, 0.5, 0.65, 16.2], tex: 'sheets' },
+      { b: [0.1, 0, 14.25, 0.55, 0.55, 14.75], tex: 'cabinet', solid: true },
+      { b: [3.4, 0, 17.4, 4.9, 2.3, 18.9], tex: 'cabinet', solid: true }, // closet
+      // bathroom
+      { b: [0.1, 0, 22.5, 1.6, 2.1, 23.9], tex: 'tile', solid: true }, // shower stall
+      { b: [3.9, 0, 20.1, 4.8, 0.42, 20.8], tex: 'appliance', solid: true }, // toilet
+      { b: [4.4, 0.42, 20.1, 4.8, 0.8, 20.5], tex: 'appliance' },
+      { b: [3.4, 0, 23.3, 4.5, 0.85, 23.9], tex: 'cabinet', solid: true }, // vanity
+      // master bedroom
+      { b: [8.6, 0, 22.0, 10.6, 0.4, 23.9], tex: 'cabinet', solid: true },
+      { b: [8.6, 0.4, 22.0, 10.6, 0.6, 23.9], tex: 'sheets' },
+      { b: [8.7, 0.6, 22.1, 9.4, 0.7, 22.8], tex: 'sheets' },
+      { b: [8.0, 0, 15.1, 10.0, 0.9, 15.6], tex: 'cabinet', solid: true },
+      { b: [10.7, 0, 23.2, 11.2, 0.5, 23.9], tex: 'cabinet', solid: true },
+      // office
+      { b: [8.0, 0, 8.2, 10.5, 0.75, 9.0], tex: 'cabinet', solid: true },
+      { b: [8.9, 0, 9.2, 9.5, 0.5, 9.8], tex: 'fabric', solid: true },
+      { b: [12.3, 0, 9.0, 12.9, 1.9, 13.0], tex: 'cabinet', solid: true },
+    ],
     roofs: [
       { x0: -0.6, z0: -0.8, x1: 26.6, z1: 8.6 },
       { x0: -0.6, z0: 7.4, x1: 13.6, z1: 24.6 },
@@ -74,10 +131,29 @@
       { x: 2.5, y: 2.3, z: 4, color: 0xffc080, intensity: 0.5, distance: 8 },
       { x: 6, y: 2.3, z: 16, color: 0xffaa70, intensity: 0.3, distance: 9 },
       { x: 2.5, y: 2.2, z: -1.4, color: 0xffd9a0, intensity: 1.0, distance: 11 },
+      // the TV's glow: starts off, props.js flickers it when the TV is on
+      { id: 'tv', x: 19.5, y: 1.0, z: 1.6, color: 0x7a9cff, intensity: 0, distance: 9 },
     ],
+    // where the player stands to use things (also checked to be reachable on foot)
+    stand: {
+      fridge: { x: 12.55, z: 1.4 },
+      microwave: { x: 6.3, z: 1.4 },
+      bin: { x: 12.4, z: 6.0 },
+      bowl: { x: 11.2, z: 6.0 },
+      tv: { x: 19.5, z: 1.35 },
+      couch: { x: 19.25, z: 3.3 },
+      latch: { x: 19.5, z: 7.3 },
+      bed: { x: 2.9, z: 15.6 },
+      hatch: { x: 2.5, z: 11.7 },
+      frontDoor: { x: 2.5, z: 1.0 },
+      closet: { x: 2.9, z: 18.0 },
+      bush: { x: 5.5, z: -2.0, outdoor: true },
+      car: { x: 10, z: -8.5, outdoor: true },
+      bathWindow: { x: -1.5, z: 21.5, outdoor: true },
+    },
     spawns: {
-      living: { x: 20, z: 4, yaw: Math.PI },
-      kitchen: { x: 9, z: 3.5, yaw: 0 },
+      living: { x: 22.5, z: 5.5, yaw: 0.53 },
+      kitchen: { x: 9, z: 2.2, yaw: 0 },
       hall: { x: 6, z: 14, yaw: Math.PI },
       master: { x: 9.5, z: 17.5, yaw: -Math.PI / 2 },
       porch: { x: 2.5, z: -4, yaw: Math.PI, outdoor: true },

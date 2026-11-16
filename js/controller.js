@@ -30,6 +30,8 @@
       locked: false,
       sprintAllowed: false,
       eyeOffset: 0, // set pieces lower the camera (crouching, hiding)
+      eyeTarget: 0, // eyeOffset eases toward this
+      frozen: false, // no walking (sitting, hiding, cutscenes); looking around still works
       boxes: boxes,
       light: { on: false, battery: 1, available: true, spot: spot },
       onLockChange: null,
@@ -56,6 +58,17 @@
     api.toggleLight = function () {
       if (!api.light.available) return;
       api.light.on = !api.light.on;
+    };
+
+    // sit down somewhere: move there, lower the eyes, stop walking
+    api.seat = function (x, z, yaw, eye) {
+      api.teleport(x, z, yaw, 0);
+      api.frozen = true;
+      api.eyeTarget = eye;
+    };
+    api.stand = function () {
+      api.frozen = false;
+      api.eyeTarget = 0;
     };
 
     api.teleport = function (x, z, yaw, pitch) {
@@ -97,7 +110,8 @@
     }
 
     api.update = function (dt) {
-      if (api.locked) {
+      api.eyeOffset += (api.eyeTarget - api.eyeOffset) * Math.min(1, dt * 6);
+      if (api.locked && !api.frozen) {
         var f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
         var s = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
         if (f || s) {

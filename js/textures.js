@@ -134,6 +134,60 @@
       }
       speckle(g, w, h, r, 400, 0.3);
     },
+    cabinet: function (g, w, h, r) {
+      g.fillStyle = '#4a3828';
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(0,0,0,0.45)';
+      for (var x = 0; x < w; x += 32) g.fillRect(x, 0, 1, h);
+      g.strokeStyle = 'rgba(0,0,0,0.35)';
+      g.strokeRect(4.5, 4.5, 23, 55);
+      g.strokeRect(36.5, 4.5, 23, 55);
+      speckle(g, w, h, r, 300, 0.3);
+    },
+    counter: function (g, w, h, r) {
+      g.fillStyle = '#6d6a62';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 700, 0.35);
+    },
+    appliance: function (g, w, h, r) {
+      g.fillStyle = '#b9bbb6';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 200, 0.15);
+    },
+    metal: function (g, w, h, r) {
+      g.fillStyle = '#5b5f64';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 250, 0.3);
+    },
+    fabric: function (g, w, h, r) {
+      g.fillStyle = '#3f5560';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 1200, 0.3);
+    },
+    fabric2: function (g, w, h, r) {
+      g.fillStyle = '#5c3030';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 1200, 0.3);
+    },
+    sheets: function (g, w, h, r) {
+      g.fillStyle = '#8f98a3';
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(0,0,0,0.12)';
+      for (var y = 0; y < h; y += 12) g.fillRect(0, y, w, 1);
+      speckle(g, w, h, r, 500, 0.2);
+    },
+    black: function (g, w, h) {
+      g.fillStyle = '#0d0d10';
+      g.fillRect(0, 0, w, h);
+    },
+    door: function (g, w, h, r) {
+      g.fillStyle = '#3d2a1c';
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(0,0,0,0.4)';
+      g.fillRect(6, 6, 52, 24);
+      g.fillRect(6, 34, 52, 24);
+      speckle(g, w, h, r, 300, 0.25);
+    },
     plain: function (g, w, h) {
       g.fillStyle = '#3a3a3e';
       g.fillRect(0, 0, w, h);
