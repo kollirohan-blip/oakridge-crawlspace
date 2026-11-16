@@ -42,7 +42,7 @@
     'act2.vo.end':
       "I found out later that the slider wasn't how he got in. It was how he was leaving. I'd just locked him in with me.",
     'act2.sms.mason1': 'did you lock the deadbolt?? i cant get in',
-    'act2.sms.dave1': "No? Nobody else has a key. Spare's in the fake rock under the bush by the porch.",
+    'act2.sms.dave1': "No? Nobody else has a key. Spare's in the fake rock under the bush, left of the porch as you face the door.",
     'act2.sms.ethan1': 'u getting on tonight or what',
     'act2.sms.mason2': 'later maybe. weird night',
     'act2.thought.door': "It won't budge. The deadbolt's thrown, and Dave never gave me a key for that. You can only lock it from inside.",

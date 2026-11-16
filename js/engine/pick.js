@@ -12,6 +12,10 @@
   var REACH = 2.3;
   var HALF_ANGLE = 0.22; // radians, a little over 12 degrees
 
+  function inFootprint(b, x, z) {
+    return x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1;
+  }
+
   function isEnabled(item) {
     if (typeof item.enabled === 'function') return !!item.enabled();
     return item.enabled !== false;
@@ -38,7 +42,12 @@
       var angle = Math.acos(Math.max(-1, Math.min(1, dot)));
       var tolerance = half + Math.atan2(it.radius || 0.15, dist);
       if (angle > tolerance) continue;
-      if (!sightline.lineOfSight(boxes, { x: cam.x, z: cam.z }, { x: it.x, z: it.z }, it.y)) continue;
+      // A thing cannot hide behind the solid it sits in (the key under the bush), and the player is
+      // not blocked by a solid they are inside (sitting in the car). Only other solids can hide it.
+      var between = boxes.filter(function (b) {
+        return !inFootprint(b, it.x, it.z) && !inFootprint(b, cam.x, cam.z);
+      });
+      if (!sightline.lineOfSight(between, { x: cam.x, z: cam.z }, { x: it.x, z: it.z }, it.y)) continue;
       if (angle < bestAngle) {
         bestAngle = angle;
         best = it;

@@ -52,6 +52,25 @@ test('a bigger radius makes an item easier to hit off-centre', () => {
   assert.equal(pickTarget(cam, [big], []).id, 'b');
 });
 
+test('an item inside a solid prop (the key under the bush) can still be picked from outside it', () => {
+  const bush = { x0: -0.6, x1: 0.6, z0: -2.1, z1: -0.9, y0: 0, y1: 0.9, kind: 'bush' };
+  const key = item('bush', 0, 0.35, -1.5, { radius: 0.6 });
+  const looking = { ...cam, pitch: -0.75 };
+  assert.equal(pickTarget(looking, [key], [bush]).id, 'bush');
+});
+
+test('sitting inside a solid box (the car), things inside the same box can be picked', () => {
+  const car = { x0: -0.9, x1: 0.9, z0: -2.5, z1: 1.7, y0: 0, y1: 1.45, kind: 'car' };
+  const ignition = item('ignition', 0, 0.95, -1.1, { radius: 0.35 });
+  const seated = { x: 0, y: 1.05, z: 0, yaw: 0, pitch: -0.1 };
+  assert.equal(pickTarget(seated, [ignition], [car]).id, 'ignition');
+});
+
+test('a different solid box in between still hides an item', () => {
+  const crate = { x0: -0.5, x1: 0.5, z0: -1.2, z1: -0.8, y0: 0, y1: 2, kind: 'furniture' };
+  assert.equal(pickTarget(cam, [item('a', 0, 1.65, -1.8)], [crate]), null);
+});
+
 test('turning the camera brings a side item into the crosshair', () => {
   const side = item('a', -1.5, 1.65, 0); // to the west; yaw +90 degrees faces -x
   assert.equal(pickTarget(cam, [side], []), null);
