@@ -18,6 +18,9 @@
       el('batteryFill').style.transform = 'scaleX(' + f + ')';
       el('battery').classList.toggle('low', f < 0.15);
     },
+    setCrosshair: function (visible) {
+      el('crosshair').style.display = visible ? '' : 'none';
+    },
     showClickPanel: function (visible) {
       el('click-panel').classList.toggle('hidden', !visible);
     },
@@ -71,6 +74,35 @@
     },
     fadeIn: function () {
       el('fade').classList.remove('on');
+    },
+    // a failure: black screen, a title, a line, and "click to try again"
+    failScreen: function (title, line, onRetry) {
+      var f = el('fade');
+      el('fadeText').innerHTML = '';
+      var h = document.createElement('div');
+      h.className = 'fail-title';
+      h.textContent = title;
+      var p = document.createElement('div');
+      p.className = 'fail-line';
+      p.textContent = line;
+      var r = document.createElement('div');
+      r.className = 'fail-retry';
+      r.textContent = 'Click or press E to try again';
+      el('fadeText').appendChild(h);
+      el('fadeText').appendChild(p);
+      el('fadeText').appendChild(r);
+      f.classList.add('on');
+      var armed = false;
+      setTimeout(function () { armed = true; }, 1200);
+      function go(e) {
+        if (!armed) return;
+        if (e.type === 'keydown' && e.code !== 'KeyE' && e.code !== 'Space') return;
+        document.removeEventListener('mousedown', go);
+        document.removeEventListener('keydown', go);
+        onRetry();
+      }
+      document.addEventListener('mousedown', go);
+      document.addEventListener('keydown', go);
     },
     error: function (msg) {
       OC.showError(msg);

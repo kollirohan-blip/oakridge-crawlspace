@@ -76,6 +76,9 @@
       var spawn = OC.house.spawns[spawnName] || OC.house.spawns[def.spawn];
       ctl.stand();
       ctl.teleport(spawn.x, spawn.z, spawn.yaw, 0);
+      r.camera.fov = 72; // a set piece may have narrowed it
+      r.camera.updateProjectionMatrix();
+      OC.hud.setCrosshair(true);
       current.id = id;
       current.def = def;
       current.act = def.create(g);
@@ -121,7 +124,7 @@
       if (OC.audio) OC.audio.listen(r.camera);
       interact.suspend(phone.isOpen || phone.choosing() || g.state.cutscene);
       interact.update(dt);
-      phone.update(dt);
+      if (ctl.locked) phone.update(dt); // a timed choice must not run out while the game is paused
       props.update(dt);
       cooper.update(dt);
       if (current.act) current.act.update(dt);

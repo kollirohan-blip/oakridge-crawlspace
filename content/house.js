@@ -94,7 +94,7 @@
       { b: [0.1, 0.35, 14.85, 2.1, 0.55, 16.35], tex: 'sheets' },
       { b: [0.12, 0.55, 15.0, 0.5, 0.65, 16.2], tex: 'sheets' },
       { b: [0.1, 0, 14.25, 0.55, 0.55, 14.75], tex: 'cabinet', solid: true },
-      { b: [3.4, 0, 17.4, 4.9, 2.3, 18.9], tex: 'cabinet', solid: true }, // closet
+      { b: [0.1, 0, 17.6, 1.9, 2.3, 18.9], tex: 'cabinet', solid: true }, // closet (its doors face the bed)
       // bathroom
       { b: [0.1, 0, 22.5, 1.6, 2.1, 23.9], tex: 'tile', solid: true }, // shower stall
       { b: [3.9, 0, 20.1, 4.8, 0.42, 20.8], tex: 'appliance', solid: true }, // toilet
@@ -141,6 +141,8 @@
       { id: 'laundry', x: 2.5, y: 2.3, z: 10.5, color: 0xfff1d6, intensity: 0, distance: 8 },
       // the guest room bedside lamp
       { id: 'guest', x: 0.35, y: 0.9, z: 14.5, color: 0xffc88a, intensity: 0, distance: 6 },
+      // the dropped phone's screen, face up on the floor by the closet
+      { id: 'phoneglow', x: 1.25, y: 0.12, z: 16.95, color: 0x9fc3ff, intensity: 0, distance: 3.2 },
     ],
     // where the player stands to use things (also checked to be reachable on foot)
     stand: {
@@ -154,7 +156,7 @@
       bed: { x: 2.9, z: 15.6 },
       hatch: { x: 2.5, z: 11.7 },
       frontDoor: { x: 2.5, z: 1.0 },
-      closet: { x: 2.9, z: 18.0 },
+      closet: { x: 2.4, z: 17.2 },
       bush: { x: 5.5, z: -2.0, outdoor: true },
       car: { x: 8.5, z: -9.6, outdoor: true }, // the driver's door
       broom: { x: 4.1, z: 12.2 },
@@ -169,6 +171,7 @@
       porch: { x: 2.5, z: -4, yaw: Math.PI, outdoor: true },
       driveway: { x: 10, z: -13.5, yaw: Math.PI, outdoor: true },
       guestBed: { x: 2.4, z: 15.2, yaw: -Math.PI / 2 },
+      bathInside: { x: 3.0, z: 21.5, yaw: -Math.PI / 2 },
     },
     anchors: {
       masterWindow: { x: 13, y: 1.5, z: 17.5 },

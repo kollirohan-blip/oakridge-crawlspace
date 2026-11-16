@@ -81,6 +81,9 @@ html, body {
   transition: opacity 1.4s; display: flex; align-items: center; justify-content: center;
 }
 #fade.on { opacity: 1; }
+.fail-title { color: var(--red); letter-spacing: 0.4em; font-size: clamp(20px, 5vmin, 52px); margin-bottom: 3vmin; }
+.fail-line { letter-spacing: 0.05em; font-size: clamp(14px, 2.6vmin, 26px); margin-bottom: 5vmin; }
+.fail-retry { color: var(--dim); letter-spacing: 0.15em; font-size: clamp(11px, 1.8vmin, 17px); animation: blink 1.6s steps(1) infinite; }
 #fadeText { letter-spacing: 0.3em; font-size: clamp(16px, 3.4vmin, 34px); color: var(--ink); text-align: center; padding: 0 6vw; }
 #subtitle {
   position: absolute; left: 50%; bottom: 9vmin; transform: translateX(-50%);

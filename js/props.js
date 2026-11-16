@@ -311,6 +311,92 @@
       return api;
     })();
 
+    // ---- the guest room closet: two doors with a two-inch gap, and what is behind it ---------------
+    var closet = (function () {
+      box(0.86, 2.08, 0.04, 'door', 0.55, 1.06, 17.57); // left door
+      var right = box(0.86, 2.08, 0.04, 'door', 1.45, 1.06, 17.57); // right door, the one that opens
+      var gap = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 2.04), new THREE.MeshBasicMaterial({ color: 0x010101 }));
+      gap.rotation.y = Math.PI;
+      gap.position.set(1.0, 1.06, 17.585);
+      scene.add(gap);
+      // the eye: pale, bloodshot, unblinking
+      var c = document.createElement('canvas');
+      c.width = 32;
+      c.height = 24;
+      var g = c.getContext('2d');
+      g.fillStyle = '#010101';
+      g.fillRect(0, 0, 32, 24);
+      g.fillStyle = '#d9d4c8';
+      g.beginPath();
+      g.ellipse(16, 12, 14, 7, 0, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = 'rgba(150,30,30,0.7)';
+      g.lineWidth = 1;
+      [[3, 11, 9, 12], [4, 14, 10, 13], [29, 10, 23, 12], [28, 14, 22, 13]].forEach(function (l) {
+        g.beginPath();
+        g.moveTo(l[0], l[1]);
+        g.lineTo(l[2], l[3]);
+        g.stroke();
+      });
+      g.fillStyle = '#5d6b5f';
+      g.beginPath();
+      g.arc(15, 12, 5.5, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#000';
+      g.beginPath();
+      g.arc(15, 12, 2.6, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = '#fff';
+      g.fillRect(13, 10, 1, 1); // the glint
+      var eyeTex = new THREE.CanvasTexture(c);
+      eyeTex.magFilter = THREE.NearestFilter;
+      var eye = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.05), new THREE.MeshBasicMaterial({ map: eyeTex, color: 0xd6d2ca }));
+      eye.rotation.y = Math.PI;
+      eye.position.set(1.0, 0.86, 17.58);
+      eye.visible = false;
+      scene.add(eye);
+      var target = 0;
+      var hinge = 0;
+      var api = {
+        eyeAt: { x: 1.0, y: 0.86, z: 17.58 },
+        showEye: function (v) {
+          eye.visible = !!v;
+        },
+        // the right door swinging open (the intruder coming out)
+        burst: function () {
+          target = 1.4;
+        },
+        reset: function () {
+          target = 0;
+          hinge = 0;
+          right.position.set(1.45, 1.06, 17.57);
+          right.rotation.y = 0;
+          eye.visible = false;
+        },
+        update: function (dt) {
+          hinge += (target - hinge) * Math.min(1, dt * 9);
+          // swing about the door's outer edge (x = 1.88)
+          right.rotation.y = hinge;
+          right.position.set(1.88 - Math.cos(hinge) * 0.43, 1.06, 17.57 - Math.sin(hinge) * 0.43);
+        },
+      };
+      return api;
+    })();
+
+    // ---- Mason's phone, lying on the floor after he drops it -------------------------------------
+    var floorPhone = (function () {
+      var m = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.012, 0.15), new THREE.MeshBasicMaterial({ color: 0x9fb8d8 }));
+      m.position.set(1.3, 0.01, 16.85);
+      m.rotation.y = 0.5;
+      m.visible = false;
+      scene.add(m);
+      return {
+        set: function (v) {
+          m.visible = !!v;
+        },
+      };
+    })();
+
     // ---- lights, by id (each act sets its own levels) ----------------------------------------------
     function setLights(levels) {
       Object.keys(levels).forEach(function (id) {
@@ -390,6 +476,8 @@
     })();
 
     return {
+      closet: closet,
+      floorPhone: floorPhone,
       car: car,
       broom: broom,
       setLights: setLights,
@@ -404,6 +492,7 @@
         tv.update(dt);
         frontDoor.update(dt);
         hatch.update(dt);
+        closet.update(dt);
       },
     };
   }
