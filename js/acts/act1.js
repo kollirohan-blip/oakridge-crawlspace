@@ -226,7 +226,7 @@
         {
           id: 'note', x: 12.55, y: 1.4, z: 0.9, radius: 0.3,
           label: 'Read the note',
-          onUse: function () { hud.say(t('act1.note.fridge'), 11000); },
+          onUse: function () { g.read('Note on the fridge', t('act1.note.fridge')); },
         },
         {
           id: 'microwave', x: 6.3, y: 1.06, z: 0.7, radius: 0.35,

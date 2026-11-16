@@ -189,6 +189,49 @@
       return api;
     })();
 
+    // ---- Dave's note on the fridge door, held by magnets (readable up close with E) ------------------
+    (function () {
+      var c = document.createElement('canvas');
+      c.width = 48;
+      c.height = 64;
+      var g = c.getContext('2d');
+      g.fillStyle = '#e9e3d2';
+      g.fillRect(0, 0, 48, 64);
+      g.fillStyle = 'rgba(0,0,0,0.08)';
+      g.fillRect(0, 60, 48, 4);
+      // scribbled handwriting: short wavy strokes, line by line
+      g.strokeStyle = '#26315a';
+      g.lineWidth = 1;
+      var seed = 7;
+      function rnd() {
+        seed = (seed * 1103515245 + 12345) >>> 0;
+        return (seed % 1000) / 1000;
+      }
+      for (var y = 9; y < 58; y += 5) {
+        var x = 5;
+        var end = 40 + rnd() * 4 - (y > 50 ? 18 : 0);
+        g.beginPath();
+        g.moveTo(x, y);
+        while (x < end) {
+          x += 2 + rnd() * 3;
+          g.lineTo(x, y + (rnd() - 0.5) * 2.2);
+        }
+        g.stroke();
+      }
+      var tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.NearestFilter;
+      var note = new THREE.Mesh(new THREE.PlaneGeometry(0.21, 0.28), new THREE.MeshPhongMaterial({ map: tex, specular: 0x000000 }));
+      note.position.set(12.55, 1.36, 0.858);
+      note.rotation.z = 0.04;
+      scene.add(note);
+      // magnets, including a few of Dave's terrible ones
+      [[12.55, 1.49, 0xc0392b], [12.34, 1.62, 0x2e86c1], [12.74, 1.15, 0xf1c40f], [12.4, 1.05, 0x27ae60]].forEach(function (m) {
+        var mag = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.012), new THREE.MeshPhongMaterial({ color: m[2], specular: 0x222222 }));
+        mag.position.set(m[0], m[1], 0.864);
+        scene.add(mag);
+      });
+    })();
+
     // ---- the living room lamp shade: it glows, because the bulb is inside it -------------------------
     var shadeMat = new THREE.MeshBasicMaterial({ color: 0xc98f52 });
     var shade = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 0.36, 8, 1, true), shadeMat);

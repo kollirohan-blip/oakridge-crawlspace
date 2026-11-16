@@ -8,6 +8,7 @@
 
   var subtitleTimer = null;
   var toastTimer = null;
+  var reading = false;
 
   var hud = {
     setStamp: function (night, label) {
@@ -85,6 +86,31 @@
     },
     fadeIn: function () {
       el('fade').classList.remove('on');
+    },
+    // Read something (a note, a letter, a clipping) full screen until the player closes it with E,
+    // Space or Esc. onClose runs once it is put away.
+    read: function (title, body, onClose) {
+      var r = el('reader');
+      el('readerTitle').textContent = title || '';
+      el('readerBody').textContent = body;
+      r.classList.add('on');
+      reading = true;
+      var armed = false;
+      setTimeout(function () { armed = true; }, 250); // the E that opened it must not also close it
+      function close(e) {
+        if (!armed) return;
+        if (e.type === 'keydown' && e.code !== 'KeyE' && e.code !== 'Space' && e.code !== 'Escape') return;
+        document.removeEventListener('keydown', close);
+        document.removeEventListener('mousedown', close);
+        r.classList.remove('on');
+        reading = false;
+        if (onClose) onClose();
+      }
+      document.addEventListener('keydown', close);
+      document.addEventListener('mousedown', close);
+    },
+    isReading: function () {
+      return reading;
     },
     // a failure: black screen, a title, a line, and "click to try again"
     failScreen: function (title, line, onRetry) {

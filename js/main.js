@@ -65,6 +65,15 @@
       onEnd: null,
     };
 
+    // read a note full screen; Mason stands still while he reads, then carries on
+    g.read = function (title, body) {
+      var wasFrozen = ctl.frozen;
+      ctl.frozen = true;
+      OC.hud.read(title, body, function () {
+        ctl.frozen = wasFrozen;
+      });
+    };
+
     var current = { id: null, def: null, act: null };
 
     function startAct(id) {
@@ -158,7 +167,7 @@
       if (ctl.locked && g.clock) g.clock.tick(dt);
       ctl.update(dt);
       if (OC.audio) OC.audio.listen(r.camera);
-      interact.suspend(phone.isOpen || phone.choosing() || g.state.cutscene);
+      interact.suspend(phone.isOpen || phone.choosing() || g.state.cutscene || OC.hud.isReading());
       interact.update(dt);
       if (ctl.locked) phone.update(dt); // a timed choice must not run out while the game is paused
       props.update(dt);

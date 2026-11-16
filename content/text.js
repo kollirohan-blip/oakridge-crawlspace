@@ -10,7 +10,7 @@
       "I want to be clear about one thing. I never went into Dave's room that night. Not once. I didn't even know where the lamp switch was.",
     'act1.vo.end': 'I told myself it was a coat on a hook. I slept with the light on anyway.',
     'act1.note.fridge':
-      "MASON. Cooper gets ONE scoop, nights only. The slider sticks, make sure it's locked. Don't mess with the hatch in the laundry room, it's padlocked, rats. Back Thursday. Dave",
+      "MASON,\n\nCooper gets ONE scoop. Nights only. He will lie to you about this.\n\nThe slider sticks. Pull on it after you lock it.\n\nDon't mess with the hatch in the laundry room. It's padlocked for a reason (rats).\n\nLasagna in the fridge has your name on it.\n\nBack Thursday.\n- Dave",
     'act1.sms.dave1': "You get in ok? Lasagna's in the fridge. Cooper eats around 8, one scoop. He'll try to con you into two.",
     'act1.sms.ethan1': "yo how's the murder cabin",
     'act1.sms.mason1': "its not a cabin. its just really far from everything",

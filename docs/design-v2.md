@@ -28,6 +28,8 @@ not as jump-scare spam. It still runs from `index.html` on the Vivobook, offline
 - **Length:** about 45 minutes.
 - **Order:** Phase 0 (bugs and foundations), then Night 1 freedom, then the look, store trip, lore,
   scare pass.
+- **Story:** open to changing the story itself to make it scarier (Rohan, mid-build). Bring concrete
+  story-change proposals to Rohan before the lore and scare phases (4 and 5); don't change the plot silently.
 
 **Time budget for 45 minutes:**
 - Act 1 free-roam routine plus dread: about 15.
