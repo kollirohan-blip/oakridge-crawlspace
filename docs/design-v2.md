@@ -10,7 +10,7 @@
 > **This file still holds:** the model pipeline, the research rules table, and per-phase
 > verification.
 >
-> **Status:** Phase 0 is done (commits 74c41d0 to e8d5cdb). The build order now lives in
+> **Status:** Phase 0 is done (commits 66bcc28 to ea3582d). The build order now lives in
 > `story-v2.md`.
 >
 > The project is about making an awesome game now; the local-model experiment is dropped.
