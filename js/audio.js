@@ -365,6 +365,7 @@
   // ---- the engine ---------------------------------------------------------------------------------
   var ctx = null;
   var bus = null;
+  var volume = 0.9;
   var occluded = null; // function(pos) -> true when a wall is between the listener and pos
   var listenerPos = { x: 0, y: 1.6, z: 0 };
 
@@ -377,7 +378,7 @@
     if (!AC) return;
     ctx = new AC();
     var comp = ctx.createDynamicsCompressor();
-    bus = gain(ctx, 0.9);
+    bus = gain(ctx, volume);
     bus.connect(comp).connect(ctx.destination);
   }
 
@@ -460,6 +461,10 @@
     measure: measure,
     names: Object.keys(B),
     setOcclusion: function (fn) { occluded = fn; },
+    setVolume: function (v) {
+      volume = v;
+      if (bus) bus.gain.value = v;
+    },
     ready: function () { return !!ctx; },
   };
 })();

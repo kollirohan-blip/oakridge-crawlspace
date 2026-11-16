@@ -33,6 +33,8 @@
       eyeOffset: 0, // set pieces lower the camera (crouching, hiding)
       eyeTarget: 0, // eyeOffset eases toward this
       frozen: false, // no walking (sitting, hiding, cutscenes); looking around still works
+      sensitivity: 1, // from settings: a multiplier on mouse look
+      bobEnabled: true, // from settings
       boxes: boxes,
       light: { on: false, battery: 1, available: true, spot: spot },
       onLockChange: null,
@@ -93,8 +95,8 @@
     });
     document.addEventListener('mousemove', function (e) {
       if (!api.locked) return;
-      api.yaw -= (e.movementX || 0) * SENSITIVITY;
-      api.pitch -= (e.movementY || 0) * SENSITIVITY;
+      api.yaw -= (e.movementX || 0) * SENSITIVITY * api.sensitivity;
+      api.pitch -= (e.movementY || 0) * SENSITIVITY * api.sensitivity;
       api.pitch = Math.max(-PITCH_MAX, Math.min(PITCH_MAX, api.pitch));
     });
     document.addEventListener('pointerlockchange', function () {
@@ -105,7 +107,7 @@
     });
 
     function applyCamera() {
-      var bob = Math.sin(bobPhase) * 0.03 * bobAmp;
+      var bob = api.bobEnabled ? Math.sin(bobPhase) * 0.03 * bobAmp : 0;
       camera.position.set(api.pos.x, EYE + api.eyeOffset + bob, api.pos.z);
       camera.rotation.set(api.pitch, api.yaw, 0);
     }

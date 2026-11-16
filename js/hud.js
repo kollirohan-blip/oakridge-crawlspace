@@ -33,9 +33,6 @@
     setCrosshair: function (visible) {
       el('crosshair').style.display = visible ? '' : 'none';
     },
-    showClickPanel: function (visible) {
-      el('click-panel').classList.toggle('hidden', !visible);
-    },
     // a line of voiceover or thought, shown for `ms` milliseconds
     say: function (text, ms) {
       var s = el('subtitle');

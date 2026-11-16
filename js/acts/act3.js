@@ -82,7 +82,7 @@
       var beat = none;
       var stare = OC.bluff.createStareRule(1.2);
       // narrowing the field of view during the reveal, like eyes focusing
-      var fovTarget = 72;
+      var fovTarget = g.baseFov || 72;
       function zoomTo(fov) {
         fovTarget = fov;
       }
@@ -114,7 +114,7 @@
         if (flags.phase === 'fail') return;
         flags.phase = 'fail';
         g.state.cutscene = true;
-        zoomTo(72);
+        zoomTo(g.baseFov || 72);
         hud.setCrosshair(true);
         props.closet.burst();
         beat.stop();
@@ -132,7 +132,7 @@
 
       function survive() {
         flags.phase = 'stand';
-        zoomTo(72);
+        zoomTo(g.baseFov || 72);
         hud.setCrosshair(true);
         phone.callLine('Mason', t('act3.choice.c'));
         later(2.6, function () { phone.callLine('Ethan', t('act3.call.e7')); });

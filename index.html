@@ -45,11 +45,57 @@
 
 <div id="epilogue"><div class="ep-play">PLAY &#9654;</div><div id="epilogueLines"></div></div>
 
-<div id="click-panel">
-  <h1>OAKRIDGE CRAWLSPACE</h1>
-  <p class="big">Click to play</p>
-  <p class="keys">W A S D move &nbsp;·&nbsp; mouse look &nbsp;·&nbsp; F phone light &nbsp;·&nbsp; E use &nbsp;·&nbsp; Tab phone</p>
-  <p class="small">Headphones recommended. Esc pauses.</p>
+<!-- Menus: the title screen, the pause menu (Esc), chapter select and settings -->
+<div id="menus">
+  <div id="title" class="menu">
+    <div class="menu-tape">PLAY &#9654;</div>
+    <h1>OAKRIDGE CRAWLSPACE</h1>
+    <div class="menu-items">
+      <button data-act="continue" id="mContinue">Continue</button>
+      <button data-act="new">New game</button>
+      <button data-act="chapters" id="mChapters">Chapters</button>
+      <button data-act="settings">Settings</button>
+      <button data-act="fullscreen">Full screen</button>
+    </div>
+    <p class="keys">W A S D move &nbsp;·&nbsp; mouse look &nbsp;·&nbsp; E use &nbsp;·&nbsp; F phone light &nbsp;·&nbsp; Tab phone &nbsp;·&nbsp; Esc pause</p>
+    <p class="small">Best with headphones, in full screen, with the lights off.</p>
+  </div>
+
+  <div id="pause" class="menu">
+    <h2>PAUSED</h2>
+    <div class="menu-items">
+      <button data-act="resume">Resume</button>
+      <button data-act="settings">Settings</button>
+      <button data-act="restart">Restart this chapter</button>
+      <button data-act="quit">Quit to title</button>
+    </div>
+  </div>
+
+  <div id="chapters" class="menu">
+    <h2>CHAPTERS</h2>
+    <div class="menu-items">
+      <button data-chapter="act1">Night 1: Arrival</button>
+      <button data-chapter="act2">Night 2: The deadbolt</button>
+      <button data-chapter="act3">12:30 AM: The closet</button>
+      <button data-chapter="act4">12:35 AM: The car</button>
+      <button data-act="back">Back</button>
+    </div>
+  </div>
+
+  <div id="settings" class="menu">
+    <h2>SETTINGS</h2>
+    <div class="settings-rows">
+      <label>Mouse sensitivity <input type="range" id="sSensitivity" min="0.3" max="3" step="0.1"></label>
+      <label>Volume <input type="range" id="sVolume" min="0" max="1" step="0.05"></label>
+      <label>VHS effect <input type="range" id="sVhs" min="0" max="1" step="0.05"></label>
+      <label>Field of view <input type="range" id="sFov" min="55" max="95" step="1"></label>
+      <label>Subtitle size
+        <select id="sSubtitle"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select>
+      </label>
+      <label>Head bob <input type="checkbox" id="sBob"></label>
+    </div>
+    <div class="menu-items"><button data-act="back">Back</button></div>
+  </div>
 </div>
 
 <div id="error-panel" hidden></div>
@@ -88,6 +134,7 @@
 <script src="js/engine/silhouette.js"></script>
 <script src="js/engine/bluff.js"></script>
 <script src="js/engine/noise.js"></script>
+<script src="js/engine/settings.js"></script>
 <script src="js/engine/content.js"></script>
 <script src="content/house.js"></script>
 <script src="content/text.js"></script>
@@ -96,6 +143,7 @@
 <script src="js/hud.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/phone.js"></script>
+<script src="js/menu.js"></script>
 <script src="js/controller.js"></script>
 <script src="js/world.js"></script>
 <script src="js/props.js"></script>

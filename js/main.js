@@ -86,7 +86,7 @@
       var spawn = OC.house.spawns[spawnName] || OC.house.spawns[def.spawn];
       ctl.stand();
       ctl.teleport(spawn.x, spawn.z, spawn.yaw, 0);
-      r.camera.fov = 72; // a set piece may have narrowed it
+      r.camera.fov = g.baseFov; // a set piece may have narrowed it
       r.camera.updateProjectionMatrix();
       OC.hud.setCrosshair(true);
       current.id = id;
@@ -121,6 +121,11 @@
         if (current.act && current.act.dispose) current.act.dispose();
         interact.clear();
         saveCheckpoint(null); // finished: the next visit starts fresh
+        try {
+          localStorage.setItem('oakridge.finished', '1'); // unlocks chapter select
+        } catch (e) {
+          /* no storage: chapters just stay locked */
+        }
         current.id = 'epilogue';
         current.act = OC.epilogue.create(g);
         return;
@@ -129,33 +134,98 @@
     };
     g.startAct = startAct;
 
-    ctl.onLockChange = function (locked) {
-      OC.hud.showClickPanel(!locked);
-    };
-    OC.hud.showClickPanel(true);
-    document.getElementById('click-panel').addEventListener('click', function () {
+    // ---- settings ------------------------------------------------------------------------------------
+    var store = (function () {
+      try {
+        return window.localStorage;
+      } catch (e) {
+        return { getItem: function () { return null; }, setItem: function () {} };
+      }
+    })();
+    var settings = OC.settings.load(store);
+    function applySettings(s) {
+      ctl.sensitivity = s.sensitivity;
+      ctl.bobEnabled = s.bob;
+      if (OC.audio) OC.audio.setVolume(s.volume);
+      document.getElementById('vhs').style.opacity = s.vhs;
+      document.getElementById('grain').style.opacity = 0.05 * s.vhs;
+      document.body.classList.toggle('sub-small', s.subtitle === 'small');
+      document.body.classList.toggle('sub-large', s.subtitle === 'large');
+      var narrowed = Math.abs(r.camera.fov - g.baseFov) > 0.5; // a set piece is zoomed in: leave it
+      g.baseFov = s.fov;
+      if (!narrowed) {
+        r.camera.fov = s.fov;
+        r.camera.updateProjectionMatrix();
+      }
+    }
+    g.baseFov = r.camera.fov;
+    applySettings(settings);
+
+    // ---- menus: title, pause, chapters, settings -------------------------------------------------------
+    var NAMES = { act2: 'Night 2, 8:30 PM', act3: 'Night 2, 12:30 AM', act4: 'Night 2, 12:35 AM' };
+    var playing = false; // the player has entered the game at least once this visit
+    function chaptersUnlocked() {
+      try {
+        return localStorage.getItem('oakridge.finished') === '1';
+      } catch (e) {
+        return false;
+      }
+    }
+    function showTitle() {
+      var saved = loadCheckpoint();
+      menu.showTitle({
+        continueLabel: saved && saved !== 'act1' && NAMES[saved] ? NAMES[saved] : null,
+        chaptersUnlocked: chaptersUnlocked(),
+      });
+    }
+    // enter the game: start the sound (needs this click) and capture the mouse
+    function begin() {
       if (OC.audio) {
         OC.audio.init();
+        OC.audio.setVolume(settings.volume);
         if (!g.drone && OC.audio.ready()) g.drone = OC.audio.play('drone');
       }
       ctl.requestLock();
+    }
+    var menu = OC.menu.create({
+      settings: settings,
+      onSettings: function (s) {
+        settings = s;
+        applySettings(s);
+        OC.settings.save(store, s);
+      },
+      onChoice: function (action, arg) {
+        if (action === 'new') {
+          saveCheckpoint(null);
+          startAct('act1');
+        } else if (action === 'chapter') {
+          startAct(arg);
+        } else if (action === 'restart') {
+          startAct(current.id === 'epilogue' ? 'act1' : current.id);
+        } else if (action === 'quit') {
+          return showTitle();
+        }
+        begin(); // new, continue, chapter, resume, restart
+      },
     });
+    g.menu = menu;
+
+    ctl.onLockChange = function (locked) {
+      if (locked) {
+        playing = true;
+        menu.hide();
+      } else if (playing) {
+        menu.showPause();
+      } else {
+        showTitle();
+      }
+    };
 
     var params = new URLSearchParams(location.search);
     var saved = loadCheckpoint();
     var startAt = params.get('act') ? 'act' + Number(params.get('act')) : saved || 'act1';
     if (!OC.acts[startAt]) startAt = 'act1';
-    if (!params.get('act') && saved && saved !== 'act1' && OC.acts[saved]) {
-      var NAMES = { act2: 'Night 2, 8:30 PM', act3: 'Night 2, 12:30 AM', act4: 'Night 2, 12:35 AM' };
-      document.querySelector('#click-panel .big').textContent = 'Click to continue (' + NAMES[saved] + ')';
-      document.querySelector('#click-panel .small').textContent = 'Press N to start over from the beginning.';
-      document.addEventListener('keydown', function (e) {
-        if (e.code === 'KeyN' && !ctl.locked) {
-          saveCheckpoint(null);
-          location.reload();
-        }
-      });
-    }
+    showTitle();
     startAct(startAt);
 
     var samples = [];

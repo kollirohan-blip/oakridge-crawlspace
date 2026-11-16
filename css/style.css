@@ -203,17 +203,40 @@ body.phone-open #subtitle { left: calc((100vw - min(34vw, 320px) - 8vmin) / 2); 
 @keyframes epIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* Panels */
-#click-panel, #error-panel {
+#error-panel {
   position: fixed; inset: 0; z-index: 10;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-  background: rgba(0,0,0,0.78);
 }
-#click-panel { cursor: pointer; }
-#click-panel.hidden { display: none; }
-#click-panel h1 { font-weight: normal; letter-spacing: 0.35em; font-size: clamp(18px, 4vmin, 40px); margin: 0 0 4vmin; }
-#click-panel .big { font-size: clamp(16px, 3vmin, 30px); margin: 0 0 3vmin; animation: blink 1.6s steps(1) infinite; }
-#click-panel .keys { color: var(--dim); font-size: clamp(11px, 1.9vmin, 18px); margin: 0 0 2vmin; padding: 0 4vw; }
-#click-panel .small { color: var(--dim); font-size: clamp(10px, 1.6vmin, 15px); margin: 0; }
+
+/* Menus */
+body.at-title #hud { display: none; }
+#menus .menu {
+  position: fixed; inset: 0; z-index: 10; display: none; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; background: rgba(4,5,9,0.86);
+  text-shadow: none;
+}
+#menus .menu.on { display: flex; }
+#title { background: radial-gradient(ellipse at center, rgba(16,22,40,0.92), rgba(2,3,6,0.97)); }
+.menu-tape { position: absolute; top: 4vmin; left: 4.5vmin; letter-spacing: 0.2em; font-size: clamp(13px, 2.4vmin, 24px); color: var(--dim); }
+#menus h1 { font-weight: normal; letter-spacing: 0.35em; font-size: clamp(20px, 4.6vmin, 46px); margin: 0 0 5vmin; }
+#menus h2 { font-weight: normal; letter-spacing: 0.4em; font-size: clamp(16px, 3.4vmin, 32px); margin: 0 0 4vmin; }
+.menu-items { display: flex; flex-direction: column; gap: 1.2vmin; margin-bottom: 4vmin; }
+.menu-items button {
+  font: inherit; font-size: clamp(14px, 2.5vmin, 24px); color: var(--ink); background: none; border: none;
+  cursor: pointer; padding: 0.5vmin 2vmin; letter-spacing: 0.08em;
+}
+.menu-items button:hover, .menu-items button:focus-visible { color: #fff; outline: none; }
+.menu-items button:hover::before, .menu-items button:focus-visible::before { content: "B6  "; color: var(--red); }
+.menu-items button[hidden] { display: none; }
+#menus .keys { color: var(--dim); font-size: clamp(11px, 1.8vmin, 17px); margin: 0 0 1.5vmin; padding: 0 4vw; }
+#menus .small { color: var(--dim); font-size: clamp(10px, 1.6vmin, 15px); margin: 0; }
+.settings-rows { display: grid; gap: 2vmin; margin-bottom: 4vmin; min-width: min(80vw, 460px); text-align: left; }
+.settings-rows label { display: flex; justify-content: space-between; align-items: center; gap: 3vw; font-size: clamp(13px, 2.1vmin, 20px); }
+.settings-rows input[type=range] { width: min(40vw, 220px); accent-color: var(--red); }
+.settings-rows select { font: inherit; background: #10131a; color: var(--ink); border: 1px solid rgba(255,255,255,0.3); padding: 2px 6px; }
+.settings-rows input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--red); }
+body.sub-small #subtitle { font-size: clamp(12px, 2vmin, 20px); }
+body.sub-large #subtitle { font-size: clamp(17px, 3.3vmin, 34px); }
 #error-panel {
   z-index: 20; background: #1a0705; color: #ffb8a8; white-space: pre-wrap; padding: 6vmin;
   font-size: clamp(13px, 2vmin, 20px); text-align: left; align-items: flex-start;
