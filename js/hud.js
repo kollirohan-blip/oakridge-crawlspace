@@ -66,6 +66,9 @@
       f.classList.add('on');
       if (cb) setTimeout(cb, 1600);
     },
+    setFadeText: function (text) {
+      el('fadeText').textContent = text;
+    },
     fadeIn: function () {
       el('fade').classList.remove('on');
     },

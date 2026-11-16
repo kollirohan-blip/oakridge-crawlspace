@@ -220,7 +220,78 @@
       };
     })();
 
+    // ---- Dave's bedroom windows: a lamp behind the blinds, and sometimes someone standing there ------
+    // Everything here faces outward (+x), so it can be seen from the courtyard and the living room
+    // but not from inside the master bedroom itself.
+    var master = (function () {
+      // Layers from the courtyard inward: glass (x 13.0), blinds (12.95), the figure (12.91), the glow
+      // (12.87). Kept tight against the glass so the wall's thickness does not hide them at an angle.
+      var glowMat = new THREE.MeshBasicMaterial({ color: 0xe0a865 });
+      var windows = [17.5, 21.5];
+      var glows = windows.map(function (z) {
+        var p = new THREE.Mesh(new THREE.PlaneGeometry(1.96, 1.38), glowMat);
+        p.rotation.y = Math.PI / 2;
+        p.position.set(12.87, 1.5, z);
+        p.visible = false;
+        scene.add(p);
+        return p;
+      });
+      var slatMat = new THREE.MeshPhongMaterial({ color: 0x8a7f6a, specular: 0x000000 });
+      windows.forEach(function (z) {
+        for (var y = 0.86; y < 2.2; y += 0.105) {
+          var s = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 1.98), slatMat);
+          s.position.set(12.95, y, z);
+          scene.add(s);
+        }
+      });
+      // a person-shaped cut-out, drawn on a canvas
+      var c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 128;
+      var g = c.getContext('2d');
+      g.fillStyle = '#000';
+      g.beginPath();
+      g.ellipse(32, 18, 10, 13, 0, 0, Math.PI * 2);
+      g.fill();
+      g.fillRect(27, 28, 10, 8);
+      g.beginPath();
+      g.moveTo(10, 46);
+      g.quadraticCurveTo(14, 36, 32, 35);
+      g.quadraticCurveTo(50, 36, 54, 46);
+      g.lineTo(56, 128);
+      g.lineTo(8, 128);
+      g.closePath();
+      g.fill();
+      var figTex = new THREE.CanvasTexture(c);
+      var figure = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.62, 1.24),
+        new THREE.MeshBasicMaterial({ map: figTex, transparent: true, alphaTest: 0.5 })
+      );
+      figure.rotation.y = Math.PI / 2;
+      figure.visible = false;
+      scene.add(figure);
+      var api = {
+        stage: 'off',
+        windows: windows.map(function (z) { return { x: 13, y: 1.5, z: z }; }),
+        // 'off' | 'lampOn' | 'figureA' | 'figureB' | 'gone'
+        setStage: function (s) {
+          api.stage = s;
+          var lit = s === 'lampOn' || s === 'figureA' || s === 'figureB';
+          glows.forEach(function (p) { p.visible = lit; });
+          figure.visible = s === 'figureA' || s === 'figureB';
+          if (s === 'figureA') figure.position.set(12.91, 1.42, 17.3);
+          if (s === 'figureB') figure.position.set(12.91, 1.47, 21.7);
+        },
+        // where to look to see the current stage
+        focus: function () {
+          return api.stage === 'figureB' ? api.windows[1] : api.windows[0];
+        },
+      };
+      return api;
+    })();
+
     return {
+      master: master,
       slider: slider,
       frontDoor: frontDoor,
       hatch: hatch,

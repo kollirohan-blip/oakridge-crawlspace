@@ -162,6 +162,18 @@ test('from the living room the master window is in view and the line of sight is
   assert.equal(lineOfSight(boxes, cam, w, 1.5), true);
 });
 
+test('from the east end of the living room both of Dave\'s windows can be seen, and fairly face-on', () => {
+  const cam = { x: 24, z: 6.5 };
+  house.windows
+    .filter((w) => w.id === 'masterE1' || w.id === 'masterE2')
+    .forEach((w) => {
+      const target = { x: w.x, z: w.z };
+      assert.equal(lineOfSight(boxes, cam, target, 1.5), true, `${w.id} must be visible through the glass`);
+      const facing = (cam.x - w.x) / Math.hypot(cam.x - w.x, cam.z - w.z);
+      assert.ok(facing >= 0.34, `${w.id} is seen too edge-on (${facing.toFixed(2)})`);
+    });
+});
+
 test('from the kitchen the master window is not visible: the walls are in the way', () => {
   const cam = { x: 9, z: 3, yaw: 3.0 };
   assert.equal(lineOfSight(boxes, cam, house.anchors.masterWindow, 1.5), false);

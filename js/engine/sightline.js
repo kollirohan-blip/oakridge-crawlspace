@@ -67,7 +67,7 @@
   function lineOfSight(boxes, from, to, y) {
     for (var i = 0; i < boxes.length; i++) {
       var b = boxes[i];
-      if (b.kind === 'glass') continue;
+      if (b.kind === 'glass' || b.kind === 'slider') continue; // both are see-through
       if (typeof b.y0 === 'number' && (y < b.y0 || y > b.y1)) continue;
       if (segmentHitsBox(from, to, b)) return false;
     }

@@ -16,6 +16,7 @@
     var keys = {};
     var bobPhase = 0;
     var bobAmp = 0;
+    var lastStep = 0;
 
     var spot = new THREE.SpotLight(0xfff2d8, 0, 22, 0.55, 0.6, 1.4);
     spot.position.set(0.12, -0.12, 0);
@@ -129,6 +130,11 @@
           api.pos.z = p.z;
           bobPhase += dt * speed * 3.2;
           bobAmp = Math.min(1, bobAmp + dt * 6);
+          var stepIndex = Math.floor(bobPhase / Math.PI);
+          if (stepIndex !== lastStep) {
+            lastStep = stepIndex;
+            if (api.onStep) api.onStep();
+          }
         } else {
           bobAmp = Math.max(0, bobAmp - dt * 6);
         }

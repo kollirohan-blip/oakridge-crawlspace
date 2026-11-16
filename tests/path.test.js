@@ -67,6 +67,30 @@ test('in the real house: the living room to the dog bowl in the kitchen is a cle
   assert.ok(pathIsClear(start, p, boxes), 'every leg must be clear of walls and furniture');
 });
 
+test('long routes across the whole house are fast enough to re-plan every frame or so', () => {
+  const furniture = house.furniture
+    .filter((f) => f.solid)
+    .map((f) => ({ x0: f.b[0], z0: f.b[2], x1: f.b[3], z1: f.b[5], y0: f.b[1], y1: f.b[4], kind: 'furniture' }));
+  const boxes = buildWalls(house).concat(house.solids, furniture);
+  const nav = createNavGrid({ boxes, x0: -6, z0: -14, x1: 34, z1: 34, step: 0.25, radius: R });
+  const trips = [
+    [{ x: 2.5, z: -4 }, { x: 10, z: 20.5 }], // porch to Dave's room
+    [{ x: 22.5, z: 5.5 }, { x: 2.5, z: 21.5 }], // living room to the bathroom
+    [{ x: 10, z: 20.5 }, { x: 24, z: 14 }], // Dave's room out to the courtyard
+    [{ x: 2.9, z: 15.6 }, { x: 10, z: -8.5 }], // guest room to the car
+  ];
+  const t0 = process.hrtime.bigint();
+  for (let i = 0; i < 5; i++) {
+    trips.forEach(([a, b]) => {
+      const p = nav.findPath(a, b);
+      assert.ok(p && p.length, 'route exists');
+      assert.ok(pathIsClear(a, p, boxes), 'route is clear');
+    });
+  }
+  const msPerPath = Number(process.hrtime.bigint() - t0) / 1e6 / (5 * trips.length);
+  assert.ok(msPerPath < 15, `a route took ${msPerPath.toFixed(1)} ms on average (budget 15 ms)`);
+});
+
 test('rebuild() notices a door that has been opened', () => {
   const boxes = [box(2.9, -12, 3.1, 12)]; // a wall that spans the whole grid, so there is no way round
   const nav = createNavGrid({ boxes, x0: -10, z0: -10, x1: 10, z1: 10, step: 0.25, radius: R });

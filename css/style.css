@@ -88,6 +88,7 @@ html, body {
   font-size: clamp(14px, 2.5vmin, 26px); opacity: 0; transition: opacity .35s;
 }
 #subtitle.on { opacity: 1; }
+body.phone-open #subtitle { left: calc((100vw - min(34vw, 320px) - 8vmin) / 2); width: calc(100vw - min(34vw, 320px) - 12vmin); }
 #toast {
   position: absolute; left: 50%; top: 9vmin; transform: translateX(-50%);
   font-size: clamp(13px, 2.2vmin, 22px); color: var(--dim); opacity: 0; transition: opacity .3s;
@@ -102,6 +103,57 @@ html, body {
 #batteryLabel {
   position: absolute; left: 0; top: -2.6vmin; font-size: clamp(10px, 1.6vmin, 15px); color: var(--dim); letter-spacing: 0.1em;
 }
+
+/* Phone */
+#notif {
+  position: absolute; right: 3vmin; top: 3vmin; max-width: min(46vw, 420px);
+  background: rgba(14,17,22,0.92); border: 1px solid rgba(255,255,255,0.18); border-radius: 10px;
+  padding: 10px 14px; font-size: clamp(12px, 1.9vmin, 17px); line-height: 1.35;
+  opacity: 0; transform: translateY(-8px); transition: opacity .25s, transform .25s; text-shadow: none;
+}
+#notif.on { opacity: 1; transform: none; }
+#notif b { color: #9fc3ff; margin-right: 6px; font-weight: normal; }
+#phone {
+  position: absolute; right: 4vmin; bottom: 4vmin; width: min(34vw, 320px); height: min(70vh, 520px);
+  background: #0c0e12; border: 3px solid #23262c; border-radius: 22px; padding: 14px 14px 10px;
+  display: flex; flex-direction: column; text-shadow: none; box-shadow: 0 0 40px rgba(0,0,0,0.8);
+  font-size: clamp(12px, 1.8vmin, 15px);
+}
+#phone.hidden, #call.hidden, #choice.hidden { display: none; }
+.phone-top { display: flex; justify-content: space-between; color: var(--dim); margin-bottom: 10px; }
+.phone-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.phone-section { color: var(--dim); letter-spacing: 0.2em; font-size: 0.85em; margin: 6px 0; }
+#phoneTasks { list-style: none; margin: 0 0 6px; padding: 0; }
+#phoneTasks li { padding: 3px 0; }
+#phoneTasks li.done { color: #6f7680; text-decoration: line-through; }
+#phoneMsgs { flex: 1; overflow-y: auto; }
+.thread { margin-bottom: 10px; }
+.thread .who { color: #9fc3ff; margin: 6px 0 4px; }
+.bubble { background: #1d232c; border-radius: 12px; padding: 6px 10px; margin: 3px 18% 3px 0; line-height: 1.35; }
+.bubble.mine { background: #24486e; margin: 3px 0 3px 18%; }
+.phone-hint, .empty { color: #5d636c; font-size: 0.85em; }
+.phone-hint { text-align: center; margin-top: 6px; }
+#call {
+  position: absolute; left: 50%; top: 8vmin; transform: translateX(-50%); width: min(80vw, 640px);
+  text-align: center; text-shadow: 0 0 4px #000;
+}
+.call-label { color: #6fd38a; letter-spacing: 0.3em; font-size: clamp(11px, 1.7vmin, 15px); }
+#callName { font-size: clamp(16px, 3vmin, 28px); margin: 4px 0 10px; }
+#callLines .line { font-size: clamp(13px, 2.2vmin, 21px); margin: 4px 0; color: var(--ink); }
+#callLines .line b { color: #9fc3ff; font-weight: normal; }
+#callLines .line.mine b { color: #e8c89f; }
+#choice {
+  position: absolute; left: 50%; bottom: 14vmin; transform: translateX(-50%); width: min(86vw, 760px);
+  background: rgba(8,9,12,0.88); border: 1px solid rgba(255,255,255,0.2); padding: 18px 22px; text-shadow: none;
+}
+#choicePrompt { color: var(--dim); margin-bottom: 10px; font-size: clamp(12px, 1.9vmin, 17px); }
+#choiceOpts .opt { font-size: clamp(14px, 2.4vmin, 22px); margin: 8px 0; }
+#choiceOpts .key {
+  display: inline-block; width: 1.6em; height: 1.6em; line-height: 1.6em; text-align: center;
+  border: 1px solid rgba(255,255,255,0.5); margin-right: 12px;
+}
+#choiceTimer { height: 4px; background: rgba(255,255,255,0.12); margin-top: 12px; }
+#choiceTimerFill { height: 100%; background: #d8362b; transform-origin: left; }
 
 /* Panels */
 #click-panel, #error-panel {

@@ -34,6 +34,10 @@
         items.push(item);
         return item;
       },
+      clear: function () {
+        items.length = 0;
+        holding = null;
+      },
       remove: function (id) {
         for (var i = items.length - 1; i >= 0; i--) if (items[i].id === id) items.splice(i, 1);
       },

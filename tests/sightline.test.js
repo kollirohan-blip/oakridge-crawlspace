@@ -13,6 +13,10 @@ test('lineOfSight is clear when nothing stands between, and glass does not block
   assert.equal(lineOfSight([{ ...wall, kind: 'glass' }], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), true);
 });
 
+test('the patio slider is a glass door: it does not block the view either', () => {
+  assert.equal(lineOfSight([{ ...wall, kind: 'slider' }], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), true);
+});
+
 test('lineOfSight ignores boxes that are entirely below or above the eye height', () => {
   assert.equal(lineOfSight([{ ...wall, y0: 0, y1: 0.9 }], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), true);
   assert.equal(lineOfSight([{ ...wall, y0: 2.0, y1: 2.6 }], { x: 0, z: 0 }, { x: 8, z: 0 }, 1.5), true);

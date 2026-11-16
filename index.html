@@ -19,6 +19,23 @@
   <div id="subtitle"></div>
   <div id="toast"></div>
   <div id="battery"><div id="batteryFill"></div><span id="batteryLabel">LIGHT</span></div>
+  <div id="notif"></div>
+  <div id="phone" class="hidden">
+    <div class="phone-top"><span id="phoneTime"></span><span id="phoneBatt"></span></div>
+    <div class="phone-body">
+      <div class="phone-section">TO DO</div>
+      <ul id="phoneTasks"></ul>
+      <div class="phone-section">MESSAGES</div>
+      <div id="phoneMsgs"></div>
+    </div>
+    <div class="phone-hint">Tab to put it away</div>
+  </div>
+  <div id="call" class="hidden"><div class="call-label">ON CALL</div><div id="callName"></div><div id="callLines"></div></div>
+  <div id="choice" class="hidden">
+    <div id="choicePrompt"></div>
+    <div id="choiceOpts"></div>
+    <div id="choiceTimer"><div id="choiceTimerFill"></div></div>
+  </div>
 </div>
 
 <div id="fade"><div id="fadeText"></div></div>
@@ -62,12 +79,15 @@
 <script src="js/engine/director.js"></script>
 <script src="js/engine/pick.js"></script>
 <script src="js/engine/path.js"></script>
+<script src="js/engine/silhouette.js"></script>
 <script src="js/engine/content.js"></script>
 <script src="content/house.js"></script>
 <script src="content/text.js"></script>
 <script src="js/textures.js"></script>
 <script src="js/render.js"></script>
 <script src="js/hud.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/phone.js"></script>
 <script src="js/controller.js"></script>
 <script src="js/world.js"></script>
 <script src="js/props.js"></script>
