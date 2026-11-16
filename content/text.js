@@ -35,5 +35,28 @@
     'act1.thought.lampOff': "The light's off. I didn't see it go off.",
     'act1.thought.masterEmpty': "Nobody. The bed's made. The lamp is cold.",
     'act1.thought.late': "It's almost two. I need to sleep.",
+
+    // ---- Act 2 ----------------------------------------------------------------------------------
+    'act2.vo.open':
+      'The second night I drove into town for groceries. I was gone forty minutes, tops. When I got back, the front door was locked. Not the knob. The deadbolt.',
+    'act2.vo.end':
+      "I found out later that the slider wasn't how he got in. It was how he was leaving. I'd just locked him in with me.",
+    'act2.sms.mason1': 'did you lock the deadbolt?? i cant get in',
+    'act2.sms.dave1': "No? Nobody else has a key. Spare's in the fake rock under the bush by the porch.",
+    'act2.sms.ethan1': 'u getting on tonight or what',
+    'act2.sms.mason2': 'later maybe. weird night',
+    'act2.thought.door': "It won't budge. The deadbolt's thrown, and Dave never gave me a key for that. You can only lock it from inside.",
+    'act2.thought.key': 'A fake rock. Dave, come on.',
+    'act2.thought.unlock': 'The deadbolt slid back like it had never been locked at all.',
+    'act2.thought.inside': 'Cooper? Hey, buddy. Where are you?',
+    'act2.thought.laundryLight': "The laundry room light is on. I didn't go in there today.",
+    'act2.thought.hatch': 'The padlock is gone. Not broken. Gone. And the hatch is open.',
+    'act2.thought.hatchClosed': "I shut it. There's nothing left to lock it with.",
+    'act2.thought.slider': 'The slider is open. Three inches, maybe. I locked it last night. I pulled on it twice.',
+    'act2.thought.sliderClosed': 'Closed.',
+    'act2.thought.latchBroken': "The latch won't catch. It just spins. I need something to jam the track.",
+    'act2.thought.broomTake': "This'll work. I didn't look at the hatch while I grabbed it.",
+    'act2.thought.broom': "Broom in the track. Nobody's opening that from outside now.",
+    'act2.thought.cooperStares': "Cooper won't stop staring down the hall.",
   };
 })();

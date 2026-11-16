@@ -62,6 +62,20 @@
         lateBed: false,
         scratch1At: -1,
       };
+      // the house as Mason finds it on night one
+      props.setLights({ living: 1.3, kitchen: 1.1, foyer: 0.5, hall: 0.3, porch: 1.0, laundry: 0, guest: 0 });
+      props.frontDoor.close();
+      props.slider.setOpen(0);
+      props.slider.setLocked(false);
+      props.hatch.setAjar(false);
+      props.hatch.setPadlock(true);
+      props.broom.set('corner');
+      props.master.setStage('off');
+      props.car.fixWindow();
+      props.car.headlights(false);
+      cooper.setPos(15.5, 5.5);
+      cooper.follow();
+
       var hum = none;
       var queue = []; // things to do after a delay, in game time
       function later(seconds, fn) {

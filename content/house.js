@@ -123,16 +123,24 @@
       { x0: -29, x1: 55, z0: 48, z1: 49, y0: 0, y1: 3, kind: 'bound' },
       { x0: -30, x1: -29, z0: -34, z1: 49, y0: 0, y1: 3, kind: 'bound' },
       { x0: 55, x1: 56, z0: -34, z1: 49, y0: 0, y1: 3, kind: 'bound' },
+      // Mason's car on the driveway, and the bush beside the porch (the fake rock is under it)
+      { x0: 9.1, x1: 10.9, z0: -11.8, z1: -7.6, y0: 0, y1: 1.45, kind: 'car' },
+      { x0: 5.0, x1: 6.2, z0: -1.3, z1: -0.15, y0: 0, y1: 0.9, kind: 'bush' },
     ],
     // warm pools of light; everything else is lit by the flashlight and a faint moon
+    // Each act sets these to its own levels (props.setLights).
     lights: [
-      { x: 16, y: 1.9, z: 3, color: 0xffb070, intensity: 1.3, distance: 12 },
-      { x: 9, y: 2.3, z: 4, color: 0xfff0d0, intensity: 1.1, distance: 10 },
-      { x: 2.5, y: 2.3, z: 4, color: 0xffc080, intensity: 0.5, distance: 8 },
-      { x: 6, y: 2.3, z: 16, color: 0xffaa70, intensity: 0.3, distance: 9 },
-      { x: 2.5, y: 2.2, z: -1.4, color: 0xffd9a0, intensity: 1.0, distance: 11 },
+      { id: 'living', x: 16, y: 1.9, z: 3, color: 0xffb070, intensity: 1.3, distance: 12 },
+      { id: 'kitchen', x: 9, y: 2.3, z: 4, color: 0xfff0d0, intensity: 1.1, distance: 10 },
+      { id: 'foyer', x: 2.5, y: 2.3, z: 4, color: 0xffc080, intensity: 0.5, distance: 8 },
+      { id: 'hall', x: 6, y: 2.3, z: 16, color: 0xffaa70, intensity: 0.3, distance: 9 },
+      { id: 'porch', x: 2.5, y: 2.2, z: -1.4, color: 0xffd9a0, intensity: 1.0, distance: 11 },
       // the TV's glow: starts off, props.js flickers it when the TV is on
       { id: 'tv', x: 19.5, y: 1.0, z: 1.6, color: 0x7a9cff, intensity: 0, distance: 9 },
+      // the laundry room: off, until night two
+      { id: 'laundry', x: 2.5, y: 2.3, z: 10.5, color: 0xfff1d6, intensity: 0, distance: 8 },
+      // the guest room bedside lamp
+      { id: 'guest', x: 0.35, y: 0.9, z: 14.5, color: 0xffc88a, intensity: 0, distance: 6 },
     ],
     // where the player stands to use things (also checked to be reachable on foot)
     stand: {
@@ -148,7 +156,9 @@
       frontDoor: { x: 2.5, z: 1.0 },
       closet: { x: 2.9, z: 18.0 },
       bush: { x: 5.5, z: -2.0, outdoor: true },
-      car: { x: 10, z: -8.5, outdoor: true },
+      car: { x: 8.5, z: -9.6, outdoor: true }, // the driver's door
+      broom: { x: 4.1, z: 12.2 },
+      guestDoor: { x: 6, z: 16 },
       bathWindow: { x: -1.5, z: 21.5, outdoor: true },
     },
     spawns: {
@@ -157,7 +167,8 @@
       hall: { x: 6, z: 14, yaw: Math.PI },
       master: { x: 9.5, z: 17.5, yaw: -Math.PI / 2 },
       porch: { x: 2.5, z: -4, yaw: Math.PI, outdoor: true },
-      driveway: { x: 10, z: -12, yaw: Math.PI, outdoor: true },
+      driveway: { x: 10, z: -13.5, yaw: Math.PI, outdoor: true },
+      guestBed: { x: 2.4, z: 15.2, yaw: -Math.PI / 2 },
     },
     anchors: {
       masterWindow: { x: 13, y: 1.5, z: 17.5 },
