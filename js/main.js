@@ -88,8 +88,13 @@
       ctl.frozen = true;
       OC.hud.read(title, body, function () {
         ctl.frozen = wasFrozen;
+        interact.block(250); // the E that put it down must not pick it straight back up
         if (onClose) onClose();
       }, opts);
+    };
+    // while a modal (the microwave keypad) owns the keyboard, E belongs to it
+    interact.isBlocked = function () {
+      return !!g.state.modal;
     };
 
     // the bathroom mirror, the phone's camera and the pet cam
@@ -381,8 +386,9 @@
       },
       // A standing check, run after every change: (1) every interaction in every act can be found by
       // a player looking at it (through the real picker, not a shortcut); (2) walking through the doors
-      // that close behind you, with real key presses, never traps you. Leaves the game in Act 1.
-      sweep: function () {
+      // that close behind you, with real key presses, never traps you; (3) Night 1's flows, played
+      // through the real items. Returns a promise of the report. Leaves the game in Act 1.
+      sweep: async function () {
         var R = OC.controller.RADIUS;
         var report = { failures: [], items: {}, doors: {} };
         function aim(from, eyeY, it) {
@@ -449,6 +455,218 @@
         var refused = !props.bathDoor.closed;
         report.doors.act4BathDoorInDoorway = refused;
         if (!refused) report.failures.push('act4 bath door closed on the player');
+
+        // ---- Night 1, played through the real items ------------------------------------------------
+        report.flows = {};
+        var D = OC.debug;
+        function tick() {
+          return new Promise(function (res) { setTimeout(res, 0); });
+        }
+        function key(code, up) {
+          window.dispatchEvent(new KeyboardEvent(up ? 'keyup' : 'keydown', { code: code }));
+        }
+        function freshNight() {
+          startAct('act1');
+          ctl.setLocked(true);
+          D.advance(0.3);
+          return current.act;
+        }
+        async function flow(name, fn) {
+          var res;
+          try {
+            res = await fn();
+          } catch (e) {
+            res = 'threw ' + e.message;
+          }
+          report.flows[name] = res === true ? true : String(res);
+          if (res !== true) report.failures.push('flow ' + name + ': ' + res);
+        }
+        var DINNERS = {
+          lasagna: [1, ['microwave', 'kp:230', 15.5, 'microwave']],
+          pizza: [2, ['oven', 12.5, 'oven', 18.5, 'oven']],
+          mac: [3, ['kettle', 10.5, 'kettle']],
+          cereal: [4, []],
+          tupperware: [5, ['microwave', 'kp:200', 12.5, 'microwave']],
+        };
+        for (const dish of Object.keys(DINNERS)) {
+          await flow('dinner.' + dish, async function () {
+            var a = freshNight();
+            var plan = DINNERS[dish];
+            D.use('fridge');
+            await tick();
+            D.choose(plan[0]);
+            await tick();
+            for (const s of plan[1]) {
+              if (typeof s === 'number') D.advance(s);
+              else if (s.indexOf('kp:') === 0) {
+                if (!D.keypad(s.slice(3))) return 'the keypad refused ' + s.slice(3);
+              } else if (!D.use(s)) return s + ' was not usable';
+              await tick();
+            }
+            if (!D.use('table')) return 'could not sit at the table';
+            D.advance(1);
+            if (!D.use('eat')) return 'could not eat';
+            D.advance(7);
+            await tick();
+            if (dish !== 'tupperware') {
+              D.choose(2);
+              await tick();
+            }
+            D.advance(6);
+            await tick();
+            var din = a.mods.dinner.dinner();
+            if (din.state !== 'eaten') return 'ended ' + din.state;
+            if (!g.habits.has('dinner')) return 'not in the habit log';
+            if (dish === 'tupperware' && !g.state.gag) return 'no gag ending flag';
+            if (ctl.frozen) return 'still sitting at the table';
+            return true;
+          });
+        }
+        await flow('tv', async function () {
+          var a = freshNight();
+          var tv = a.mods.tv.tv;
+          ctl.teleport(19.4, 3.0, 0, -0.05);
+          D.use('tv');
+          D.advance(0.3);
+          var seen = [];
+          for (var i = 0; i < 4; i++) {
+            D.use('remote');
+            D.advance(0.5);
+            seen.push(tv.channel().n);
+            if (!tv.caption()) return 'no caption on ' + tv.channel().n;
+          }
+          if (seen.join() !== '22,31,48,7') return 'channels went ' + seen.join();
+          if (!document.getElementById('cc').classList.contains('on')) return 'no captions on screen while watching';
+          a.mods.tv.armAlert();
+          D.advance(4.3);
+          if (!tv.alerting() || OC.tvData.alert.lines.indexOf(tv.caption()) < 0) return 'the alert did not interrupt';
+          D.advance(17);
+          if (tv.alerting() || OC.tvData.alert.lines.indexOf(tv.caption()) >= 0) return 'the alert did not end';
+          return true;
+        });
+        await flow('photo', async function () {
+          freshNight();
+          ctl.teleport(6.1, 6.6, Math.PI, 0);
+          D.advance(0.2);
+          var n = g.photo.album.length;
+          D.phoneApp('camera');
+          var p = D.shoot();
+          D.phoneApp(null);
+          if (!p || g.photo.album.length !== n + 1) return 'no photo in the album';
+          var b = OC.camera.brightness(p.canvas);
+          if (b < 10) return 'a black photo (' + b.toFixed(1) + ')';
+          return true;
+        });
+        await flow('petcam', async function () {
+          freshNight();
+          D.phoneApp('petcam');
+          var f = g.petcam.frames;
+          D.advance(0.6);
+          D.phoneApp(null);
+          if (g.petcam.frames <= f) return 'no frames';
+          if (g.petcam.lastBrightness < 5) return 'a black feed';
+          return true;
+        });
+        await flow('mirror', async function () {
+          freshNight();
+          props.setLights({ bath: 0.9 });
+          ctl.teleport(3.95, 22.8, Math.PI, 0);
+          var f = g.mirror.frames;
+          D.advance(0.2);
+          if (!g.mirror.active || g.mirror.frames <= f) return 'the mirror is not rendering';
+          var b = g.mirror.sample();
+          if (b < 5) return 'a black mirror (' + b.toFixed(1) + ')';
+          return true;
+        });
+        await flow('laundryDoor', async function () {
+          freshNight();
+          ctl.teleport(6.4, 10.5, Math.PI / 2, 0); // in the hall, facing the laundry room
+          props.laundryDoor.close(ctl.pos, true);
+          if (ctl.nav) ctl.nav.rebuild();
+          key('KeyW');
+          D.advance(2);
+          key('KeyW', true);
+          if (ctl.pos.x < 5.3) return 'walked through the closed door (x=' + ctl.pos.x.toFixed(2) + ')';
+          D.use('laundryDoor');
+          if (props.laundryDoor.closed) return 'it would not open';
+          key('KeyW');
+          D.advance(3);
+          key('KeyW', true);
+          if (ctl.pos.x > 4.5) return 'could not walk in (x=' + ctl.pos.x.toFixed(2) + ')';
+          ctl.teleport(5.0, 10.5, Math.PI / 2, 0);
+          if (props.laundryDoor.close(ctl.pos)) return 'it closed on the player';
+          return true;
+        });
+        await flow('readerClose', async function () {
+          freshNight();
+          D.goto('fridge', 0);
+          D.aim(12.55, 1.4, 0.9);
+          D.advance(0.2);
+          if (!interact.target || interact.target.id !== 'note') return 'not looking at the note';
+          key('KeyE');
+          key('KeyE', true);
+          D.advance(0.1);
+          if (!OC.hud.isReading()) return 'E did not open the note';
+          await new Promise(function (res) { setTimeout(res, 300); });
+          document.body.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE', bubbles: true }));
+          document.body.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE', bubbles: true }));
+          D.advance(0.2);
+          if (OC.hud.isReading()) return 'E put the note down and picked it straight back up';
+          return true;
+        });
+        await flow('modalUnlock', async function () {
+          freshNight();
+          ctl.teleport(6.3, 1.5, 0, -0.5);
+          D.use('fridge');
+          await tick();
+          D.choose(1);
+          await tick();
+          D.use('microwave');
+          if (g.state.modal !== 'keypad') return 'the keypad did not open';
+          ctl.setLocked(false); // Esc
+          ctl.setLocked(true); // back in
+          if (g.state.modal !== 'keypad') return 'the keypad vanished on pause';
+          key('KeyE');
+          key('KeyE', true);
+          D.advance(0.3);
+          if (g.state.modal) return 'the keypad is still open after E (' + g.state.modal + ')';
+          if (ctl.frozen) return 'Mason is still frozen';
+          return true;
+        });
+        await flow('restart', async function () {
+          var a = freshNight();
+          props.laundryDoor.close(null, true);
+          D.use('tv');
+          cooper.pose('sit');
+          D.phoneApp('music');
+          phone.act(); // play a track
+          D.phoneApp(null);
+          startAct('act1');
+          ctl.setLocked(true);
+          D.advance(0.2);
+          if (props.laundryDoor.closed) return 'the laundry door is still closed';
+          if (props.tv.on) return 'the TV is still on';
+          if (cooper.poseName !== 'stand') return 'Cooper is still ' + cooper.poseName;
+          if (a.loops.length) return a.loops.length + ' sounds from the old night still running';
+          if (g.state.music) return 'the mixtape is still playing';
+          return true;
+        });
+        await flow('night1Afk', async function () {
+          var a = freshNight();
+          ctl.teleport(22.5, 5.5, 0.53, 0);
+          var t = 0;
+          while (a.dread.stage() !== 'bed' && t < 1100) {
+            if (t >= 560 && t < 620) ctl.teleport(2.5, -4, Math.PI, 0); // a minute out on the porch
+            else if (t >= 620 && t < 625) ctl.teleport(22.5, 5.5, 0.53, 0);
+            D.advance(5, 0.1);
+            t += 5;
+            await tick(); // lets timed-out choices resolve
+          }
+          if (a.dread.stage() !== 'bed') return 'stuck at ' + a.dread.stage() + ' after ' + t + ' s';
+          report.afkSeconds = t;
+          return true;
+        });
+
         startAct('act1');
         report.ok = report.failures.length === 0;
         return report;

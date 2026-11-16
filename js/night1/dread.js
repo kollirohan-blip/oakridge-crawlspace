@@ -75,6 +75,11 @@
     function indoors() {
       return flags.room !== null;
     }
+    // may the next scripted beat go? Only a relief window holds it back: the ambient cooldown does not,
+    // or ambient sounds firing the moment each cooldown ends would starve the beats for good
+    function beatReady() {
+      return !tension.inRelief();
+    }
     function free() {
       // nothing else has Mason: not sitting, reading, choosing or in a modal
       return !ctl.frozen && !g.state.modal && !phone.choosing() && !hud.isReading() && !g.state.cutscene;
@@ -225,6 +230,7 @@
     // ---- beat 2: the scratching that travels ------------------------------------------------------
     function startScratch() {
       stage('scratch');
+      tension.spend();
       st.scratchPos = { x: HATCH.x, z: HATCH.z };
       st.scratchBurst = 0;
       st.scratchT = 0;
@@ -556,15 +562,18 @@
             }
             break;
           case 'scratchWait':
-            if (tension.ready() && indoors() && free() && since() > 5) startScratch();
+            if (beatReady() && indoors() && free() && since() > 5) startScratch();
             break;
           case 'scratch':
             updateScratch(dt);
             break;
           case 'windowWait':
-            if (tension.ready() && SOUTH_WING.indexOf(flags.room) < 0 && !seen && since() > 5) {
+            if (beatReady() && SOUTH_WING.indexOf(flags.room) < 0 && !seen && since() > 5) {
               props.master.setStage('lampOn');
+              tension.spend();
               stage('window');
+            } else if (since() > 90) {
+              stage('knocksWait'); // never a moment to show it (always watching, or in the south wing): skip it
             }
             break;
           case 'window':

@@ -15,9 +15,11 @@
     var holding = null; // { item, t }
     var consumed = false; // a hold already fired: wait for E to be released
     var suspended = false;
+    var blockedUntil = 0; // an E that just closed something must not also use what is in view
 
     window.addEventListener('keydown', function (e) {
       if (e.code !== 'KeyE' || e.repeat || !ctl.locked) return;
+      if (performance.now() < blockedUntil || (api.isBlocked && api.isBlocked())) return;
       pressed = true;
       down = true;
     });
@@ -41,6 +43,13 @@
       remove: function (id) {
         for (var i = items.length - 1; i >= 0; i--) if (items[i].id === id) items.splice(i, 1);
       },
+      // ignore E for a moment (a note or a keypad was just closed with it)
+      block: function (ms) {
+        blockedUntil = performance.now() + (ms || 250);
+        pressed = false;
+      },
+      // fn() -> true while something else owns the E key (a modal); set by main.js
+      isBlocked: null,
       // set pieces and menus switch interaction off while they run
       suspend: function (v) {
         suspended = !!v;
