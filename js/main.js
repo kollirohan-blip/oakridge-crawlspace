@@ -69,6 +69,7 @@
 
     function startAct(id) {
       var def = OC.acts[id];
+      if (current.act && current.act.dispose) current.act.dispose(); // stop the last act's loops and listeners
       interact.clear();
       g.state.cutscene = false;
       g.clock = OC.clock.gameClock(def.clockDef);
@@ -90,6 +91,9 @@
       var next = ACT_ORDER[ACT_ORDER.indexOf(id) + 1];
       if (next && OC.acts[next]) return startAct(next);
       if (!next && OC.epilogue) {
+        if (current.act && current.act.dispose) current.act.dispose();
+        interact.clear();
+        current.id = 'epilogue';
         current.act = OC.epilogue.create(g);
         return;
       }

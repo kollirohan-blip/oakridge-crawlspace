@@ -141,6 +141,8 @@
       { id: 'laundry', x: 2.5, y: 2.3, z: 10.5, color: 0xfff1d6, intensity: 0, distance: 8 },
       // the guest room bedside lamp
       { id: 'guest', x: 0.35, y: 0.9, z: 14.5, color: 0xffc88a, intensity: 0, distance: 6 },
+      // moonlight over the driveway (outdoor scenes only)
+      { id: 'yard', x: 8.5, y: 4.5, z: -9.5, color: 0x8fa6d6, intensity: 0, distance: 16 },
       // the dropped phone's screen, face up on the floor by the closet
       { id: 'phoneglow', x: 1.25, y: 0.12, z: 16.95, color: 0x9fc3ff, intensity: 0, distance: 3.2 },
     ],
@@ -158,7 +160,10 @@
       frontDoor: { x: 2.5, z: 1.0 },
       closet: { x: 2.4, z: 17.2 },
       bush: { x: 5.5, z: -2.0, outdoor: true },
-      car: { x: 8.5, z: -9.6, outdoor: true }, // the driver's door
+      car: { x: 11.5, z: -9.6, outdoor: true }, // the driver's door (the car faces the house, so it is the east side)
+      shower: { x: 0.85, z: 21.9 },
+      bathWindowInside: { x: 0.8, z: 21.5 },
+      bathDoor: { x: 4.2, z: 21.5 },
       broom: { x: 4.1, z: 12.2 },
       guestDoor: { x: 6, z: 16 },
       bathWindow: { x: -1.5, z: 21.5, outdoor: true },

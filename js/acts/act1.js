@@ -63,7 +63,7 @@
         scratch1At: -1,
       };
       // the house as Mason finds it on night one
-      props.setLights({ living: 1.3, kitchen: 1.1, foyer: 0.5, hall: 0.3, porch: 1.0, laundry: 0, guest: 0 });
+      props.setLights({ living: 1.3, kitchen: 1.1, foyer: 0.5, hall: 0.3, porch: 1.0, laundry: 0, guest: 0, phoneglow: 0, yard: 0 });
       props.frontDoor.close();
       props.slider.setOpen(0);
       props.slider.setLocked(false);

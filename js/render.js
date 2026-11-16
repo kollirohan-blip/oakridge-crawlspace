@@ -8,10 +8,11 @@
     var canvas = document.getElementById('view');
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false, powerPreference: 'high-performance' });
     renderer.setPixelRatio(1);
-    renderer.setClearColor(0x05060a);
+    // a very dark navy night rather than pure black, so a figure outside can be seen against the sky
+    renderer.setClearColor(0x0a0e16);
 
     var scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x05060a, 0.04);
+    scene.fog = new THREE.FogExp2(0x0a0e16, 0.04);
 
     var camera = new THREE.PerspectiveCamera(72, 16 / 9, 0.05, 140);
     camera.rotation.order = 'YXZ';

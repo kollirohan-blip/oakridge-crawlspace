@@ -228,18 +228,41 @@
       var g = new THREE.Group();
       g.position.set(10, 0, -9.7);
       scene.add(g);
-      var paint = new THREE.MeshPhongMaterial({ color: 0x3b4a5c, specular: 0x222222, shininess: 20 });
-      var dark = new THREE.MeshBasicMaterial({ color: 0x07090c });
+      // double-sided, so the car still has walls and a roof when you are sitting inside it
+      var paint = new THREE.MeshPhongMaterial({ color: 0x3b4a5c, specular: 0x222222, shininess: 20, side: THREE.DoubleSide });
+      var trim = new THREE.MeshPhongMaterial({ color: 0x16181c, specular: 0x000000, side: THREE.DoubleSide });
+      var glass = new THREE.MeshBasicMaterial({ color: 0x0a1018, transparent: true, opacity: 0.4, depthWrite: false, side: THREE.DoubleSide });
       function part(w, h, d, m, x, y, z) {
         var mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
         mesh.position.set(x, y, z);
         g.add(mesh);
         return mesh;
       }
+      function pane(w, h, x, y, z, rotY) {
+        var mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), glass);
+        mesh.position.set(x, y, z);
+        mesh.rotation.y = rotY || 0;
+        g.add(mesh);
+        return mesh;
+      }
+      // the car faces the house (+z), so the driver sits on the +x side
       part(1.8, 0.55, 4.2, paint, 0, 0.6, 0); // body
-      part(1.6, 0.5, 2.3, paint, 0, 1.13, 0.15); // cabin
-      part(1.62, 0.38, 2.0, dark, 0, 1.15, 0.15); // windows all round
-      var glassSide = part(0.02, 0.36, 0.9, dark, -0.82, 1.15, -0.25); // the driver's window (it breaks)
+      part(1.62, 0.06, 2.3, paint, 0, 1.4, 0.15); // roof
+      [[-0.78, -1.0], [0.78, -1.0], [-0.78, 1.3], [0.78, 1.3]].forEach(function (p) { part(0.06, 0.52, 0.06, paint, p[0], 1.13, p[1]); });
+      pane(1.5, 0.5, 0, 1.13, 1.3); // windshield
+      pane(1.5, 0.5, 0, 1.13, -1.0); // rear window
+      pane(2.24, 0.5, -0.8, 1.13, 0.15, Math.PI / 2); // passenger side
+      var glassSide = pane(2.24, 0.5, 0.8, 1.13, 0.15, Math.PI / 2); // the driver's window (it breaks)
+      // inside
+      part(1.6, 0.22, 0.32, trim, 0, 0.98, 1.08); // dashboard
+      part(0.5, 0.14, 0.5, trim, 0.4, 0.62, -0.05); // driver's seat
+      part(0.5, 0.6, 0.12, trim, 0.4, 0.95, -0.36);
+      part(0.5, 0.14, 0.5, trim, -0.4, 0.62, -0.05); // passenger seat
+      part(0.5, 0.6, 0.12, trim, -0.4, 0.95, -0.36);
+      var wheel = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.02, 4, 12), trim);
+      wheel.position.set(0.4, 1.05, 0.82);
+      wheel.rotation.x = -0.35;
+      g.add(wheel);
       var wheelGeo = new THREE.CylinderGeometry(0.33, 0.33, 0.22, 10);
       var tyre = new THREE.MeshPhongMaterial({ color: 0x111111, specular: 0x000000 });
       [[-0.88, -1.3], [0.88, -1.3], [-0.88, 1.35], [0.88, 1.35]].forEach(function (p) {
@@ -397,6 +420,196 @@
       };
     })();
 
+    // ---- the bathroom door (it starts open, swung back into the bathroom) --------------------------
+    var bathDoor = (function () {
+      var hinge = new THREE.Group();
+      hinge.position.set(5, 0, 21.05);
+      scene.add(hinge);
+      box(0.04, 2.05, 0.9, 'door', 0, 1.025, 0.45, hinge);
+      box(0.12, 0.06, 0.06, 'metal', 0, 1.0, 0.8, hinge);
+      var wall = { x0: 4.94, x1: 5.06, z0: 21.05, z1: 21.95, y0: 0, y1: 2.1, kind: 'door' };
+      var OPEN = -Math.PI / 2;
+      var target = OPEN;
+      var speed = 5;
+      hinge.rotation.y = OPEN;
+      var api = {
+        closed: false,
+        close: function () {
+          api.closed = true;
+          target = 0;
+          speed = 5;
+          if (world.boxes.indexOf(wall) < 0) world.boxes.push(wall);
+        },
+        open: function (fast) {
+          api.closed = false;
+          target = OPEN;
+          speed = fast ? 14 : 5;
+          var i = world.boxes.indexOf(wall);
+          if (i >= 0) world.boxes.splice(i, 1);
+        },
+        update: function (dt) {
+          hinge.rotation.y += (target - hinge.rotation.y) * Math.min(1, dt * speed);
+        },
+      };
+      return api;
+    })();
+
+    // ---- him: a hooded figure with a pale face and a crowbar --------------------------------------
+    var intruder = (function () {
+      var g = new THREE.Group(); // faces local +z
+      g.visible = false;
+      scene.add(g);
+      var cloth = new THREE.MeshPhongMaterial({ color: 0x121316, specular: 0x000000 });
+      // the face glows faintly: a pale face in a dark window has to read even where there is no light
+      var skin = new THREE.MeshBasicMaterial({ color: 0x8a837b });
+      var iron = new THREE.MeshPhongMaterial({ color: 0x2a2d31, specular: 0x333333, shininess: 30 });
+      function part(w, h, d, m, x, y, z, parent) {
+        var mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+        mesh.position.set(x, y, z);
+        (parent || g).add(mesh);
+        return mesh;
+      }
+      part(0.46, 0.64, 0.26, cloth, 0, 1.12, 0);
+      part(0.4, 0.2, 0.24, cloth, 0, 0.78, 0);
+      var head = new THREE.Group();
+      head.position.set(0, 1.58, 0);
+      g.add(head);
+      part(0.27, 0.31, 0.29, cloth, 0, 0.02, -0.01, head); // hood
+      // the face: an oval drawn on a canvas, pale in the middle and shadowed at the edges
+      var fc = document.createElement('canvas');
+      fc.width = 32;
+      fc.height = 40;
+      var fg = fc.getContext('2d');
+      var grad = fg.createRadialGradient(16, 18, 2, 16, 20, 17);
+      grad.addColorStop(0, '#b7b0a6');
+      grad.addColorStop(0.7, '#7d766e');
+      grad.addColorStop(1, '#2a2725');
+      fg.fillStyle = grad;
+      fg.beginPath();
+      fg.ellipse(16, 20, 13, 18, 0, 0, Math.PI * 2);
+      fg.fill();
+      fg.fillStyle = 'rgba(10,8,8,0.85)'; // eye sockets
+      fg.beginPath();
+      fg.ellipse(10.5, 17, 4, 2.6, 0, 0, Math.PI * 2);
+      fg.ellipse(21.5, 17, 4, 2.6, 0, 0, Math.PI * 2);
+      fg.fill();
+      fg.fillStyle = '#c9c4ba'; // the wet glint of eyes that are looking straight at you
+      fg.fillRect(11, 16, 1, 1);
+      fg.fillRect(22, 16, 1, 1);
+      fg.fillStyle = 'rgba(30,25,22,0.6)';
+      fg.fillRect(15, 20, 2, 6); // nose shadow
+      fg.fillRect(11, 30, 10, 1); // mouth
+      var faceTex = new THREE.CanvasTexture(fc);
+      faceTex.magFilter = THREE.NearestFilter;
+      skin.map = faceTex;
+      skin.color.setHex(0xffffff);
+      skin.transparent = true;
+      skin.alphaTest = 0.5;
+      var face = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.22), skin);
+      face.position.set(0, -0.01, 0.137);
+      head.add(face);
+      var legs = [-0.11, 0.11].map(function (x) {
+        var hip = new THREE.Group();
+        hip.position.set(x, 0.7, 0);
+        g.add(hip);
+        part(0.15, 0.7, 0.17, cloth, 0, -0.35, 0, hip);
+        return hip;
+      });
+      var arms = [-0.3, 0.3].map(function (x) {
+        var sh = new THREE.Group();
+        sh.position.set(x, 1.4, 0);
+        g.add(sh);
+        part(0.12, 0.62, 0.12, cloth, 0, -0.3, 0, sh);
+        return sh;
+      });
+      part(0.03, 0.78, 0.03, iron, 0, -0.62, 0.08, arms[1]); // the crowbar, in his right hand
+      var phase = 0;
+      var api = {
+        pos: { x: 0, z: 0 },
+        heading: 0,
+        crouch: 0,
+        raise: 0, // 0..1: the crowbar arm lifted for a swing
+        show: function (v) {
+          g.visible = !!v;
+        },
+        visible: function () {
+          return g.visible;
+        },
+        setPos: function (x, z) {
+          api.pos.x = x;
+          api.pos.z = z;
+        },
+        faceTo: function (x, z) {
+          api.heading = Math.atan2(x - api.pos.x, z - api.pos.z);
+        },
+        // step toward a point; returns true on arrival
+        stepTo: function (x, z, speed, dt) {
+          var dx = x - api.pos.x;
+          var dz = z - api.pos.z;
+          var d = Math.hypot(dx, dz);
+          if (d < 0.05) return true;
+          var s = Math.min(d, speed * dt);
+          api.pos.x += (dx / d) * s;
+          api.pos.z += (dz / d) * s;
+          api.heading = Math.atan2(dx, dz);
+          phase += dt * speed * 4.5;
+          return false;
+        },
+        update: function () {
+          var swing = Math.sin(phase) * 0.55;
+          legs[0].rotation.x = swing;
+          legs[1].rotation.x = -swing;
+          arms[0].rotation.x = -swing * 0.6;
+          arms[1].rotation.x = -api.raise * 2.6 + swing * 0.3 * (1 - api.raise);
+          head.rotation.x = api.crouch * 0.35;
+          g.position.set(api.pos.x, -0.42 * api.crouch, api.pos.z);
+          g.rotation.y = api.heading;
+        },
+      };
+      return api;
+    })();
+
+    // ---- broken glass falling into the car ---------------------------------------------------------
+    var shards = (function () {
+      var list = [];
+      var m = new THREE.MeshBasicMaterial({ color: 0x9fb2bf, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+      for (var i = 0; i < 16; i++) {
+        var s = new THREE.Mesh(new THREE.PlaneGeometry(0.05 + Math.random() * 0.05, 0.04 + Math.random() * 0.05), m);
+        s.visible = false;
+        scene.add(s);
+        list.push({ mesh: s, v: new THREE.Vector3(), alive: false });
+      }
+      return {
+        burst: function (x, y, z) {
+          list.forEach(function (p) {
+            p.mesh.position.set(x + (Math.random() - 0.5) * 0.1, y + (Math.random() - 0.5) * 0.4, z + (Math.random() - 0.5) * 1.6);
+            p.v.set(-0.8 - Math.random() * 1.4, Math.random() * 0.8, (Math.random() - 0.5) * 0.6);
+            p.mesh.visible = true;
+            p.alive = true;
+          });
+        },
+        clear: function () {
+          list.forEach(function (p) {
+            p.mesh.visible = false;
+            p.alive = false;
+          });
+        },
+        update: function (dt) {
+          list.forEach(function (p) {
+            if (!p.alive) return;
+            p.v.y -= 9.8 * dt;
+            p.mesh.position.addScaledVector(p.v, dt);
+            p.mesh.rotation.x += dt * 7;
+            p.mesh.rotation.y += dt * 5;
+            if (p.mesh.position.y < 0.4) {
+              p.mesh.position.y = 0.4;
+              p.alive = false;
+            }
+          });
+        },
+      };
+    })();
+
     // ---- lights, by id (each act sets its own levels) ----------------------------------------------
     function setLights(levels) {
       Object.keys(levels).forEach(function (id) {
@@ -476,6 +689,9 @@
     })();
 
     return {
+      bathDoor: bathDoor,
+      intruder: intruder,
+      shards: shards,
       closet: closet,
       floorPhone: floorPhone,
       car: car,
@@ -493,6 +709,9 @@
         frontDoor.update(dt);
         hatch.update(dt);
         closet.update(dt);
+        bathDoor.update(dt);
+        intruder.update(dt);
+        shards.update(dt);
       },
     };
   }

@@ -45,7 +45,7 @@
       props.tv.setOn(false);
       props.microwave.setGlow(false);
       props.bowl.setFilled(false);
-      props.setLights({ living: 0, kitchen: 0, foyer: 0, hall: 0, porch: 1.0, laundry: 0.9, guest: 0, tv: 0 });
+      props.setLights({ living: 0, kitchen: 0, foyer: 0, hall: 0, porch: 1.0, laundry: 0.9, guest: 0, tv: 0, yard: 0.45 });
       props.frontDoor.close();
       props.slider.setLocked(false);
       props.slider.setOpen(0.076);

@@ -85,5 +85,41 @@
     'act3.fail.confront': 'You confronted someone who had already decided.',
     'act3.fail.freeze': "You froze. He didn't.",
     'act3.fail.look': 'You looked back. He knew you knew.',
+
+    // ---- Act 4 ----------------------------------------------------------------------------------
+    'act4.vo.open':
+      "I've told this part to the police a dozen times, and I still can't tell it in order. I remember the water. I remember the window. I remember not breathing.",
+    'act4.vo.end':
+      'He ran when the sirens got close. I stayed on that floor until an officer knocked on the glass and said my name.',
+    'act4.thought.lockDoor': "Locked. It's a bathroom lock. A coin could open it.",
+    'act4.thought.shower': "Water on. Loud. Let him think I'm in here.",
+    'act4.thought.scrape': "Something is scraping the door. Slow. Like he isn't even trying to be quiet.",
+    'act4.thought.window': "The window. It's small. I can fit.",
+    'act4.thought.outside': 'Grass. Cold. The car. Go.',
+    'act4.thought.inCar': 'Keys. Keys. Come on.',
+    'act4.thought.dead': "Nothing. It's dead. It was fine this morning.",
+    'act4.thought.frontDoor': "The front door's opening.",
+    'act4.thought.down': "Get down. Don't move. Don't breathe.",
+    'act4.thought.peek': "He's right there. On the other side of the glass.",
+    'act4.thought.smash': "Glass in my hair. Don't make a sound.",
+    'act4.thought.sirens': 'Sirens.',
+    'act4.sms.mason1': 'call 911. someone is in daves house. im hiding in my car',
+    'act4.sms.ethan1': 'CALLING NOW. stay down. dont move',
+    'act4.fail.door': "You waited too long. The lock didn't hold.",
+    'act4.fail.noise': 'He heard you.',
+    'act4.fail.seen': 'You stayed upright. He saw you through the windshield.',
+    'act4.fail.outside': 'You stayed out in the open too long.',
+
+    // ---- Epilogue -------------------------------------------------------------------------------
+    'epilogue.1': 'Police searched the house that night. Under the laundry room hatch was a crawlspace, and in it, a sleeping bag.',
+    'epilogue.2': 'Forty-seven tally marks were carved into the beam above it.',
+    'epilogue.3':
+      "Next to the sleeping bag was a spiral notebook. Mason's name was on the first page. Then times. When he got in. When he fed the dog. When he locked the slider. When he went to bed.",
+    'epilogue.4': "The last page was titled TONIGHT'S PLAN.",
+    'epilogue.5': "Cooper was found hiding under Dave's bed. He was fine.",
+    'epilogue.6': 'The man was never identified.',
+    'epilogue.vo': 'Dave sold the house that spring. I still check the closet before I go to sleep.',
+    'epilogue.title': 'OAKRIDGE CRAWLSPACE',
+    'epilogue.credit': 'A game by Rohan',
   };
 })();

@@ -55,7 +55,7 @@
       var EYE = props.closet.eyeAt;
 
       // the house, past midnight on night two
-      props.setLights({ living: 0, kitchen: 0, foyer: 0, hall: 0.15, porch: 1.0, laundry: 0.9, guest: 0.55, tv: 0, phoneglow: 0 });
+      props.setLights({ living: 0, kitchen: 0, foyer: 0, hall: 0.15, porch: 1.0, laundry: 0.9, guest: 0.55, tv: 0, phoneglow: 0, yard: 0 });
       props.closet.reset();
       props.floorPhone.set(false);
       props.frontDoor.close();

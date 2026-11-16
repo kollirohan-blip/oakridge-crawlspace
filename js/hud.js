@@ -18,6 +18,17 @@
       el('batteryFill').style.transform = 'scaleX(' + f + ')';
       el('battery').classList.toggle('low', f < 0.15);
     },
+    // the noise meter while hiding: 0..1, or null to hide it
+    setNoise: function (level) {
+      var n = el('noise');
+      if (level === null || level === undefined) {
+        n.classList.remove('on');
+        return;
+      }
+      n.classList.add('on');
+      n.classList.toggle('loud', level > 0.6);
+      el('noiseFill').style.transform = 'scaleX(' + Math.max(0, Math.min(1, level)) + ')';
+    },
     setCrosshair: function (visible) {
       el('crosshair').style.display = visible ? '' : 'none';
     },
