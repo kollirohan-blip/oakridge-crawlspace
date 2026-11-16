@@ -806,6 +806,7 @@
       // put the props that acts did not reset themselves before Phase 1 back to their defaults
       reset: function () {
         laundryDoor.reset();
+        setLights({ bath: 0 }); // added in Phase 1: the older acts do not set it themselves
         if (api.decor) api.decor.reset();
       },
       intruder: intruder,

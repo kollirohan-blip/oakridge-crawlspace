@@ -164,7 +164,7 @@
 
     // ---- the singing fish (a motion sensor; it sings when anything goes past) -----------------------
     var fishG = new THREE.Group(); // faces -x, out of the hall's east wall
-    fishG.position.set(6.89, 1.45, 9.4);
+    fishG.position.set(6.85, 1.45, 9.4);
     scene.add(fishG);
     var scales = new THREE.MeshPhongMaterial({ color: 0x6f8f3a, specular: 0x333322, shininess: 20 });
     var belly = new THREE.MeshPhongMaterial({ color: 0xc9b77a, specular: 0x111111 });
@@ -182,7 +182,7 @@
     mesh(new THREE.BoxGeometry(0.02, 0.14, 0.08), scales, 0, 0, 0.04, fishTail);
     var singT = 0;
     var fish = {
-      at: { x: 6.89, y: 1.45, z: 9.4 },
+      at: { x: 6.85, y: 1.45, z: 9.4 },
       singing: function () {
         return singT > 0;
       },

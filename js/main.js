@@ -76,7 +76,8 @@
       }, opts);
     };
 
-    // the phone's camera and the pet cam
+    // the bathroom mirror, the phone's camera and the pet cam
+    g.mirror = OC.mirror.create(r, ctl);
     g.camera = OC.camera.create(g, r);
     g.petcam = OC.petcam.create(r);
     phone.setPetcamCanvas(g.petcam.canvas);
@@ -276,6 +277,7 @@
       last = now;
       var t0 = performance.now();
       tick(dt);
+      g.mirror.update();
       r.render();
       samples.push(performance.now() - t0);
       if (samples.length > 120) samples.shift();
@@ -298,6 +300,7 @@
       advance: function (seconds, step) {
         step = step || 0.05;
         for (var t = 0; t < seconds - 1e-9; t += step) tick(step);
+        g.mirror.update();
         r.render();
       },
       // open the phone on an app ('home', 'camera', 'petcam', 'photos', 'flappy', 'music'), or close it
