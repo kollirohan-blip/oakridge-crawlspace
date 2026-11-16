@@ -192,6 +192,36 @@
       g.fillStyle = '#3a3a3e';
       g.fillRect(0, 0, w, h);
     },
+    // Dave's sticky notes: yellow paper, blue scribbles
+    sticky: function (g, w, h, r) {
+      g.fillStyle = '#e8d35a';
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(0,0,0,0.12)';
+      g.fillRect(0, 0, w, 6);
+      g.strokeStyle = '#2b3a7a';
+      g.lineWidth = 2;
+      for (var y = 16; y < h - 6; y += 10) {
+        var x = 6;
+        g.beginPath();
+        g.moveTo(x, y);
+        while (x < w - 8 - r() * 14) {
+          x += 4 + r() * 5;
+          g.lineTo(x, y + (r() - 0.5) * 4);
+        }
+        g.stroke();
+      }
+    },
+    // fridge magnets: small bright blocks
+    magnet: function (g, w, h, r) {
+      var colors = ['#c0392b', '#2e86c1', '#f1c40f', '#27ae60', '#8e44ad', '#e67e22'];
+      for (var y = 0; y < h; y += 16) {
+        for (var x = 0; x < w; x += 16) {
+          g.fillStyle = colors[(r() * colors.length) | 0];
+          g.fillRect(x, y, 16, 16);
+        }
+      }
+      speckle(g, w, h, r, 120, 0.3);
+    },
   };
 
   function baseCanvas(name) {

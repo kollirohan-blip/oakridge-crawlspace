@@ -22,6 +22,7 @@
     var r = OC.render.init();
     var world = OC.world.build(r.scene, OC.house);
     var props = OC.props.build(world, OC.house);
+    OC.decor.build(world, props, OC.house);
     world.commit();
     var ctl = OC.controller.create(r.camera, world.boxes);
     ctl.nav = OC.path.createNavGrid({ boxes: world.boxes, x0: -6, z0: -14, x1: 34, z1: 34, step: 0.25, radius: 0.25 });
@@ -80,6 +81,7 @@
       var def = OC.acts[id];
       if (current.act && current.act.dispose) current.act.dispose(); // stop the last act's loops and listeners
       interact.clear();
+      props.reset();
       g.state.cutscene = false;
       g.clock = OC.clock.gameClock(def.clockDef);
       var spawnName = new URLSearchParams(location.search).get('spawn');

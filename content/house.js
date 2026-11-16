@@ -110,6 +110,56 @@
       { b: [8.0, 0, 8.2, 10.5, 0.75, 9.0], tex: 'cabinet', solid: true },
       { b: [8.9, 0, 9.2, 9.5, 0.5, 9.8], tex: 'fabric', solid: true },
       { b: [12.3, 0, 9.0, 12.9, 1.9, 13.0], tex: 'cabinet', solid: true },
+      // ---- night one: the routine's things ----
+      // kitchen: the stove (its cabinet is already solid), the sink, the kettle, the bin
+      { b: [6.9, 0, 0.1, 7.65, 0.92, 0.8], tex: 'appliance' },
+      { b: [7.0, 0.25, 0.8, 7.55, 0.6, 0.812], tex: 'black' }, // oven window
+      { b: [8.5, 0.92, 0.15, 9.5, 0.94, 0.65], tex: 'metal' }, // sink
+      { b: [8.95, 0.94, 0.15, 9.05, 1.2, 0.22], tex: 'metal' }, // faucet
+      { b: [10.71, 0.92, 0.37, 10.89, 1.12, 0.53], tex: 'metal' }, // kettle
+      { b: [7.5, 0, 7.3, 7.9, 0.6, 7.75], tex: 'metal', solid: true }, // trash can
+      // living room: Cooper's bed, the remote on the coffee table
+      { b: [24.1, 0, 6.3, 25.1, 0.18, 7.2], tex: 'fabric2' },
+      { b: [19.52, 0.4, 2.27, 19.58, 0.42, 2.43], tex: 'black' },
+      // hall: the singing fish's plaque
+      { b: [6.9, 1.25, 9.1, 6.94, 1.65, 9.7], tex: 'wood' },
+      // foyer: the thermostat
+      { b: [0.06, 1.38, 2.94, 0.09, 1.5, 3.06], tex: 'appliance' },
+      // laundry room: the utility sink (dishes go here: the kitchen sink is clogged)
+      { b: [1.1, 0, 8.1, 2.0, 0.9, 8.65], tex: 'appliance', solid: true },
+      { b: [1.2, 0.9, 8.15, 1.9, 0.92, 8.6], tex: 'metal' },
+      { b: [1.5, 0.92, 8.1, 1.6, 1.15, 8.18], tex: 'metal' },
+      // bathroom: the mirror's frame above the vanity
+      { b: [3.5, 1.1, 23.92, 4.4, 1.9, 23.94], tex: 'cabinet' },
+      // outside: the bins (right of the porch) and the mailbox at the end of the drive
+      { b: [-1.9, 0, -1.0, -0.9, 1.0, -0.4], tex: 'metal', solid: true },
+      { b: [7.0, 0, -13.46, 7.12, 1.1, -13.34], tex: 'wood' },
+      { b: [6.85, 1.1, -13.6, 7.3, 1.35, -13.2], tex: 'metal' },
+      // light switches
+      { b: [1.56, 1.19, 0.06, 1.64, 1.31, 0.08], tex: 'appliance' },
+      { b: [5.06, 1.19, 2.86, 5.08, 1.31, 2.94], tex: 'appliance' },
+      { b: [13.06, 1.19, 2.16, 13.08, 1.31, 2.24], tex: 'appliance' },
+      { b: [6.92, 1.19, 8.31, 6.94, 1.31, 8.39], tex: 'appliance' },
+      { b: [4.92, 1.19, 9.66, 4.94, 1.31, 9.74], tex: 'appliance' },
+    ],
+    // Dave's sticky notes (collectible; text in content/text.js as sticky.<id>). face = the way it faces.
+    stickies: [
+      { id: 'sink', x: 9.3, y: 1.1, z: 0.07, face: 'pz' },
+      { id: 'thermostat', x: 0.07, y: 1.27, z: 3.0, face: 'px' },
+      { id: 'remote', x: 18.6, y: 0.38, z: 0.66, face: 'pz' },
+      { id: 'mirror', x: 4.32, y: 1.82, z: 23.91, face: 'nz' },
+      { id: 'dryer', x: 0.76, y: 0.8, z: 9.5, face: 'px' },
+      { id: 'frontDoor', x: 3.4, y: 1.45, z: 0.07, face: 'pz' },
+      { id: 'kibble', x: 11.99, y: 0.5, z: 7.0, face: 'nx' },
+      { id: 'pipes', x: 12.36, y: 1.12, z: 0.858, face: 'pz' },
+    ],
+    // the light switches: which light, where
+    switches: [
+      { light: 'foyer', label: 'foyer', x: 1.6, y: 1.25, z: 0.1, on: 0.5 },
+      { light: 'kitchen', label: 'kitchen', x: 5.1, y: 1.25, z: 2.9, on: 1.1 },
+      { light: 'living', label: 'living room', x: 13.1, y: 1.25, z: 2.2, on: 1.3 },
+      { light: 'hall', label: 'hall', x: 6.9, y: 1.25, z: 8.35, on: 0.6 },
+      { light: 'laundry', label: 'laundry room', x: 4.9, y: 1.25, z: 9.7, on: 0.9 },
     ],
     roofs: [
       { x0: -0.6, z0: -0.8, x1: 26.6, z1: 8.6 },
@@ -167,6 +217,19 @@
       broom: { x: 4.1, z: 12.2 },
       guestDoor: { x: 6, z: 16 },
       bathWindow: { x: -1.5, z: 21.5, outdoor: true },
+      // night one
+      stove: { x: 7.3, z: 1.4 },
+      kettle: { x: 10.8, z: 1.4 },
+      table: { x: 11.15, z: 4.1 }, // beside the east chair; sitting puts you on it (10.6, 4.1)
+      laundrySink: { x: 1.55, z: 9.3 },
+      trash: { x: 7.7, z: 6.8 },
+      bins: { x: -1.4, z: -1.8, outdoor: true },
+      mailbox: { x: 7.8, z: -13.4, outdoor: true },
+      vanity: { x: 3.95, z: 22.8 },
+      fish: { x: 6.3, z: 9.6 },
+      remote: { x: 19.2, z: 3.2 },
+      dogBed: { x: 23.8, z: 5.9 },
+      laundryDoorHall: { x: 6.0, z: 10.5 },
     },
     spawns: {
       living: { x: 22.5, z: 5.5, yaw: 0.53 },

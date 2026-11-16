@@ -117,6 +117,7 @@
       box(0.96, 0.03, 0.03, 'metal', 2.5, 0.02, 10.0);
       box(0.96, 0.03, 0.03, 'metal', 2.5, 0.02, 11.0);
       var angle = 0;
+      var swingT = 0;
       var api = {
         ajar: false,
         setAjar: function (v) {
@@ -126,8 +127,16 @@
         setPadlock: function (v) {
           padlock.visible = !!v;
         },
+        // the padlock swinging a little, as if someone just let go of it
+        swing: function () {
+          swingT = 4;
+        },
         update: function (dt) {
           pivot.rotation.z += (angle - pivot.rotation.z) * Math.min(1, dt * 3);
+          if (swingT > 0) {
+            swingT = Math.max(0, swingT - dt);
+            padlock.rotation.x = Math.sin(swingT * 9) * 0.35 * (swingT / 4);
+          }
         },
       };
       return api;
@@ -500,6 +509,50 @@
       return api;
     })();
 
+    // ---- the laundry room door (night one closes it; it starts open, swung back into the room) -------
+    var laundryDoor = (function () {
+      var hinge = new THREE.Group();
+      hinge.position.set(5, 0, 10.05);
+      scene.add(hinge);
+      box(0.04, 2.05, 0.9, 'door', 0, 1.025, 0.45, hinge);
+      box(0.12, 0.06, 0.06, 'metal', 0, 1.0, 0.8, hinge);
+      var wall = { x0: 4.94, x1: 5.06, z0: 10.05, z1: 10.95, y0: 0, y1: 2.1, kind: 'door' };
+      var door = OC.doors.createDoor({ box: wall, boxes: world.boxes, closed: false });
+      var OPEN = -Math.PI / 2;
+      var target = OPEN;
+      var speed = 5;
+      hinge.rotation.y = OPEN;
+      var api = {
+        closed: false,
+        at: { x: 5, y: 1.0, z: 10.5 },
+        // pass the player's position: the door will not close on them (returns false if it can't)
+        close: function (playerPos, instant) {
+          if (!door.close(playerPos)) return false;
+          api.closed = true;
+          target = 0;
+          speed = 5;
+          if (instant) hinge.rotation.y = 0;
+          return true;
+        },
+        open: function (slow) {
+          api.closed = false;
+          target = OPEN;
+          speed = slow ? 1.2 : 5;
+          door.open();
+        },
+        reset: function () {
+          door.open();
+          api.closed = false;
+          target = OPEN;
+          hinge.rotation.y = OPEN;
+        },
+        update: function (dt) {
+          hinge.rotation.y += (target - hinge.rotation.y) * Math.min(1, dt * speed);
+        },
+      };
+      return api;
+    })();
+
     // ---- him: a hooded figure with a pale face and a crowbar --------------------------------------
     var intruder = (function () {
       var g = new THREE.Group(); // faces local +z
@@ -554,6 +607,15 @@
       var face = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.22), skin);
       face.position.set(0, -0.01, 0.137);
       head.add(face);
+      // red-eye: what a camera flash does to eyes that are wide open in the dark
+      var redMat = new THREE.MeshBasicMaterial({ color: 0xff2a1a, fog: false });
+      var redEyes = [-0.029, 0.029].map(function (x) {
+        var e = new THREE.Mesh(new THREE.PlaneGeometry(0.024, 0.02), redMat);
+        e.position.set(x, 0.007, 0.139);
+        e.visible = false;
+        head.add(e);
+        return e;
+      });
       var legs = [-0.11, 0.11].map(function (x) {
         var hip = new THREE.Group();
         hip.position.set(x, 0.7, 0);
@@ -577,6 +639,9 @@
         raise: 0, // 0..1: the crowbar arm lifted for a swing
         show: function (v) {
           g.visible = !!v;
+        },
+        redEye: function (v) {
+          redEyes.forEach(function (e) { e.visible = !!v; });
         },
         visible: function () {
           return g.visible;
@@ -734,8 +799,15 @@
       return api;
     })();
 
-    return {
+    var api = {
       bathDoor: bathDoor,
+      laundryDoor: laundryDoor,
+      decor: null, // js/decor.js attaches the night-one props here
+      // put the props that acts did not reset themselves before Phase 1 back to their defaults
+      reset: function () {
+        laundryDoor.reset();
+        if (api.decor) api.decor.reset();
+      },
       intruder: intruder,
       shards: shards,
       closet: closet,
@@ -756,10 +828,13 @@
         hatch.update(dt);
         closet.update(dt);
         bathDoor.update(dt);
+        laundryDoor.update(dt);
         intruder.update(dt);
         shards.update(dt);
+        if (api.decor) api.decor.update(dt);
       },
     };
+    return api;
   }
 
   OC.props = { build: build };

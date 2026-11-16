@@ -77,6 +77,22 @@
     return { stop: function () { alive = false; } };
   }
 
+  function mtof(m) {
+    return 440 * Math.pow(2, (m - 69) / 12);
+  }
+  // Ethan's mixtape, vol. 3: "songs to housesit to" (patterns of MIDI notes per sixteenth)
+  var MIXTAPE = [
+    { bpm: 78, bassWave: 'triangle', leadWave: 'sine',
+      bass: [45, 0, 0, 0, 45, 0, 0, 0, 41, 0, 0, 0, 43, 0, 0, 0],
+      lead: [69, 0, 72, 0, 76, 0, 74, 0, 72, 0, 0, 69, 67, 0, 0, 0] },
+    { bpm: 140, bassWave: 'sawtooth', leadWave: 'square',
+      bass: [38, 38, 0, 38, 0, 38, 41, 0, 38, 38, 0, 38, 43, 0, 41, 0],
+      lead: [62, 0, 65, 0, 69, 0, 65, 0, 62, 0, 60, 0, 57, 0, 0, 0] },
+    { bpm: 66, bassWave: 'triangle', leadWave: 'sine',
+      bass: [36, 0, 0, 0, 0, 0, 0, 0, 40, 0, 0, 0, 43, 0, 0, 0],
+      lead: [72, 0, 0, 74, 76, 0, 0, 0, 79, 0, 77, 76, 74, 0, 0, 0] },
+  ];
+
   // ---- the sounds ---------------------------------------------------------------------------------
   var B = {
     step: function (c, out, o, t) {
@@ -329,6 +345,155 @@
     click: function (c, out, o, t) {
       burst(c, out, t, { freq: 3500, q: 3, peak: 0.25, decay: 0.012 });
     },
+    // ---- night one -----------------------------------------------------------------------------
+    // the singing fish: a goofy original jingle over a motor whir
+    fish: function (c, out, o, t) {
+      var notes = [76, 79, 81, 79, 76, 72, 74, 76, 79, 76, 74, 72, 0, 72, 67, 72];
+      var d = 0.17;
+      notes.forEach(function (m, i) {
+        if (m) tone(c, out, t + i * d, { wave: 'square', freq: mtof(m), peak: 0.07, attack: 0.005, decay: d * 0.9 });
+      });
+      var whir = osc(c, 'sawtooth', 58);
+      var wf = filt(c, 'lowpass', 300);
+      var wg = gain(c, 0.025);
+      whir.connect(wf).connect(wg).connect(out);
+      whir.start(t);
+      whir.stop(t + notes.length * d);
+    },
+    pan: function (c, out, o, t) {
+      [[0, 0.7], [0.24, 0.4], [0.4, 0.25], [0.52, 0.14]].forEach(function (b) {
+        burst(c, out, t + b[0], { freq: 2600, q: 1.5, peak: b[1] * 0.8, decay: 0.08 });
+        [310, 770, 1290, 2170].forEach(function (f) {
+          tone(c, out, t + b[0], { freq: f * (0.97 + Math.random() * 0.06), peak: b[1] * 0.12, decay: 0.7 });
+        });
+      });
+    },
+    kettle: function (c, out, o, t) {
+      var dur = o.duration || 3;
+      var v = osc(c, 'sine', 1350);
+      var vib = osc(c, 'sine', 7);
+      var vg = gain(c, 30);
+      vib.connect(vg).connect(v.frequency);
+      var g = gain(c, 0);
+      v.connect(g).connect(out);
+      v.frequency.linearRampToValueAtTime(2100, t + dur * 0.7);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.06, t + dur * 0.5);
+      g.gain.setValueAtTime(0.06, t + dur - 0.2);
+      g.gain.linearRampToValueAtTime(0, t + dur);
+      [v, vib].forEach(function (n) { n.start(t); n.stop(t + dur + 0.05); });
+    },
+    ice: function (c, out, o, t) {
+      for (var i = 0; i < 6; i++) {
+        var at = t + i * 0.07 + Math.random() * 0.05;
+        tone(c, out, at, { freq: 2000 + Math.random() * 1600, peak: 0.08, decay: 0.08 });
+        burst(c, out, at, { freq: 3500, q: 2, peak: 0.15, decay: 0.02 });
+      }
+    },
+    fridgeHum: function (c, out) {
+      var a = osc(c, 'sawtooth', 50);
+      var b = osc(c, 'sine', 100);
+      var f = filt(c, 'lowpass', 180);
+      var g = gain(c, 0.05);
+      a.connect(f);
+      b.connect(f);
+      f.connect(g).connect(out);
+      a.start();
+      b.start();
+      return { stop: function () { [a, b].forEach(function (n) { try { n.stop(); } catch (e) {} }); } };
+    },
+    clockTick: function (c, out) {
+      var tock = false;
+      return repeater(c, 1, function (t) {
+        tock = !tock;
+        burst(c, out, t, { freq: tock ? 2400 : 3100, q: 4, peak: 0.12, decay: 0.012 });
+      });
+    },
+    // the two-tone alert signal
+    alertTone: function (c, out, o, t) {
+      var dur = o.duration || 8;
+      var g = gain(c, 0);
+      [853, 960].forEach(function (f) {
+        var v = osc(c, 'sine', f);
+        v.connect(g);
+        v.start(t);
+        v.stop(t + dur + 0.05);
+      });
+      g.connect(out);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.07, t + 0.05);
+      g.gain.setValueAtTime(0.07, t + dur - 0.05);
+      g.gain.linearRampToValueAtTime(0, t + dur);
+    },
+    whine: function (c, out, o, t) {
+      for (var i = 0; i < (o.count || 1); i++) {
+        var at = t + i * 1.1;
+        var v = osc(c, 'sine', 720);
+        var g = gain(c, 0);
+        v.connect(g).connect(out);
+        v.frequency.setValueAtTime(720, at);
+        v.frequency.linearRampToValueAtTime(940, at + 0.35);
+        v.frequency.linearRampToValueAtTime(640, at + 0.9);
+        g.gain.setValueAtTime(0, at);
+        g.gain.linearRampToValueAtTime(0.09, at + 0.1);
+        g.gain.linearRampToValueAtTime(0, at + 0.9);
+        v.start(at);
+        v.stop(at + 0.95);
+      }
+    },
+    shutter: function (c, out, o, t) {
+      burst(c, out, t, { freq: 4200, q: 2, peak: 0.4, decay: 0.015 });
+      burst(c, out, t + 0.06, { freq: 3000, q: 2, peak: 0.3, decay: 0.02 });
+    },
+    switch: function (c, out, o, t) {
+      burst(c, out, t, { freq: 2100, q: 2, peak: 0.45, decay: 0.012 });
+      tone(c, out, t, { freq: 900, peak: 0.06, decay: 0.03 });
+    },
+    kibble: function (c, out, o, t) {
+      for (var i = 0; i < 26; i++) burst(c, out, t + Math.random() * 0.6, { freq: 2500 + Math.random() * 2500, q: 3, peak: 0.12, decay: 0.015 });
+    },
+    water: function (c, out) {
+      var s = noise(c);
+      s.loop = true;
+      var hp = filt(c, 'highpass', 500);
+      var lp = filt(c, 'lowpass', 4000);
+      var g = gain(c, 0.1);
+      s.connect(hp).connect(lp).connect(g).connect(out);
+      s.start();
+      return { stop: function () { try { s.stop(); } catch (e) {} } };
+    },
+    bounce: function (c, out, o, t) {
+      tone(c, out, t, { freq: 190, to: 95, peak: 0.25, decay: 0.1 });
+      burst(c, out, t, { type: 'lowpass', freq: 700, peak: 0.2, decay: 0.04 });
+    },
+    rustle: function (c, out, o, t) {
+      for (var i = 0; i < 12; i++) burst(c, out, t + Math.random() * 0.5, { freq: 2500 + Math.random() * 2000, q: 1, peak: 0.15, decay: 0.05 });
+    },
+    keyBeep: function (c, out, o, t) {
+      tone(c, out, t, { wave: 'square', freq: 2400, peak: 0.05, attack: 0.002, decay: 0.05 });
+    },
+    munch: function (c, out, o, t) {
+      for (var i = 0; i < 4; i++) burst(c, out, t + i * 0.28, { type: 'lowpass', freq: 900, peak: 0.25, decay: 0.09 });
+    },
+    // Ethan's mixtape: three cheap loops (opts.track 0..2)
+    mixtape: function (c, out, o) {
+      var T = MIXTAPE[o.track || 0];
+      var step = 0;
+      var sixteenth = 60 / T.bpm / 4;
+      var master = gain(c, 0.5);
+      master.connect(out);
+      var r = repeater(c, sixteenth, function (t) {
+        var i = step % 16;
+        var b = T.bass[i];
+        var l = T.lead[i];
+        if (b) tone(c, master, t, { wave: T.bassWave, freq: mtof(b), peak: 0.16, attack: 0.01, decay: sixteenth * 3 });
+        if (l) tone(c, master, t, { wave: T.leadWave, freq: mtof(l), peak: 0.07, attack: 0.01, decay: sixteenth * 2.2 });
+        if (i % 2 === 0) burst(c, master, t, { type: 'highpass', freq: 7000, peak: 0.05, decay: 0.03 });
+        if (i % 8 === 0) tone(c, master, t, { freq: 110, to: 45, peak: 0.25, decay: 0.15 });
+        step++;
+      });
+      return { stop: function () { r.stop(); } };
+    },
     drone: function (c, out) {
       var g = gain(c, 0.06);
       var lp = filt(c, 'lowpass', 190);
@@ -460,6 +625,7 @@
     listen: listen,
     measure: measure,
     names: Object.keys(B),
+    tracks: ['lo-fi beats to housesit to', "cooper's theme (dubstep remix)", 'slow jam for nobody'],
     setOcclusion: function (fn) { occluded = fn; },
     setVolume: function (v) {
       volume = v;
