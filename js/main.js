@@ -294,6 +294,80 @@
         it.onUse();
         return true;
       },
+      // A standing check, run after every change: (1) every interaction in every act can be found by
+      // a player looking at it (through the real picker, not a shortcut); (2) walking through the doors
+      // that close behind you, with real key presses, never traps you. Leaves the game in Act 1.
+      sweep: function () {
+        var R = OC.controller.RADIUS;
+        var report = { failures: [], items: {}, doors: {} };
+        function aim(from, eyeY, it) {
+          var dx = it.x - from.x;
+          var dz = it.z - from.z;
+          var h = Math.hypot(dx, dz);
+          return { x: from.x, y: eyeY, z: from.z, yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(it.y - eyeY, h) };
+        }
+        function pickable(cam, it) {
+          var probe = Object.assign({}, it, { enabled: true });
+          return !!OC.pick.pickTarget(cam, [probe], ctl.boxes);
+        }
+        function standing(it) {
+          for (var d = 0.8; d <= 1.81; d += 0.33) {
+            for (var a = 0; a < Math.PI * 2; a += Math.PI / 16) {
+              var p = { x: it.x + Math.cos(a) * d, z: it.z + Math.sin(a) * d };
+              if (OC.collision.blocked(p.x, p.z, R, ctl.boxes)) continue;
+              if (pickable(aim(p, 1.65, it), it)) return true;
+            }
+          }
+          return false;
+        }
+        // items used from a seat: checked from where the player actually sits
+        var SEATED = {
+          act3: { ids: ['charger', 'phone'], at: function () {} },
+          act4: { ids: ['ignition', 'down'], at: function () { ctl.seat(10.4, -9.95, Math.PI, -0.6); } },
+        };
+        ACT_ORDER.forEach(function (id) {
+          if (!OC.acts[id]) return;
+          startAct(id);
+          ctl.setLocked(true);
+          OC.debug.advance(0.3);
+          var seated = SEATED[id];
+          if (seated) {
+            seated.at();
+            OC.debug.advance(0.5);
+          }
+          interact.items.forEach(function (it) {
+            var ok;
+            if (seated && seated.ids.indexOf(it.id) >= 0) {
+              ok = pickable(aim(ctl.pos, r.camera.position.y, it), it);
+            } else ok = standing(it);
+            report.items[id + '.' + it.id] = ok;
+            if (!ok) report.failures.push(id + '.' + it.id + ': no prompt');
+          });
+        });
+        // the Act 2 front door: unlock it, then walk in holding W, the way a player does
+        startAct('act2');
+        ctl.setLocked(true);
+        OC.debug.use('bush');
+        ctl.teleport(2.5, -1.2, Math.PI, 0);
+        OC.debug.use('frontDoor');
+        window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW' }));
+        OC.debug.advance(3);
+        window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyW' }));
+        var walkedIn = ctl.pos.z > 2 && !props.frontDoor.isOpen;
+        report.doors.act2FrontDoor = walkedIn;
+        if (!walkedIn) report.failures.push('act2 front door: walking in got stuck (z=' + ctl.pos.z.toFixed(2) + ')');
+        // the Act 4 bathroom door must refuse to close on someone standing in it
+        startAct('act4');
+        ctl.setLocked(true);
+        ctl.teleport(4.88, 21.5, -Math.PI / 2, 0);
+        OC.debug.use('bathDoor');
+        var refused = !props.bathDoor.closed;
+        report.doors.act4BathDoorInDoorway = refused;
+        if (!refused) report.failures.push('act4 bath door closed on the player');
+        startAct('act1');
+        report.ok = report.failures.length === 0;
+        return report;
+      },
       stats: function () {
         var avg = samples.reduce(function (a, b) { return a + b; }, 0) / Math.max(1, samples.length);
         var a = current.act;
