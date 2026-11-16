@@ -1,5 +1,20 @@
 # Oakridge Crawlspace v2: a real indie horror episode
 
+> **Update, 2026-11-15 (late):** Rohan approved a full story redesign, in **`docs/story-v2.md`**. It
+> replaces this file's story beats, fear curve, time budget and phase list:
+> - **The story:** Wes Hale, the man who grew up in the house.
+> - **Length:** about 60 minutes, with a daytime Day 2.
+> - **Features:** the pet cam, the habit notebook, the deputy, the Night 2 crawl, evidence endings
+>   where he is never caught, and the "absolutely terrifying, and fun" target.
+>
+> **This file still holds:** the model pipeline, the research rules table, and per-phase
+> verification.
+>
+> **Status:** Phase 0 is done (commits 74c41d0 to e8d5cdb). The build order now lives in
+> `story-v2.md`.
+>
+> The project is about making an awesome game now; the local-model experiment is dropped.
+
 ## Context
 
 v1 works end to end (4 acts + epilogue, 85 tests), but Rohan's verdict is "decent for first code".
@@ -25,13 +40,13 @@ not as jump-scare spam. It still runs from `index.html` on the Vivobook, offline
 
 ## Decisions (Rohan, 2026-11-15)
 - **Art:** free CC0 low-poly model kits, bundled so the game stays offline.
-- **Length:** about 45 minutes.
+- **Length:** about 45 minutes. *Superseded: about 60 minutes (see `story-v2.md`).*
 - **Order:** Phase 0 (bugs and foundations), then Night 1 freedom, then the look, store trip, lore,
-  scare pass.
-- **Story:** open to changing the story itself to make it scarier (Rohan, mid-build). Bring concrete
-  story-change proposals to Rohan before the lore and scare phases (4 and 5); don't change the plot silently.
+  scare pass. *Superseded by the build order in `story-v2.md`.*
+- **Story:** open to changing the story itself to make it scarier (Rohan, mid-build). *Done: the
+  redesign is approved in `story-v2.md`.*
 
-**Time budget for 45 minutes:**
+**Time budget for 45 minutes** (*superseded; see the beat timings in `story-v2.md`*):
 - Act 1 free-roam routine plus dread: about 15.
 - Store trip: about 8.
 - Act 2: about 8.
