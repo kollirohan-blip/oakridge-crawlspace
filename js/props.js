@@ -10,7 +10,10 @@
     // ---- furniture ----------------------------------------------------------------------------
     house.furniture.forEach(function (f) {
       var b = f.b;
-      world.box(b[0], b[1], b[2], b[3], b[4], b[5], f.tex);
+      // a CC0 model stretched to fill the box, if there is one; the box still does the colliding
+      if (f.model && OC.models && OC.models.has(f.model)) OC.models.fit(f.model, b, f.rot);
+      else if (f.tex) world.box(b[0], b[1], b[2], b[3], b[4], b[5], f.tex);
+      if (f.under && f.tex) world.emitBox(b[0], b[1], b[2], b[3], b[4], b[5], { ny: f.tex }, 1.2); // seen from below (a ceiling)
       if (f.solid) {
         world.boxes.push({ x0: b[0], y0: b[1], z0: b[2], x1: b[3], y1: b[4], z1: b[5], kind: 'furniture' });
       }
@@ -357,6 +360,11 @@
 
     // ---- the porch bush (the fake rock with the spare key is under it) -----------------------------
     (function () {
+      if (OC.models && OC.models.has('plant_bushLarge')) {
+        OC.models.fit('plant_bushLarge', [4.95, 0, -1.35, 6.25, 0.95, -0.1]);
+        OC.models.fit('plant_bush', [5.9, 0, -1.25, 6.5, 0.55, -0.6]);
+        return;
+      }
       var leaf = new THREE.MeshPhongMaterial({ color: 0x1b2a17, specular: 0x000000, flatShading: true });
       [[5.4, 0.45, -0.75, 0.55], [5.9, 0.4, -0.6, 0.45], [5.6, 0.62, -0.5, 0.4]].forEach(function (b) {
         var m = new THREE.Mesh(new THREE.IcosahedronGeometry(b[3], 0), leaf);
@@ -560,137 +568,8 @@
       return api;
     })();
 
-    // ---- him: a hooded figure with a pale face and a crowbar --------------------------------------
-    var intruder = (function () {
-      var g = new THREE.Group(); // faces local +z
-      g.visible = false;
-      scene.add(g);
-      var cloth = new THREE.MeshPhongMaterial({ color: 0x121316, specular: 0x000000 });
-      // the face glows faintly: a pale face in a dark window has to read even where there is no light
-      var skin = new THREE.MeshBasicMaterial({ color: 0x8a837b });
-      var iron = new THREE.MeshPhongMaterial({ color: 0x2a2d31, specular: 0x333333, shininess: 30 });
-      function part(w, h, d, m, x, y, z, parent) {
-        var mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
-        mesh.position.set(x, y, z);
-        (parent || g).add(mesh);
-        return mesh;
-      }
-      part(0.46, 0.64, 0.26, cloth, 0, 1.12, 0);
-      part(0.4, 0.2, 0.24, cloth, 0, 0.78, 0);
-      var head = new THREE.Group();
-      head.position.set(0, 1.58, 0);
-      g.add(head);
-      part(0.27, 0.31, 0.29, cloth, 0, 0.02, -0.01, head); // hood
-      // the face: an oval drawn on a canvas, pale in the middle and shadowed at the edges
-      var fc = document.createElement('canvas');
-      fc.width = 32;
-      fc.height = 40;
-      var fg = fc.getContext('2d');
-      var grad = fg.createRadialGradient(16, 18, 2, 16, 20, 17);
-      grad.addColorStop(0, '#b7b0a6');
-      grad.addColorStop(0.7, '#7d766e');
-      grad.addColorStop(1, '#2a2725');
-      fg.fillStyle = grad;
-      fg.beginPath();
-      fg.ellipse(16, 20, 13, 18, 0, 0, Math.PI * 2);
-      fg.fill();
-      fg.fillStyle = 'rgba(10,8,8,0.85)'; // eye sockets
-      fg.beginPath();
-      fg.ellipse(10.5, 17, 4, 2.6, 0, 0, Math.PI * 2);
-      fg.ellipse(21.5, 17, 4, 2.6, 0, 0, Math.PI * 2);
-      fg.fill();
-      fg.fillStyle = '#c9c4ba'; // the wet glint of eyes that are looking straight at you
-      fg.fillRect(11, 16, 1, 1);
-      fg.fillRect(22, 16, 1, 1);
-      fg.fillStyle = 'rgba(30,25,22,0.6)';
-      fg.fillRect(15, 20, 2, 6); // nose shadow
-      fg.fillRect(11, 30, 10, 1); // mouth
-      var faceTex = new THREE.CanvasTexture(fc);
-      faceTex.magFilter = THREE.NearestFilter;
-      skin.map = faceTex;
-      skin.color.setHex(0xffffff);
-      skin.transparent = true;
-      skin.alphaTest = 0.5;
-      var face = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.22), skin);
-      face.position.set(0, -0.01, 0.137);
-      head.add(face);
-      // red-eye: what a camera flash does to eyes that are wide open in the dark
-      var redMat = new THREE.MeshBasicMaterial({ color: 0xff2a1a, fog: false });
-      var haloMat = new THREE.MeshBasicMaterial({ color: 0xff3a20, fog: false, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
-      var redEyes = [-0.029, 0.029].map(function (x) {
-        var e = new THREE.Mesh(new THREE.PlaneGeometry(0.045, 0.034), redMat);
-        e.position.set(x, 0.007, 0.139);
-        e.visible = false;
-        // the glow around it, so it still reads as two red points from the far end of a hall
-        var halo = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.13), haloMat);
-        halo.position.z = 0.002;
-        e.add(halo);
-        head.add(e);
-        return e;
-      });
-      var legs = [-0.11, 0.11].map(function (x) {
-        var hip = new THREE.Group();
-        hip.position.set(x, 0.7, 0);
-        g.add(hip);
-        part(0.15, 0.7, 0.17, cloth, 0, -0.35, 0, hip);
-        return hip;
-      });
-      var arms = [-0.3, 0.3].map(function (x) {
-        var sh = new THREE.Group();
-        sh.position.set(x, 1.4, 0);
-        g.add(sh);
-        part(0.12, 0.62, 0.12, cloth, 0, -0.3, 0, sh);
-        return sh;
-      });
-      part(0.03, 0.78, 0.03, iron, 0, -0.62, 0.08, arms[1]); // the crowbar, in his right hand
-      var phase = 0;
-      var api = {
-        pos: { x: 0, z: 0 },
-        heading: 0,
-        crouch: 0,
-        raise: 0, // 0..1: the crowbar arm lifted for a swing
-        show: function (v) {
-          g.visible = !!v;
-        },
-        redEye: function (v) {
-          redEyes.forEach(function (e) { e.visible = !!v; });
-        },
-        visible: function () {
-          return g.visible;
-        },
-        setPos: function (x, z) {
-          api.pos.x = x;
-          api.pos.z = z;
-        },
-        faceTo: function (x, z) {
-          api.heading = Math.atan2(x - api.pos.x, z - api.pos.z);
-        },
-        // step toward a point; returns true on arrival
-        stepTo: function (x, z, speed, dt) {
-          var dx = x - api.pos.x;
-          var dz = z - api.pos.z;
-          var d = Math.hypot(dx, dz);
-          if (d < 0.05) return true;
-          var s = Math.min(d, speed * dt);
-          api.pos.x += (dx / d) * s;
-          api.pos.z += (dz / d) * s;
-          api.heading = Math.atan2(dx, dz);
-          phase += dt * speed * 4.5;
-          return false;
-        },
-        update: function () {
-          var swing = Math.sin(phase) * 0.55;
-          legs[0].rotation.x = swing;
-          legs[1].rotation.x = -swing;
-          arms[0].rotation.x = -swing * 0.6;
-          arms[1].rotation.x = -api.raise * 2.6 + swing * 0.3 * (1 - api.raise);
-          head.rotation.x = api.crouch * 0.35;
-          g.position.set(api.pos.x, -0.42 * api.crouch, api.pos.z);
-          g.rotation.y = api.heading;
-        },
-      };
-      return api;
-    })();
+    // ---- him: Wes Hale (js/wes.js) --------------------------------------------------------------
+    var intruder = OC.wes.create(scene);
 
     // ---- broken glass falling into the car ---------------------------------------------------------
     var shards = (function () {
@@ -732,6 +611,13 @@
         },
       };
     })();
+
+    // ---- the yard: the fence around the courtyard, and things at the edge of the trees --------------
+    (house.scenery || []).forEach(function (s) {
+      if (!OC.models || !OC.models.has(s.model)) return;
+      if (s.b) OC.models.fit(s.model, s.b, s.rot);
+      else OC.models.at(s.model, s);
+    });
 
     // ---- lights, by id (each act sets its own levels) ----------------------------------------------
     function setLights(levels) {

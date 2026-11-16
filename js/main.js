@@ -24,6 +24,7 @@
     var props = OC.props.build(world, OC.house);
     OC.decor.build(world, props, OC.house);
     world.commit();
+    if (OC.models) OC.models.commit(world.group); // the fitted furniture and the yard, merged by material
     var ctl = OC.controller.create(r.camera, world.boxes);
     ctl.nav = OC.path.createNavGrid({ boxes: world.boxes, x0: -6, z0: -14, x1: 34, z1: 34, step: 0.25, radius: 0.25 });
     var cooper = OC.cooper.create(world, ctl, { x: 15.5, z: 5.5 });
@@ -117,6 +118,7 @@
       if (current.act && current.act.dispose) current.act.dispose(); // stop the last act's loops and listeners
       interact.clear();
       props.reset();
+      world.setDaylight(def.daylight || 0, r.renderer); // night, unless the act is a day
       document.getElementById('epilogue').classList.remove('on'); // an ending screen must not cover a new night
       g.state.cutscene = false;
       g.clock = OC.clock.gameClock(def.clockDef);
@@ -728,10 +730,19 @@
     };
   }
 
-  try {
-    boot();
-  } catch (e) {
-    console.error(e);
-    OC.showError(e.message);
+  function start() {
+    try {
+      boot();
+    } catch (e) {
+      console.error(e);
+      OC.showError(e.message);
+    }
   }
+  // the furniture and trees are models: parse them first (they are embedded, so this is quick)
+  if (OC.models && OC.modelData && window.THREE && THREE.GLTFLoader) {
+    OC.models.load().then(start, function (e) {
+      console.error(e);
+      OC.showError(e.message);
+    });
+  } else start();
 })();

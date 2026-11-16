@@ -59,3 +59,18 @@ the static batch (they were 26 meshes), and the pet cam only sees 13 m (a cheap 
 room, not the house). Before them the pet cam frame was 190.
 
 Not measured: the frame rate on the Vivobook's own GPU.
+
+## Phase 2, the look and Wes (2026-11-16)
+
+58 CC0 models (1.35 MB embedded) fitted to the furniture boxes and placed in the yard, merged into one mesh per
+material at boot; Kenney pines replace the instanced cone trees. Main-view draw calls, same setup:
+
+| Scene | Draw calls |
+|---|---|
+| Living room (night) | 99 |
+| Living room (day) | 114 |
+| Kitchen | 82 |
+| Office | 95 |
+| Front yard, day | 105 |
+| Porch toward the trees | 31 |
+| The shed | 20 to 54 |

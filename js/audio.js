@@ -475,6 +475,11 @@
     munch: function (c, out, o, t) {
       for (var i = 0; i < 4; i++) burst(c, out, t + i * 0.28, { type: 'lowpass', freq: 900, peak: 0.25, decay: 0.09 });
     },
+    // a knee popping as he straightens up
+    kneePop: function (c, out, o, t) {
+      burst(c, out, t, { type: 'bandpass', freq: 1800, q: 3, peak: 0.6, decay: 0.025 });
+      tone(c, out, t, { freq: 240, to: 120, peak: 0.12, decay: 0.05 });
+    },
     // Ethan's mixtape: three cheap loops (opts.track 0..2)
     mixtape: function (c, out, o) {
       var T = MIXTAPE[o.track || 0];

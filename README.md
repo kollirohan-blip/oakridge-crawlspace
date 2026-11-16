@@ -79,7 +79,10 @@ tests/                  node --test
 docs/design.md          the design; docs/superpowers/plans/ the build plan; docs/perf.md
 ```
 
-Everything is drawn and synthesized at runtime: no image, model or audio files.
+The furniture, food and the trees are free CC0 models by Kenney (kenney.nl): Furniture Kit, Food Kit and
+Nature Kit, kept in `assets/models/` with their licence and embedded into `content/models.js` so the game
+still opens from disk. Change a model, then run `node tools/embed_models.js` (a test fails if you forget).
+Wes, Cooper, the house itself, every texture and every sound are made by code: no image or audio files.
 
 ## Not checked
 

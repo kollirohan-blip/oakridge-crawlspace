@@ -58,62 +58,79 @@
       // kitchen
       { b: [5.4, 0, 0.1, 12.0, 0.88, 0.75], tex: 'cabinet', solid: true },
       { b: [5.35, 0.88, 0.1, 12.0, 0.92, 0.8], tex: 'counter' },
-      { b: [12.2, 0, 0.15, 12.9, 1.85, 0.85], tex: 'appliance', solid: true }, // fridge
-      { b: [5.9, 0.92, 0.2, 6.7, 1.2, 0.65], tex: 'appliance' }, // microwave
-      { b: [8.4, 0.72, 3.6, 10.4, 0.78, 5.0], tex: 'cabinet', solid: true }, // table
-      { b: [8.45, 0, 3.65, 8.55, 0.72, 3.75], tex: 'cabinet' },
-      { b: [10.25, 0, 3.65, 10.35, 0.72, 3.75], tex: 'cabinet' },
-      { b: [8.45, 0, 4.85, 8.55, 0.72, 4.95], tex: 'cabinet' },
-      { b: [10.25, 0, 4.85, 10.35, 0.72, 4.95], tex: 'cabinet' },
-      { b: [8.0, 0, 3.9, 8.35, 0.45, 4.3], tex: 'fabric', solid: true }, // chairs
-      { b: [10.45, 0, 3.9, 10.8, 0.45, 4.3], tex: 'fabric', solid: true },
+      // `model` (with `rot` quarter turns; models face +z at rot 0) replaces the box's look with a CC0
+      // model stretched to fill it. The box still does the colliding.
+      { b: [12.2, 0, 0.15, 12.9, 1.85, 0.85], tex: 'appliance', model: 'kitchenFridgeLarge', solid: true }, // fridge
+      { b: [5.9, 0.92, 0.2, 6.7, 1.2, 0.65], tex: 'appliance', model: 'kitchenMicrowave' }, // microwave
+      { b: [8.4, 0, 3.6, 10.4, 0.78, 5.0], tex: 'cabinet', model: 'table', solid: true }, // table
+      { b: [7.95, 0, 3.85, 8.4, 0.95, 4.35], tex: 'fabric', model: 'chairCushion', rot: 1, solid: true }, // chairs
+      { b: [10.4, 0, 3.85, 10.85, 0.95, 4.35], tex: 'fabric', model: 'chairCushion', rot: 3, solid: true },
       { b: [12.0, 0, 6.6, 12.8, 0.7, 7.4], tex: 'metal', solid: true }, // kibble bin
       { b: [10.95, 0, 6.65, 11.45, 0.1, 7.15], tex: 'metal' }, // Cooper's bowl
+      // upper cabinets, and the counter's clutter (Dave's soup)
+      { b: [5.4, 1.45, 0.1, 6.1, 2.1, 0.45], model: 'kitchenCabinetUpper' },
+      { b: [6.1, 1.45, 0.1, 6.8, 2.1, 0.45], model: 'kitchenCabinetUpper' },
+      { b: [6.8, 1.45, 0.1, 7.5, 2.1, 0.45], model: 'kitchenCabinetUpper' },
+      { b: [7.5, 1.45, 0.1, 8.2, 2.1, 0.45], model: 'kitchenCabinetUpper' },
+      { b: [9.8, 1.45, 0.1, 10.55, 2.1, 0.45], model: 'kitchenCabinetUpper' },
+      { b: [10.55, 1.45, 0.1, 11.3, 2.1, 0.45], model: 'kitchenCabinetUpper' },
+      { b: [11.3, 1.45, 0.1, 12.0, 2.1, 0.45], model: 'kitchenCabinetUpper' },
+      { b: [10.1, 0.92, 0.18, 10.4, 1.08, 0.36], model: 'toaster' },
+      { b: [11.35, 0.92, 0.15, 11.65, 1.24, 0.5], model: 'kitchenCoffeeMachine' },
+      { b: [7.72, 0.92, 0.22, 7.8, 1.03, 0.3], model: 'food-can' },
+      { b: [7.82, 0.92, 0.22, 7.9, 1.03, 0.3], model: 'food-can' },
+      { b: [7.77, 1.03, 0.22, 7.85, 1.14, 0.3], model: 'food-can' },
       // living room
-      { b: [17.8, 0, 0.15, 21.2, 0.5, 0.65], tex: 'cabinet', solid: true }, // TV stand
+      { b: [17.8, 0, 0.15, 21.2, 0.5, 0.65], tex: 'cabinet', model: 'cabinetTelevision', solid: true }, // TV stand
       { b: [18.3, 0.55, 0.25, 20.7, 1.35, 0.42], tex: 'black' }, // TV
-      { b: [17.5, 0, 3.6, 21.0, 0.45, 4.5], tex: 'fabric', solid: true }, // couch
-      { b: [17.5, 0.45, 4.2, 21.0, 0.95, 4.5], tex: 'fabric' },
-      { b: [17.5, 0.45, 3.6, 17.8, 0.7, 4.5], tex: 'fabric' },
-      { b: [20.7, 0.45, 3.6, 21.0, 0.7, 4.5], tex: 'fabric' },
-      { b: [18.2, 0, 2.0, 20.3, 0.4, 2.8], tex: 'cabinet', solid: true }, // coffee table
-      { b: [14.0, 0, 1.0, 15.0, 0.5, 2.0], tex: 'fabric2', solid: true }, // armchair
-      { b: [14.0, 0.5, 0.9, 15.0, 0.95, 1.2], tex: 'fabric2' },
-      { b: [25.5, 0, 2.0, 25.9, 1.9, 5.5], tex: 'cabinet', solid: true }, // bookshelf
+      { b: [17.5, 0, 3.6, 21.0, 0.95, 4.5], tex: 'fabric', model: 'loungeSofaLong', rot: 2, solid: true }, // couch
+      { b: [18.2, 0, 2.0, 20.3, 0.4, 2.8], tex: 'cabinet', model: 'tableCoffee', solid: true }, // coffee table
+      { b: [17.4, 0.003, 1.3, 21.1, 0.012, 3.5], model: 'rugRectangle' },
+      { b: [14.0, 0, 0.9, 15.0, 0.95, 2.0], tex: 'fabric2', model: 'loungeChair', solid: true }, // armchair
+      { b: [25.5, 0, 2.0, 25.9, 1.9, 5.5], solid: true }, // the bookshelves (three models, below)
+      { b: [25.5, 0, 2.0, 25.9, 1.9, 3.17], model: 'bookcaseOpen', rot: 3 },
+      { b: [25.5, 0, 3.17, 25.9, 1.9, 4.33], model: 'bookcaseOpen', rot: 3 },
+      { b: [25.5, 0, 4.33, 25.9, 1.9, 5.5], model: 'bookcaseOpen', rot: 3 },
       { b: [15.95, 0, 2.95, 16.05, 1.6, 3.05], tex: 'metal', solid: true }, // lamp pole (the glowing shade is in props.js)
+      { b: [13.2, 0, 0.25, 13.75, 1.25, 0.8], model: 'pottedPlant' },
+      { b: [25.3, 0, 7.2, 25.85, 1.25, 7.75], model: 'pottedPlant' },
       // foyer
       { b: [0.2, 0, 5.5, 1.6, 0.45, 6.4], tex: 'cabinet', solid: true },
       { b: [0.4, 0.45, 5.7, 1.0, 0.85, 6.2], tex: 'fabric2' }, // Mason's backpack
-      { b: [3.6, 0, 0.2, 4.8, 0.8, 0.7], tex: 'cabinet', solid: true },
+      { b: [3.6, 0, 0.2, 4.8, 0.8, 0.7], tex: 'cabinet', model: 'sideTable', solid: true },
+      { b: [0.2, 0, 0.2, 0.7, 1.75, 0.7], model: 'coatRackStanding', solid: true },
+      { b: [1.95, 0.003, 0.15, 3.05, 0.012, 0.75], model: 'rugDoormat' },
       // laundry room
-      { b: [0.1, 0, 8.15, 0.75, 0.95, 9.0], tex: 'appliance', solid: true },
-      { b: [0.1, 0, 9.1, 0.75, 0.95, 9.95], tex: 'appliance', solid: true },
-      { b: [3.8, 0, 8.1, 4.9, 1.8, 8.6], tex: 'cabinet', solid: true },
-      // guest bedroom
-      { b: [0.1, 0, 14.85, 2.1, 0.35, 16.35], tex: 'cabinet', solid: true },
-      { b: [0.1, 0.35, 14.85, 2.1, 0.55, 16.35], tex: 'sheets' },
-      { b: [0.12, 0.55, 15.0, 0.5, 0.65, 16.2], tex: 'sheets' },
-      { b: [0.1, 0, 14.25, 0.55, 0.55, 14.75], tex: 'cabinet', solid: true },
+      { b: [0.1, 0, 8.15, 0.75, 0.95, 9.0], tex: 'appliance', model: 'washer', rot: 1, solid: true },
+      { b: [0.1, 0, 9.1, 0.75, 0.95, 9.95], tex: 'appliance', model: 'dryer', rot: 1, solid: true },
+      { b: [3.8, 0, 8.1, 4.9, 1.8, 8.6], tex: 'cabinet', model: 'bookcaseClosedWide', solid: true },
+      { b: [0.3, 0, 12.25, 0.9, 0.55, 12.85], model: 'cardboardBoxClosed', solid: true },
+      { b: [0.4, 0.55, 12.35, 0.85, 0.95, 12.8], model: 'cardboardBoxOpen' },
+      // guest bedroom (his old room)
+      { b: [0.1, 0, 14.85, 2.1, 0.65, 16.35], tex: 'cabinet', model: 'bedSingle', rot: 1, solid: true },
+      { b: [0.1, 0, 14.25, 0.55, 0.55, 14.75], tex: 'cabinet', model: 'cabinetBedDrawerTable', rot: 1, solid: true },
+      { b: [0.2, 0.55, 14.37, 0.45, 0.95, 14.63], model: 'lampSquareTable' },
       { b: [0.1, 0, 17.6, 1.9, 2.3, 18.9], tex: 'cabinet', solid: true }, // closet (its doors face the bed)
+      { b: [2.0, 0.003, 15.1, 3.6, 0.012, 16.7], model: 'rugRound' },
       // bathroom
-      { b: [0.1, 0, 22.5, 1.6, 2.1, 23.9], tex: 'tile', solid: true }, // shower stall
-      { b: [3.9, 0, 20.1, 4.8, 0.42, 20.8], tex: 'appliance', solid: true }, // toilet
-      { b: [4.4, 0.42, 20.1, 4.8, 0.8, 20.5], tex: 'appliance' },
-      { b: [3.4, 0, 23.3, 4.5, 0.85, 23.9], tex: 'cabinet', solid: true }, // vanity
+      { b: [0.1, 0, 22.5, 1.6, 2.1, 23.9], tex: 'tile', model: 'shower', rot: 2, solid: true }, // shower stall
+      { b: [3.9, 0, 20.1, 4.8, 0.8, 20.8], tex: 'appliance', model: 'toilet', rot: 3, solid: true }, // toilet
+      { b: [3.4, 0, 23.3, 4.5, 0.85, 23.9], tex: 'cabinet', model: 'bathroomSink', rot: 2, solid: true }, // vanity
       // master bedroom
-      { b: [8.6, 0, 22.0, 10.6, 0.4, 23.9], tex: 'cabinet', solid: true },
-      { b: [8.6, 0.4, 22.0, 10.6, 0.6, 23.9], tex: 'sheets' },
-      { b: [8.7, 0.6, 22.1, 9.4, 0.7, 22.8], tex: 'sheets' },
-      { b: [8.0, 0, 15.1, 10.0, 0.9, 15.6], tex: 'cabinet', solid: true },
-      { b: [10.7, 0, 23.2, 11.2, 0.5, 23.9], tex: 'cabinet', solid: true },
+      { b: [8.6, 0, 22.0, 10.6, 0.75, 23.9], tex: 'cabinet', model: 'bedDouble', rot: 2, solid: true },
+      { b: [8.0, 0, 15.1, 10.0, 0.9, 15.6], tex: 'cabinet', model: 'bookcaseClosedWide', solid: true },
+      { b: [10.7, 0, 23.2, 11.2, 0.5, 23.9], tex: 'cabinet', model: 'cabinetBedDrawerTable', rot: 2, solid: true },
       // office
-      { b: [8.0, 0, 8.2, 10.5, 0.75, 9.0], tex: 'cabinet', solid: true },
-      { b: [8.9, 0, 9.2, 9.5, 0.5, 9.8], tex: 'fabric', solid: true },
-      { b: [12.3, 0, 9.0, 12.9, 1.9, 13.0], tex: 'cabinet', solid: true },
+      { b: [8.0, 0, 8.2, 10.5, 0.75, 9.0], tex: 'cabinet', model: 'desk', solid: true },
+      { b: [8.85, 0, 9.15, 9.55, 1.0, 9.85], tex: 'fabric', model: 'chairDesk', rot: 2, solid: true },
+      { b: [8.95, 0.75, 8.3, 9.65, 1.25, 8.55], model: 'computerScreen' },
+      { b: [12.3, 0, 9.0, 12.9, 1.9, 13.0], solid: true }, // the cabinets along the east wall (three models)
+      { b: [12.3, 0, 9.0, 12.9, 1.9, 10.33], model: 'bookcaseClosedWide', rot: 3 },
+      { b: [12.3, 0, 10.33, 12.9, 1.9, 11.67], model: 'bookcaseClosedWide', rot: 3 },
+      { b: [12.3, 0, 11.67, 12.9, 1.9, 13.0], model: 'bookcaseClosedWide', rot: 3 },
       // ---- night one: the routine's things ----
       // kitchen: the stove (its cabinet is already solid), the sink, the kettle, the bin
-      { b: [6.9, 0, 0.1, 7.65, 0.92, 0.8], tex: 'appliance' },
-      { b: [7.0, 0.25, 0.8, 7.55, 0.6, 0.812], tex: 'black' }, // oven window
+      { b: [6.9, 0, 0.1, 7.65, 0.92, 0.8], tex: 'appliance', model: 'kitchenStove' },
       { b: [8.5, 0.92, 0.15, 9.5, 0.94, 0.65], tex: 'metal' }, // sink
       { b: [8.95, 0.94, 0.15, 9.05, 1.2, 0.22], tex: 'metal' }, // faucet
       { b: [10.71, 0.92, 0.37, 10.89, 1.12, 0.53], tex: 'metal' }, // kettle
@@ -142,6 +159,28 @@
       { b: [6.88, 1.19, 8.31, 6.9, 1.31, 8.39], tex: 'appliance' },
       { b: [4.88, 1.19, 9.66, 4.9, 1.31, 9.74], tex: 'appliance' },
       { b: [4.88, 1.19, 20.86, 4.9, 1.31, 20.94], tex: 'appliance' },
+      // ---- outside: the crawlspace vent behind the bush (its screen is in js/decor.js) ----
+      { b: [5.2, 0.08, -0.14, 6.0, 0.46, -0.1], tex: 'black' },
+      { b: [5.18, 0.06, -0.16, 6.02, 0.1, -0.1], tex: 'metal' },
+      { b: [5.18, 0.44, -0.16, 6.02, 0.48, -0.1], tex: 'metal' },
+      // ---- the shed in the front yard: the Hale boxes are in here ----
+      { b: [25.5, 0, -7.5, 29.5, 2.3, -7.38], tex: 'siding', solid: true },
+      { b: [25.5, 0, -7.5, 25.62, 2.3, -3.5], tex: 'siding', solid: true },
+      { b: [29.38, 0, -7.5, 29.5, 2.3, -3.5], tex: 'siding', solid: true },
+      { b: [25.5, 0, -3.62, 26.9, 2.3, -3.5], tex: 'siding', solid: true },
+      { b: [27.9, 0, -3.62, 29.5, 2.3, -3.5], tex: 'siding', solid: true },
+      { b: [26.9, 2.0, -3.62, 27.9, 2.3, -3.5], tex: 'siding' },
+      { b: [25.3, 2.3, -7.7, 29.7, 2.42, -3.3], tex: 'shingle' },
+      { b: [25.62, 0.0, -7.38, 29.38, 0.02, -3.62], tex: 'concrete' },
+      { b: [25.62, 2.27, -7.38, 29.38, 2.3, -3.62], tex: 'wood', under: true }, // the shed's ceiling
+      { b: [28.4, 0, -7.32, 29.3, 0.6, -6.6], model: 'cardboardBoxClosed', solid: true }, // the Hale boxes
+      { b: [28.6, 0.6, -7.25, 29.2, 1.1, -6.75], model: 'cardboardBoxClosed' },
+      { b: [27.5, 0, -7.32, 28.25, 0.5, -6.8], model: 'cardboardBoxOpen', solid: true },
+      { b: [25.62, 0, -6.9, 26.05, 1.8, -5.3], model: 'bookcaseOpen', rot: 1, solid: true },
+      { b: [28.75, 0, -5.7, 29.38, 0.9, -4.2], model: 'desk', rot: 3, solid: true }, // the workbench
+      { b: [26.85, 1.38, -7.38, 26.9, 1.43, -7.32], tex: 'metal' }, // the crowbar hook, empty
+      { b: [27.25, 1.38, -7.38, 27.3, 1.43, -7.32], tex: 'metal' },
+      { b: [26.8, 1.25, -7.379, 27.35, 1.55, -7.378], tex: 'black' }, // its outline, painted on the wall
     ],
     // Dave's sticky notes (collectible; text in content/text.js as sticky.<id>). face = the way it faces.
     stickies: [
@@ -153,6 +192,44 @@
       { id: 'frontDoor', x: 3.4, y: 1.45, z: 0.105, face: 'pz' },
       { id: 'kibble', x: 11.99, y: 0.5, z: 7.0, face: 'nx' },
       { id: 'pipes', x: 12.36, y: 1.12, z: 0.858, face: 'pz' },
+    ],
+    // CC0 scenery outside: the courtyard fence (its collision is in solids) and things at the edge of the
+    // trees. b = fill a box (with rot quarter turns), or x/z with a height or scale.
+    scenery: [
+      { model: 'fence_simple', b: [13, 0, 23.97, 14.857, 1.5, 24.07] },
+      { model: 'fence_simple', b: [14.857, 0, 23.97, 16.714, 1.5, 24.07] },
+      { model: 'fence_simple', b: [16.714, 0, 23.97, 18.571, 1.5, 24.07] },
+      { model: 'fence_simple', b: [18.571, 0, 23.97, 20.429, 1.5, 24.07] },
+      { model: 'fence_simple', b: [20.429, 0, 23.97, 22.286, 1.5, 24.07] },
+      { model: 'fence_simple', b: [22.286, 0, 23.97, 24.143, 1.5, 24.07] },
+      { model: 'fence_simple', b: [24.143, 0, 23.97, 26, 1.5, 24.07] },
+      { model: 'fence_simple', b: [25.97, 0, 8, 26.07, 1.5, 10], rot: 1 },
+      { model: 'fence_simple', b: [25.97, 0, 10, 26.07, 1.5, 12], rot: 1 },
+      { model: 'fence_simple', b: [25.97, 0, 12, 26.07, 1.5, 14], rot: 1 },
+      { model: 'fence_simple', b: [25.97, 0, 14, 26.07, 1.5, 16], rot: 1 },
+      { model: 'fence_simple', b: [25.97, 0, 16, 26.07, 1.5, 18], rot: 1 },
+      { model: 'fence_simple', b: [25.97, 0, 18, 26.07, 1.5, 20], rot: 1 },
+      { model: 'fence_simple', b: [25.97, 0, 20, 26.07, 1.5, 22], rot: 1 },
+      { model: 'fence_simple', b: [25.97, 0, 22, 26.07, 1.5, 24], rot: 1 },
+      { model: 'rock_smallA', b: [4.6, 0, -1.6, 4.95, 0.17, -1.25] }, // the fake rock with the spare key
+      { model: 'rock_largeA', x: -6, z: -8, height: 0.7, rotY: 0.6 },
+      { model: 'rock_largeA', x: 32, z: 14, height: 0.8, rotY: 2.1 },
+      { model: 'rock_largeA', x: -4, z: 28, height: 0.6, rotY: 4 },
+      { model: 'stump_round', x: -8, z: -3, height: 0.45, rotY: 1 },
+      { model: 'stump_round', x: 30, z: -12, height: 0.5, rotY: 2 },
+      { model: 'stump_round', x: 33, z: 30, height: 0.4, rotY: 3 },
+      { model: 'log', x: -7, z: 12, height: 0.35, rotY: 0.4 },
+      { model: 'log', x: 34, z: 4, height: 0.4, rotY: 1.9 },
+      { model: 'grass_large', x: 2, z: -3.5, height: 0.35, rotY: 0 },
+      { model: 'grass_large', x: -2.5, z: 2, height: 0.35, rotY: 1 },
+      { model: 'grass_large', x: 15, z: -2, height: 0.3, rotY: 2 },
+      { model: 'grass_large', x: 24, z: -1.5, height: 0.35, rotY: 3 },
+      { model: 'grass_large', x: 27.5, z: 11, height: 0.35, rotY: 4 },
+      { model: 'grass_large', x: -1.5, z: 18, height: 0.35, rotY: 5 },
+      { model: 'grass_large', x: 14, z: 26, height: 0.3, rotY: 1 },
+      { model: 'grass_large', x: 6, z: 27, height: 0.35, rotY: 2 },
+      { model: 'rock_smallA', x: -3, z: -6, height: 0.25, rotY: 1 },
+      { model: 'rock_smallA', x: 20, z: 27, height: 0.3, rotY: 2 },
     ],
     // the light switches: which light, where
     switches: [
@@ -224,7 +301,7 @@
       // night one
       stove: { x: 7.3, z: 1.4 },
       kettle: { x: 10.8, z: 1.4 },
-      table: { x: 11.15, z: 4.1 }, // beside the east chair; sitting puts you on it (10.6, 4.1)
+      table: { x: 11.25, z: 4.1 }, // beside the east chair; sitting puts you on it (10.6, 4.1)
       laundrySink: { x: 1.55, z: 9.3 },
       trash: { x: 7.7, z: 6.8 },
       bins: { x: -1.4, z: -1.8, outdoor: true },
@@ -234,6 +311,9 @@
       remote: { x: 19.2, z: 3.2 },
       dogBed: { x: 22.6, z: 5.6 },
       laundryDoorHall: { x: 6.0, z: 10.5 },
+      vent: { x: 5.6, z: -1.6, outdoor: true },
+      shedDoor: { x: 27.4, z: -2.8, outdoor: true },
+      shedInside: { x: 27.4, z: -5.2, outdoor: true },
     },
     spawns: {
       living: { x: 22.5, z: 5.5, yaw: 0.53 },
@@ -249,6 +329,7 @@
       masterWindow: { x: 13, y: 1.5, z: 17.5 },
       livingGlass: { x: 15.3, y: 1.2, z: 8 },
       hatch: { x: 2.5, y: 0, z: 10.5 },
+      vent: { x: 5.6, y: 0.27, z: -0.12 }, // the crawlspace vent behind the bush: how he gets in
     },
   };
 });

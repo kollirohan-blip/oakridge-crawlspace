@@ -35,7 +35,7 @@
     [[12.3, 1.55], [12.75, 1.3], [12.47, 0.98], [12.7, 1.72], [12.28, 1.3]].forEach(function (p) {
       world.emitBox(p[0] - 0.03, p[1] - 0.018, 0.852, p[0] + 0.03, p[1] + 0.018, 0.866, { pz: 'magnet' }, 0.25);
     });
-    [[7.08, 0.3], [7.47, 0.3], [7.08, 0.58], [7.47, 0.58]].forEach(function (p) {
+    if (!(OC.models && OC.models.has('kitchenStove'))) [[7.08, 0.3], [7.47, 0.3], [7.08, 0.58], [7.47, 0.58]].forEach(function (p) {
       world.box(p[0] - 0.08, 0.92, p[1] - 0.08, p[0] + 0.08, 0.93, p[1] + 0.08, 'black');
     });
 
@@ -204,7 +204,39 @@
       },
     };
 
+    // ---- the crawlspace vent's screen, behind the bush: loose (and, later, pushed out from inside) --
+    var gc = document.createElement('canvas');
+    gc.width = 32;
+    gc.height = 16;
+    var gg = gc.getContext('2d');
+    gg.fillStyle = '#1a1c1e';
+    gg.fillRect(0, 0, 32, 16);
+    gg.fillStyle = '#5a5e62';
+    for (var gx = 0; gx < 32; gx += 3) gg.fillRect(gx, 0, 1, 16);
+    for (var gy = 0; gy < 16; gy += 3) gg.fillRect(0, gy, 32, 1);
+    var gtex = new THREE.CanvasTexture(gc);
+    gtex.magFilter = THREE.NearestFilter;
+    var screenMesh = mesh(new THREE.PlaneGeometry(0.76, 0.34), new THREE.MeshPhongMaterial({ map: gtex, specular: 0x000000, transparent: true, opacity: 0.95 }), 5.6, 0.27, -0.165);
+    screenMesh.rotation.y = Math.PI;
+    var vent = {
+      at: { x: 5.6, y: 0.27, z: -0.165 },
+      // 'fixed' | 'loose' (one corner bent out: how it looks on night one) | 'out' (pushed out, on the ground)
+      set: function (state) {
+        vent.state = state;
+        screenMesh.position.set(5.6, 0.27, -0.165);
+        screenMesh.rotation.set(0, Math.PI, 0);
+        if (state === 'loose') {
+          screenMesh.rotation.set(0.08, Math.PI + 0.22, 0.06);
+          screenMesh.position.set(5.63, 0.26, -0.21);
+        } else if (state === 'out') {
+          screenMesh.rotation.set(-Math.PI / 2, Math.PI + 0.4, 0);
+          screenMesh.position.set(5.75, 0.02, -0.55);
+        }
+      },
+    };
+
     var api = {
+      vent: vent,
       stoveGlow: function (v) {
         ovenGlow.visible = !!v;
       },
@@ -261,6 +293,7 @@
         singT = 0;
         blinkT = 0;
         treeLightMesh.visible = false;
+        vent.set('loose');
       },
       update: function (dt) {
         ball.update(dt);

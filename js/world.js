@@ -167,6 +167,24 @@
       if (x > -4 && x < 30 && z > -22 && z < 30) continue; // keep the house, yard and drive clear
       spots.push([x, z]);
     }
+    // Kenney's pines when the models are there (merged with the rest of the scenery: a few draw calls);
+    // otherwise two instanced meshes of cones
+    var PINES = ['tree_pineTallA', 'tree_pineTallB', 'tree_pineTallC', 'tree_pineRoundA', 'tree_pineDefaultA', 'tree_detailed_dark'];
+    if (OC.models && OC.models.has(PINES[0])) {
+      spots.forEach(function (s) {
+        var kind = PINES[Math.floor(rnd() * PINES.length)];
+        OC.models.at(kind, { x: s[0], z: s[1], rotY: rnd() * Math.PI * 2, height: 7 + rnd() * 5 });
+      });
+      // a second, nearer row thinly, so the yard has an edge you can see from the porch
+      for (var k = 0; k < 26; k++) {
+        var aa = rnd() * Math.PI * 2;
+        var rr = 19 + rnd() * 4;
+        var tx = 13 + Math.cos(aa) * rr * 1.45;
+        var tz = 6 + Math.sin(aa) * rr * 1.15;
+        if (tx > -5 && tx < 31 && tz > -22 && tz < 30) continue;
+        OC.models.at(PINES[Math.floor(rnd() * PINES.length)], { x: tx, z: tz, rotY: rnd() * 6.28, height: 6 + rnd() * 4 });
+      }
+    } else {
     var trunks = new THREE.InstancedMesh(
       new THREE.CylinderGeometry(0.25, 0.35, 5, 6),
       new THREE.MeshPhongMaterial({ color: 0x1d1610, specular: 0x000000 }),
@@ -186,9 +204,16 @@
     });
     group.add(trunks);
     group.add(crowns);
+    }
 
     // ---- light: a faint moon, then warm pools where somebody left a lamp on -------------------
-    scene.add(new THREE.HemisphereLight(0x33405e, 0x0a0a0e, 0.34));
+    var hemi = new THREE.HemisphereLight(0x33405e, 0x0a0a0e, 0.34);
+    scene.add(hemi);
+    // the sun: always in the scene (adding a light later recompiles every material), off at night
+    var sun = new THREE.DirectionalLight(0xfff1dc, 0);
+    sun.position.set(30, 40, -25);
+    scene.add(sun);
+    scene.add(sun.target);
     var lightById = {};
     var lights = (house.lights || []).map(function (l) {
       var pl = new THREE.PointLight(l.color, l.intensity, l.distance, 2);
@@ -237,6 +262,28 @@
       },
       emitBox: emitBox,
       meshes: [],
+      // 0 = night, 1 = a grey November day: the sky, the fog, the sun, the light in the windows
+      setDaylight: function (f, renderer) {
+        f = Math.max(0, Math.min(1, f));
+        var night = new THREE.Color(0x0a0e16);
+        var day = new THREE.Color(0xa7b7c6);
+        var sky = night.clone().lerp(day, f);
+        if (renderer) renderer.setClearColor(sky);
+        if (scene.fog) {
+          scene.fog.color.copy(sky);
+          scene.fog.density = 0.04 - 0.028 * f;
+        }
+        hemi.intensity = 0.34 + 0.86 * f;
+        hemi.color.set(0x33405e).lerp(new THREE.Color(0xd2dcea), f);
+        hemi.groundColor.set(0x0a0a0e).lerp(new THREE.Color(0x4a4438), f);
+        sun.intensity = 0.9 * f;
+        if (world.glassMesh) {
+          world.glassMesh.material.color.set(0x0b1420).lerp(new THREE.Color(0xb9c8d6), f);
+          world.glassMesh.material.opacity = 0.3 - 0.12 * f;
+        }
+        world.daylight = f;
+      },
+      daylight: 0,
       commit: function () {
         Object.keys(parts).forEach(function (tex) {
           var mesh = new THREE.Mesh(geometryFrom(parts[tex]), materialFor(tex));

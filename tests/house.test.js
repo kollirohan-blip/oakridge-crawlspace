@@ -178,3 +178,15 @@ test('from the kitchen the master window is not visible: the walls are in the wa
   const cam = { x: 9, z: 3, yaw: 3.0 };
   assert.equal(lineOfSight(boxes, cam, house.anchors.masterWindow, 1.5), false);
 });
+
+test('every sticky note has an id, a position and a facing, and every furniture entry has a box', () => {
+  house.stickies.forEach((n, i) => {
+    assert.equal(typeof n.id, 'string', 'sticky ' + i + ' has no id');
+    ['x', 'y', 'z'].forEach((k) => assert.equal(typeof n[k], 'number', 'sticky ' + n.id + ' has no ' + k));
+    assert.ok(['px', 'nx', 'pz', 'nz'].includes(n.face), 'sticky ' + n.id + ' faces nowhere');
+  });
+  house.furniture.forEach((f, i) => {
+    assert.ok(Array.isArray(f.b) && f.b.length === 6, 'furniture ' + i + ' has no box');
+    assert.ok(f.b[3] > f.b[0] && f.b[4] > f.b[1] && f.b[5] > f.b[2], 'furniture ' + i + ' has an inside-out box');
+  });
+});
