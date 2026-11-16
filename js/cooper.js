@@ -114,6 +114,9 @@
     };
     // stand and stare at a point in the world (x, y, z), or pass null to carry on
     api.stare = function (target) {
+      // Busy walking somewhere or eating: a stare would cancel that and its callback would never
+      // fire (feeding him could then never finish). Staring is flavour; finishing the errand is not.
+      if (api.mode === 'goto' || api.mode === 'eat') return;
       if (!target) {
         api.lookAt = null;
         if (api.mode === 'stare') api.mode = 'follow';

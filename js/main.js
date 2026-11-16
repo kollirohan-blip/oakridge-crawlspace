@@ -84,6 +84,24 @@
       current.def = def;
       current.act = def.create(g);
       OC.hud.fadeIn();
+      saveCheckpoint(id);
+    }
+
+    // a checkpoint at the start of each act, so closing the tab does not mean starting over
+    function saveCheckpoint(id) {
+      try {
+        if (id) localStorage.setItem('oakridge.checkpoint', id);
+        else localStorage.removeItem('oakridge.checkpoint');
+      } catch (e) {
+        /* private window or blocked storage: no checkpoints, nothing else changes */
+      }
+    }
+    function loadCheckpoint() {
+      try {
+        return localStorage.getItem('oakridge.checkpoint');
+      } catch (e) {
+        return null;
+      }
     }
 
     g.onEnd = function (id, outcome) {
@@ -93,6 +111,7 @@
       if (!next && OC.epilogue) {
         if (current.act && current.act.dispose) current.act.dispose();
         interact.clear();
+        saveCheckpoint(null); // finished: the next visit starts fresh
         current.id = 'epilogue';
         current.act = OC.epilogue.create(g);
         return;
@@ -114,8 +133,21 @@
     });
 
     var params = new URLSearchParams(location.search);
-    var startAt = 'act' + (Number(params.get('act')) || 1);
-    startAct(OC.acts[startAt] ? startAt : 'act1');
+    var saved = loadCheckpoint();
+    var startAt = params.get('act') ? 'act' + Number(params.get('act')) : saved || 'act1';
+    if (!OC.acts[startAt]) startAt = 'act1';
+    if (!params.get('act') && saved && saved !== 'act1' && OC.acts[saved]) {
+      var NAMES = { act2: 'Night 2, 8:30 PM', act3: 'Night 2, 12:30 AM', act4: 'Night 2, 12:35 AM' };
+      document.querySelector('#click-panel .big').textContent = 'Click to continue (' + NAMES[saved] + ')';
+      document.querySelector('#click-panel .small').textContent = 'Press N to start over from the beginning.';
+      document.addEventListener('keydown', function (e) {
+        if (e.code === 'KeyN' && !ctl.locked) {
+          saveCheckpoint(null);
+          location.reload();
+        }
+      });
+    }
+    startAct(startAt);
 
     var samples = [];
     var last = performance.now();
@@ -153,6 +185,7 @@
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
+    document.body.setAttribute('data-booted', '1'); // for automated checks: the game started
 
     OC.game = { g: g, render: r, world: world, props: props, ctl: ctl, cooper: cooper, interact: interact, phone: phone, content: content, current: current };
     Object.defineProperty(OC.game, 'act', { get: function () { return current.act; } });
