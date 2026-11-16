@@ -8,7 +8,7 @@
   var FPS = 5;
 
   function create(r) {
-    var cam = new THREE.PerspectiveCamera(42, W / H, 0.05, 60);
+    var cam = new THREE.PerspectiveCamera(42, W / H, 0.05, 13); // a cheap IR camera sees the room, not the house
     cam.position.set(25.55, 2.1, 1.2); // on top of the bookshelf
     cam.lookAt(21.9, 0.3, 6.3); // Cooper's bed, with the way to the kitchen and hall beyond it
     // its infrared lamp: on only while the pet cam renders, so it lights the room for the feed alone

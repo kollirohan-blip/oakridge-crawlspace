@@ -192,6 +192,12 @@
       g.fillStyle = '#3a3a3e';
       g.fillRect(0, 0, w, h);
     },
+    // the blinds in Dave's bedroom windows
+    blinds: function (g, w, h, r) {
+      g.fillStyle = '#8a7f6a';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 80, 0.12);
+    },
     // Dave's sticky notes: yellow paper, blue scribbles
     sticky: function (g, w, h, r) {
       g.fillStyle = '#e8d35a';

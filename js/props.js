@@ -757,12 +757,10 @@
         scene.add(p);
         return p;
       });
-      var slatMat = new THREE.MeshPhongMaterial({ color: 0x8a7f6a, specular: 0x000000 });
+      // the blind slats never move: they go into the static batch (26 meshes were 26 draw calls)
       windows.forEach(function (z) {
         for (var y = 0.86; y < 2.2; y += 0.105) {
-          var s = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 1.98), slatMat);
-          s.position.set(12.95, y, z);
-          scene.add(s);
+          world.box(12.94, y - 0.02, z - 0.99, 12.96, y + 0.02, z + 0.99, 'blinds', 0.5);
         }
       });
       // a person-shaped cut-out, drawn on a canvas

@@ -92,34 +92,35 @@ async (page) => {
   await ev('tv', async () => {
     const D = OC.debug;
     D.advance(4);
-    D.teleport(19.25, 3.3, 0, 0); D.advance(0.3); D.use('tv'); D.use('remote'); D.use('remote'); D.advance(0.5);
-    D.use('couch'); D.advance(6.5); OC.game.ctl.pitch = -0.05;
-    document.getElementById('subtitle').classList.remove('on'); D.advance(0.2);
-    return 'channel ' + D.act1().mods.tv.tv.channel().n;
+    D.teleport(19.25, 3.3, 0, 0); D.advance(0.3); D.use('tv'); D.advance(0.3);
+    D.use('couch'); D.advance(1.2); OC.game.ctl.pitch = -0.05;
+    document.getElementById('subtitle').classList.remove('on'); D.advance(0.1);
+    return 'channel ' + D.act1().mods.tv.tv.channel().n + ', settled stage=' + D.dread();
   });
   await shot('tv');
-  await ev('settled', async () => {
-    const D = OC.debug;
-    D.advance(15); D.use('latch'); D.advance(1);
-    return 'tasks=' + D.act1().flags.tasksDone + ' stage=' + D.dread();
-  });
 
-  // ---- the alert and the reflection ---------------------------------------------------------------
+  // ---- the alert and the reflection (both armed by the settled-in gate) ---------------------------
   await ev('alert', async () => {
     const D = OC.debug;
-    D.teleport(19.4, 3.2, 0, -0.05);
-    T.until(() => D.act1().mods.tv.tv.alerting(), 20); D.advance(1);
+    T.until(() => D.act1().mods.tv.tv.alerting(), 20); D.advance(1.5);
+    document.getElementById('subtitle').classList.remove('on');
     return 'alerting=' + D.act1().mods.tv.tv.alerting();
   });
   await shot('alert');
   await ev('reflection', async () => {
     const D = OC.debug;
-    T.until(() => !D.act1().mods.tv.tv.alerting(), 20);
-    D.teleport(19.5, 2.2, 0, -0.1); D.advance(0.2);
-    D.use('remote'); D.advance(0.12);
+    T.until(() => !D.act1().mods.tv.tv.alerting() && D.act1().director.done('watchTv'), 30);
+    D.teleport(19.4, 2.6, 0, -0.12); D.advance(0.3);
+    D.use('remote'); D.advance(0.1);
+    document.getElementById('subtitle').classList.remove('on');
     return 'reflection=' + D.act1().mods.tv.state.sawReflection;
   });
-  await shot('reflection');
+  await shot('reflection', { clip: { x: 340, y: 180, width: 600, height: 380 } });
+  await ev('settled', async () => {
+    const D = OC.debug;
+    D.advance(8); D.use('latch'); D.advance(1);
+    return 'tasks=' + D.act1().flags.tasksDone + ' stage=' + D.dread();
+  });
 
   // ---- the photo -----------------------------------------------------------------------------------
   await ev('photo', async () => {
@@ -169,8 +170,8 @@ async (page) => {
   await ev('door', async () => {
     const D = OC.debug;
     T.until(() => D.dread() === 'knocks', 40); D.advance(6);
-    D.teleport(6.4, 14.2, 0.3, -0.15); D.advance(1.2);
-    D.aim(5, 1.0, 10.5); OC.game.ctl.yaw += 0.22; D.advance(0.3);
+    D.teleport(6.6, 12.6, 0, 0); OC.game.ctl.light.on = true; D.advance(1.2);
+    D.aim(5, 0.9, 10.5); OC.game.ctl.yaw -= 0.1; D.advance(0.3);
     return 'stage=' + D.dread() + ' door closed=' + OC.game.props.laundryDoor.closed;
   });
   await shot('knocks');
@@ -190,7 +191,7 @@ async (page) => {
     D.use('bed'); D.advance(10);
     return 'stage=' + D.dread() + ' petcam=' + OC.game.g.petcam.on;
   });
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(2000); // the fade to black is a real-time CSS transition
   await shot('petcam-213');
   await ev('end', async () => {
     const D = OC.debug; D.advance(8);
@@ -218,6 +219,7 @@ async (page) => {
     OC.debug.advance(19); // the card's lines run on game time
     return 'act=' + OC.game.current.id + ' variant=' + (OC.game.act && OC.game.act.variant);
   });
+  await page.waitForTimeout(3000); // its lines fade in on a real-time CSS animation
   await shot('gag-ending');
   return { log, errs };
 }

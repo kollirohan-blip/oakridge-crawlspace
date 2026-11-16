@@ -37,3 +37,25 @@ about 3.5 ms per route across the whole house, and only runs a couple of times a
 
 To see your own numbers: open the game, click to play, open the browser console and run
 `OC.debug.stats()`.
+
+## Phase 1, Night 1 (2026-11-16)
+
+Same setup (headless Chrome, software WebGL, 480 px internal width). Night 1 adds two extra render
+passes that only run sometimes: the pet cam (5 times a second, only while its app is open) and the
+bathroom mirror (only while you are in the bathroom facing it). The numbers are whole frames,
+including those passes.
+
+| Scene | Draw calls |
+|---|---|
+| Living room, a frame where the pet cam renders | 141 |
+| Kitchen, pet cam open | 96 |
+| Living room toward the kitchen | 95 |
+| Hall, looking north | 100 |
+| Bathroom at the mirror | 97 |
+| Driveway toward the house | 104 |
+
+Two changes kept this under the ~150 target: the 26 blind slats in Dave's windows are now part of
+the static batch (they were 26 meshes), and the pet cam only sees 13 m (a cheap IR camera sees the
+room, not the house). Before them the pet cam frame was 190.
+
+Not measured: the frame rate on the Vivobook's own GPU.
