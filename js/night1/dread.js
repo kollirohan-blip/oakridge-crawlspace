@@ -427,10 +427,13 @@
       cooper.follow();
       cooper.wag(0.45);
       ctx.later(3, function () {
+        if (st.stage === 'asleep') return;
         cooper.goTo(ctl.pos.x + 0.7, ctl.pos.z + 0.4, function () {
+          if (st.stage === 'asleep') return;
           cooper.pose('lie');
           cooper.stay();
           ctx.later(10, function () {
+            if (st.stage === 'asleep') return; // he is on his bed for the pet cam now: leave him there
             cooper.wag(null);
             cooper.follow();
           });

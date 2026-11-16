@@ -117,6 +117,7 @@
       if (current.act && current.act.dispose) current.act.dispose(); // stop the last act's loops and listeners
       interact.clear();
       props.reset();
+      document.getElementById('epilogue').classList.remove('on'); // an ending screen must not cover a new night
       g.state.cutscene = false;
       g.clock = OC.clock.gameClock(def.clockDef);
       var spawnName = new URLSearchParams(location.search).get('spawn');
@@ -649,6 +650,40 @@
           if (cooper.poseName !== 'stand') return 'Cooper is still ' + cooper.poseName;
           if (a.loops.length) return a.loops.length + ' sounds from the old night still running';
           if (g.state.music) return 'the mixtape is still playing';
+          return true;
+        });
+        await flow('petcamCooperStays', async function () {
+          // go to bed as soon as it is allowed: nothing left over from the relief may move Cooper
+          var a = freshNight();
+          var st = a.dread.state;
+          st.stage = 'knocked';
+          props.laundryDoor.close(null, true);
+          D.use('laundryDoor');
+          var t = 0;
+          while (a.dread.stage() !== 'bed' && t < 40) {
+            D.advance(0.5);
+            t += 0.5;
+          }
+          if (a.dread.stage() !== 'bed') return 'never reached bed (' + a.dread.stage() + ')';
+          ctl.teleport(2.9, 15.6, Math.PI / 2, 0);
+          D.use('bed');
+          D.advance(14);
+          var bed = props.decor.dogBed;
+          var off = Math.hypot(cooper.pos.x - bed.x, cooper.pos.z - bed.z);
+          if (off > 0.3) return 'Cooper left his bed during the 2:13 feed (' + off.toFixed(2) + ' m away, ' + cooper.mode + ')';
+          return true;
+        });
+        await flow('newGameAfterGag', async function () {
+          freshNight();
+          current.act.dispose();
+          interact.clear();
+          current.id = 'epilogue';
+          current.act = OC.epilogue.create(g, { variant: 'gag' });
+          D.advance(2);
+          startAct('act1'); // what Quit to title, then New game, does
+          ctl.setLocked(true);
+          if (document.getElementById('epilogue').classList.contains('on')) return 'the ending screen is still covering the game';
+          if (g.state.cutscene) return 'still in a cutscene';
           return true;
         });
         await flow('night1Afk', async function () {
