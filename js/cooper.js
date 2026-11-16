@@ -160,6 +160,14 @@
       goal = null;
       route = [];
     };
+    // stop and stay where he is (lying on his bed for the night)
+    api.stay = function () {
+      api.mode = 'idle';
+      goal = null;
+      route = [];
+      fetchState = null;
+      sniffState = null;
+    };
     api.goTo = function (x, z, cb) {
       api.mode = 'goto';
       api.poseName = 'stand';

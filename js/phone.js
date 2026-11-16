@@ -100,6 +100,7 @@
       // the phone held up in front of everything (the 2:13 AM pet cam alert)
       raise: function (v) {
         el('phone').classList.toggle('raised', !!v);
+        document.body.classList.toggle('phone-raised', !!v); // the HUD goes above the fade, for this
       },
       stopMusic: function () {
         if (track >= 0) {

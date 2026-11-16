@@ -300,3 +300,6 @@ body.at-title #phone.raised { display: none; }
 .kp-hint { color: var(--dim); font-size: clamp(11px, 1.7vmin, 15px); line-height: 1.4; }
 /* Dave's handwriting, and the note that is not quite his */
 #reader.shaky .paper { font-family: "Segoe Script", "Bradley Hand", cursive; transform: rotate(1.6deg); background-color: #efe7a8; }
+
+body.phone-raised #hud { z-index: 9; }
+body.phone-raised #rec, body.phone-raised #battery, body.phone-raised #crosshair, body.phone-raised #prompt, body.phone-raised #toast, body.phone-raised #subtitle { visibility: hidden; }

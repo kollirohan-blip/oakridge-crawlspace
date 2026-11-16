@@ -87,14 +87,16 @@
     },
     // the black screen as a mirror: the room behind you, and someone standing behind the couch
     reflection: function (g) {
-      px(g, '#050607', 0, 0, 64, 36);
-      px(g, '#14171b', 0, 22, 64, 14); // the floor
-      px(g, '#1f2328', 14, 18, 36, 8); // the couch back
-      px(g, '#2a2e33', 22, 9, 6, 6); // the lamp
-      px(g, '#1a1d22', 40, 4, 10, 6); // a window
-      px(g, '#0c0d0f', 36, 5, 6, 3); // his head, hood up, tilted
-      px(g, '#0c0d0f', 35, 8, 8, 10); // shoulders, above the couch
-      px(g, '#3a3a38', 38, 6, 2, 1); // a pale face in the hood
+      px(g, '#0e1114', 0, 0, 64, 36);
+      px(g, '#1c2026', 0, 23, 64, 13); // the floor
+      px(g, '#20262d', 46, 3, 12, 8); // a window
+      px(g, '#3a3f46', 12, 10, 4, 4); // the lamp shade
+      px(g, '#2f363e', 8, 18, 46, 8); // the couch back, where you are not sitting
+      px(g, '#040405', 33, 2, 9, 7); // his hood, head tilted
+      px(g, '#040405', 30, 8, 15, 11); // his shoulders, above the couch
+      px(g, '#77746c', 36, 4, 4, 3); // a pale face in the hood
+      px(g, '#040405', 37, 5, 1, 1);
+      px(g, '#040405', 39, 5, 1, 1);
     },
   };
 
@@ -219,7 +221,7 @@
         } else if (ev === 'alertEnd' && st.alertSeen) {
           ctx.later(1.5, function () { say('n1.tv.alertGone', 5000); });
         }
-        if (watching()) {
+        if (watching() && !st.special) {
           hud.cc(tv.caption(), tv.alerting());
           if (tv.alerting() && !st.alertSeen) {
             st.alertSeen = true;

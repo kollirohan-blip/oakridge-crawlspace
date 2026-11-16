@@ -2,8 +2,8 @@
 // stage something for the photo only (beforeShot), which is how a flash shows what the room does not.
 (function () {
   var OC = (window.OC = window.OC || {});
-  var W = 160;
-  var H = 90;
+  var W = 320;
+  var H = 180;
 
   function create(g, r) {
     // the flash: a light that is always in the scene (adding one later would recompile every material)
@@ -25,8 +25,8 @@
         var spot = g.ctl.light.spot;
         var spotWas = spot.intensity;
         flash.position.copy(r.camera.position);
-        flash.intensity = 2.4;
-        spot.intensity = 5;
+        flash.intensity = 1.7;
+        spot.intensity = 3.4;
         r.render();
         // copy the frame while it is still in the drawing buffer (same task as the render)
         var src = r.renderer.domElement;

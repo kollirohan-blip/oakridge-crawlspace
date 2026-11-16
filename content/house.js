@@ -119,7 +119,7 @@
       { b: [10.71, 0.92, 0.37, 10.89, 1.12, 0.53], tex: 'metal' }, // kettle
       { b: [7.5, 0, 7.3, 7.9, 0.6, 7.75], tex: 'metal', solid: true }, // trash can
       // living room: Cooper's bed, the remote on the coffee table
-      { b: [24.1, 0, 6.3, 25.1, 0.18, 7.2], tex: 'fabric2' },
+      { b: [22.1, 0, 6.05, 23.1, 0.18, 6.95], tex: 'fabric2' }, // in the middle of the pet cam's view
       { b: [19.52, 0.4, 2.27, 19.58, 0.42, 2.43], tex: 'black' },
       // hall: the singing fish's plaque
       { b: [6.86, 1.25, 9.1, 6.9, 1.65, 9.7], tex: 'wood' },
@@ -232,7 +232,7 @@
       vanity: { x: 3.95, z: 22.8 },
       fish: { x: 6.3, z: 9.6 },
       remote: { x: 19.2, z: 3.2 },
-      dogBed: { x: 23.8, z: 5.9 },
+      dogBed: { x: 22.6, z: 5.6 },
       laundryDoorHall: { x: 6.0, z: 10.5 },
     },
     spawns: {

@@ -246,7 +246,7 @@
       ball: ball,
       fish: fish,
       treeLight: treeLight,
-      dogBed: { x: 24.6, z: 6.75 },
+      dogBed: { x: 22.6, z: 6.5 },
       reset: function () {
         ovenGlow.visible = false;
         api.kettleLight(false);

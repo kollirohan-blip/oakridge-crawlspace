@@ -616,10 +616,15 @@
       head.add(face);
       // red-eye: what a camera flash does to eyes that are wide open in the dark
       var redMat = new THREE.MeshBasicMaterial({ color: 0xff2a1a, fog: false });
+      var haloMat = new THREE.MeshBasicMaterial({ color: 0xff3a20, fog: false, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
       var redEyes = [-0.029, 0.029].map(function (x) {
-        var e = new THREE.Mesh(new THREE.PlaneGeometry(0.024, 0.02), redMat);
+        var e = new THREE.Mesh(new THREE.PlaneGeometry(0.045, 0.034), redMat);
         e.position.set(x, 0.007, 0.139);
         e.visible = false;
+        // the glow around it, so it still reads as two red points from the far end of a hall
+        var halo = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.13), haloMat);
+        halo.position.z = 0.002;
+        e.add(halo);
         head.add(e);
         return e;
       });

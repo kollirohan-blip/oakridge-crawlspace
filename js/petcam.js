@@ -3,14 +3,18 @@
 // it on the phone, and draws it green-grey with a timestamp.
 (function () {
   var OC = (window.OC = window.OC || {});
-  var W = 160;
-  var H = 90;
+  var W = 240;
+  var H = 135;
   var FPS = 5;
 
   function create(r) {
-    var cam = new THREE.PerspectiveCamera(74, W / H, 0.05, 60);
-    cam.position.set(25.6, 2.3, 0.4);
-    cam.lookAt(19.5, 0.4, 5.2);
+    var cam = new THREE.PerspectiveCamera(42, W / H, 0.05, 60);
+    cam.position.set(25.55, 2.1, 1.2); // on top of the bookshelf
+    cam.lookAt(21.9, 0.3, 6.3); // Cooper's bed, with the way to the kitchen and hall beyond it
+    // its infrared lamp: on only while the pet cam renders, so it lights the room for the feed alone
+    var ir = new THREE.PointLight(0xffffff, 0, 14, 1.3);
+    ir.position.copy(cam.position);
+    r.scene.add(ir);
     var rt = new THREE.WebGLRenderTarget(W, H);
     var buf = new Uint8Array(W * H * 4);
     var canvas = document.createElement('canvas');
@@ -37,17 +41,19 @@
       },
       renderNow: function () {
         var renderer = r.renderer;
+        ir.intensity = 1.3;
         renderer.setRenderTarget(rt);
         renderer.render(r.scene, cam);
         renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf);
         renderer.setRenderTarget(null);
+        ir.intensity = 0;
         var d = img.data;
         var total = 0;
         for (var y = 0; y < H; y++) {
           var src = (H - 1 - y) * W * 4; // the target is upside down
           for (var x = 0; x < W; x++) {
             var i = src + x * 4;
-            var lum = (buf[i] * 0.3 + buf[i + 1] * 0.59 + buf[i + 2] * 0.11) * 3.2 + 14 + (Math.random() - 0.5) * 22;
+            var lum = (buf[i] * 0.3 + buf[i + 1] * 0.59 + buf[i + 2] * 0.11) * 2.2 + 12 + (Math.random() - 0.5) * 22;
             lum = Math.max(0, Math.min(255, lum));
             var o = (y * W + x) * 4;
             d[o] = lum * 0.72;
