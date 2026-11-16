@@ -192,7 +192,9 @@
     };
 
     // ---- the light out in the trees (it blinks once) -----------------------------------------------
-    var treeLightMesh = mesh(new THREE.SphereGeometry(0.09, 6, 4), basic(0xfff3c4, { fog: false }), -14, 1.4, -18);
+    var treeLightMesh = mesh(new THREE.SphereGeometry(0.16, 6, 4), basic(0xfff3c4, { fog: false }), -14, 1.4, -18);
+    // a soft halo, so a flashlight 20 m away reads as a flashlight and not a stuck pixel
+    mesh(new THREE.SphereGeometry(0.7, 8, 6), basic(0xfff0c0, { fog: false, transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending }), 0, 0, 0, treeLightMesh);
     treeLightMesh.visible = false;
     var blinkT = 0;
     var treeLight = {
@@ -214,8 +216,14 @@
         if (dish && FOOD_COLORS[dish]) micro.food = FOOD_COLORS[dish];
         drawMicro();
       },
-      // where the plate is: 'none' | 'table' | 'sink'
+      // where the plate is: 'none' | 'table' | 'tableEmpty' | 'sink'
       plate: function (where, dish) {
+        if (where === 'tableEmpty') {
+          food.visible = false;
+          plate.position.set(PLATE_AT.table[0], PLATE_AT.table[1], PLATE_AT.table[2]);
+          plate.visible = true;
+          return;
+        }
         plate.visible = where === 'table' || where === 'sink';
         if (dish && FOOD_COLORS[dish]) foodMat.color.setHex(FOOD_COLORS[dish]);
         food.visible = where === 'table';

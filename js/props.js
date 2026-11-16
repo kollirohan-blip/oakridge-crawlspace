@@ -164,6 +164,8 @@
       blank();
       var api = {
         on: false,
+        // night one paints its own channels: fn(ctx2d, t) on the 64x36 canvas
+        painter: null,
         setOn: function (v) {
           api.on = !!v;
           if (!v) {
@@ -178,6 +180,11 @@
           if (light) light.intensity = 0.55 + Math.random() * 0.35;
           if (acc < 0.09) return;
           acc = 0;
+          if (api.painter) {
+            api.painter(g, t);
+            tex.needsUpdate = true;
+            return;
+          }
           // a news-ish look: a blue desk, a lower-third bar, and a little static
           g.fillStyle = '#16233f';
           g.fillRect(0, 0, 64, 36);
@@ -807,6 +814,7 @@
       reset: function () {
         laundryDoor.reset();
         setLights({ bath: 0 }); // added in Phase 1: the older acts do not set it themselves
+        tv.painter = null;
         if (api.decor) api.decor.reset();
       },
       intruder: intruder,

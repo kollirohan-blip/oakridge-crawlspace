@@ -126,7 +126,7 @@
     }
     // where his mouth is (for carrying the ball)
     function mouth() {
-      return { x: api.pos.x + Math.cos(api.heading) * 0.95, z: api.pos.z - Math.sin(api.heading) * 0.95 };
+      return { x: api.pos.x + Math.cos(api.heading) * 0.75, z: api.pos.z - Math.sin(api.heading) * 0.75 };
     }
 
     api.setPos = function (x, z) {
@@ -290,15 +290,15 @@
               f.replan = 0.4;
             }
             moved = walkRoute(WALK * 1.6, dt);
-            var m = mouth();
-            if (!f.ball.moving && Math.hypot(b.x - m.x, b.z - m.z) < 0.45) {
+            // close enough to reach it with his nose
+            if (!f.ball.moving && Math.hypot(b.x - api.pos.x, b.z - api.pos.z) < 0.9) {
               f.stage = 'back';
               f.ball.carried = true;
               route = [];
             } else if (stuck > 3) {
               fetchState = null;
               api.mode = 'follow';
-              if (f.cb) f.cb('refused');
+              if (f.cb) f.cb('lost');
             }
           }
         } else {

@@ -62,9 +62,25 @@
       audio: OC.audio || null,
       drone: null,
       clock: null,
-      state: { cutscene: false },
+      state: { cutscene: false, modal: null },
       onEnd: null,
+      habits: null,
     };
+    // the habit log: what Mason did, kept with the checkpoint for the nights that read it
+    g.habits = (function () {
+      try {
+        return OC.habits.restore(JSON.parse(localStorage.getItem('oakridge.habits')));
+      } catch (e) {
+        return OC.habits.createHabits();
+      }
+    })();
+    function saveHabits() {
+      try {
+        localStorage.setItem('oakridge.habits', JSON.stringify(g.habits.serialize()));
+      } catch (e) {
+        /* no storage: the next night uses a fresh log */
+      }
+    }
 
     // read a note full screen; Mason stands still while he reads, then carries on
     g.read = function (title, body, onClose, opts) {
@@ -78,11 +94,11 @@
 
     // the bathroom mirror, the phone's camera and the pet cam
     g.mirror = OC.mirror.create(r, ctl);
-    g.camera = OC.camera.create(g, r);
+    g.photo = OC.camera.create(g, r); // the phone camera (g.camera is the Three.js camera)
     g.petcam = OC.petcam.create(r);
     phone.setPetcamCanvas(g.petcam.canvas);
     phone.onShoot = function () {
-      return g.camera.shoot();
+      return g.photo.shoot();
     };
     phone.onMusic = function (track) {
       if (g.state.music) g.state.music.stop();
@@ -131,6 +147,21 @@
 
     g.onEnd = function (id, outcome) {
       if (outcome === 'retry') return startAct(id);
+      if (id === 'act1') saveHabits();
+      if (outcome === 'gag' && OC.epilogue) {
+        // the Tupperware: its own short ending, and it counts as finishing
+        if (current.act && current.act.dispose) current.act.dispose();
+        interact.clear();
+        saveCheckpoint(null);
+        try {
+          localStorage.setItem('oakridge.finished', '1');
+        } catch (e) {
+          /* no storage: chapters just stay locked */
+        }
+        current.id = 'epilogue';
+        current.act = OC.epilogue.create(g, { variant: 'gag' });
+        return;
+      }
       var next = ACT_ORDER[ACT_ORDER.indexOf(id) + 1];
       if (next && OC.acts[next]) return startAct(next);
       if (!next && OC.epilogue) {
@@ -253,10 +284,10 @@
       if (ctl.locked && g.clock) g.clock.tick(dt);
       ctl.update(dt);
       if (OC.audio) OC.audio.listen(r.camera);
-      interact.suspend(phone.isOpen || phone.choosing() || g.state.cutscene || OC.hud.isReading());
+      interact.suspend(phone.isOpen || phone.choosing() || g.state.cutscene || !!g.state.modal || OC.hud.isReading());
       interact.update(dt);
       if (ctl.locked) phone.update(dt); // a timed choice must not run out while the game is paused
-      g.camera.update(dt);
+      g.photo.update(dt);
       g.petcam.on = g.state.petcamForce || (phone.isOpen && phone.currentApp() === 'petcam');
       g.petcam.update(dt, g.clock ? g.clock.label() : '');
       props.update(dt);
@@ -310,11 +341,24 @@
         phone.app(name);
       },
       shoot: function () {
-        return g.camera.shoot();
+        return g.photo.shoot();
       },
       // answer the open choice, 1-based
       choose: function (n) {
         phone.answer(n);
+      },
+      // type a time on the microwave keypad and press Enter
+      keypad: function (str) {
+        return current.act.mods.dinner.keypadInput(str);
+      },
+      habits: function () {
+        return g.habits.entries();
+      },
+      act1: function () {
+        return current.id === 'act1' ? current.act : null;
+      },
+      dread: function () {
+        return current.act && current.act.dread ? current.act.dread.stage() : null;
       },
       // turn to look at a point
       aim: function (x, y, z) {
