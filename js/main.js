@@ -1,7 +1,7 @@
 // Boot, the act manager, and the main loop.
 (function () {
   var OC = (window.OC = window.OC || {});
-  var ACT_ORDER = ['act1', 'act2', 'act3', 'act4'];
+  var ACT_ORDER = ['act1', 'day2', 'act2', 'act3', 'act4'];
   var FLOOR_SURFACE = { floorboards: 'wood', tile: 'tile', carpet: 'carpet', concrete: 'concrete' };
 
   function boot() {
@@ -23,6 +23,7 @@
     var world = OC.world.build(r.scene, OC.house);
     var props = OC.props.build(world, OC.house);
     OC.decor.build(world, props, OC.house);
+    if (OC.places) OC.places.build(world); // the road to town and the Gas-N-Go, far off
     world.commit();
     if (OC.models) OC.models.commit(world.group); // the fitted furniture and the yard, merged by material
     var ctl = OC.controller.create(r.camera, world.boxes);
@@ -66,6 +67,7 @@
       state: { cutscene: false, modal: null },
       onEnd: null,
       habits: null,
+      render: r, // the renderer and scene, for acts that build or relight things (Day 2)
     };
     // the habit log: what Mason did, kept with the checkpoint for the nights that read it
     g.habits = (function () {
@@ -106,6 +108,16 @@
     phone.onShoot = function () {
       return g.photo.shoot();
     };
+    // a link someone texted: read it full screen (the act may want to know)
+    phone.onLink = function (link) {
+      phone.close();
+      g.read(link.title, link.body);
+      if (current.act && current.act.onLink) current.act.onLink(link);
+    };
+    phone.onCall = function (id) {
+      if (current.act && current.act.onCall) return current.act.onCall(id);
+      OC.hud.toast('No answer.');
+    };
     phone.onMusic = function (track) {
       if (g.state.music) g.state.music.stop();
       g.state.music = track >= 0 && g.audio ? g.audio.play('mixtape', { track: track }) : null;
@@ -119,6 +131,13 @@
       interact.clear();
       props.reset();
       world.setDaylight(def.daylight || 0, r.renderer); // night, unless the act is a day
+      if (OC.places) OC.places.lightsAt(world, 'home');
+      g.petcam.setTurned(false);
+      g.petcam.gain = 2.2;
+      g.petcam.clipGain = 0;
+      g.petcam.beforeRender = g.petcam.afterRender = null;
+      phone.setContacts(def.contacts || []);
+      if (props.decor && props.decor.petcamDevice) props.decor.petcamDevice.turn(false);
       document.getElementById('epilogue').classList.remove('on'); // an ending screen must not cover a new night
       g.state.cutscene = false;
       g.clock = OC.clock.gameClock(def.clockDef);
@@ -217,7 +236,7 @@
     applySettings(settings);
 
     // ---- menus: title, pause, chapters, settings -------------------------------------------------------
-    var NAMES = { act2: 'Night 2, 8:30 PM', act3: 'Night 2, 12:30 AM', act4: 'Night 2, 12:35 AM' };
+    var NAMES = { day2: 'Day 2, 10:00 AM', act2: 'Night 2, 8:30 PM', act3: 'Night 2, 12:30 AM', act4: 'Night 2, 12:35 AM' };
     var playing = false; // the player has entered the game at least once this visit
     function chaptersUnlocked() {
       try {
@@ -301,7 +320,7 @@
       props.update(dt);
       cooper.update(dt);
       if (current.act) current.act.update(dt);
-      if (current.def) OC.hud.setStamp(current.def.night, g.clock.label());
+      if (current.def) OC.hud.setStamp(current.def.stamp || current.def.night, g.clock.label());
       OC.hud.setBattery(ctl.light.battery);
       phoneClock -= dt;
       if (phoneClock <= 0) {

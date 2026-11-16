@@ -11,8 +11,9 @@
   var reading = false;
 
   var hud = {
+    // night: a number (NIGHT 2) or a label of its own (DAY 2)
     setStamp: function (night, label) {
-      el('stamp').textContent = 'NIGHT ' + night + '   ' + label;
+      el('stamp').textContent = (typeof night === 'string' ? night : 'NIGHT ' + night) + '   ' + label;
     },
     setBattery: function (frac) {
       var f = Math.max(0, Math.min(1, frac));
@@ -37,6 +38,21 @@
     say: function (text, ms) {
       var s = el('subtitle');
       s.textContent = text;
+      s.classList.add('on');
+      clearTimeout(subtitleTimer);
+      subtitleTimer = setTimeout(function () {
+        s.classList.remove('on');
+      }, ms || Math.max(2200, text.length * 55));
+    },
+    // someone talking to Mason in person: their name, then the line
+    speak: function (who, text, ms) {
+      var s = el('subtitle');
+      s.innerHTML = '';
+      var b = document.createElement('span');
+      b.className = 'who' + (who === 'Mason' ? ' mine' : '');
+      b.textContent = who + ': ';
+      s.appendChild(b);
+      s.appendChild(document.createTextNode(text));
       s.classList.add('on');
       clearTimeout(subtitleTimer);
       subtitleTimer = setTimeout(function () {

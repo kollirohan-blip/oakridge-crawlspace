@@ -28,3 +28,14 @@ test('the clock stops at the end time', () => {
   assert.equal(c.minutes(), 1530);
   assert.equal(c.label(), '1:30 AM');
 });
+
+test('jump() starts a new stretch of the day from its own start time', () => {
+  const c = gameClock({ startMin: 600, endMin: 780, durationSec: 100 });
+  c.tick(0.1);
+  c.jump({ startMin: 14 * 60, endMin: 17 * 60, durationSec: 60 });
+  assert.equal(c.label(), '2:00 PM');
+  assert.equal(c.finished(), false);
+  for (let i = 0; i < 601; i++) c.tick(0.1);
+  assert.equal(c.label(), '5:00 PM');
+  assert.equal(c.finished(), true);
+});

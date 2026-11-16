@@ -1,11 +1,11 @@
-// Mason's phone: Tab opens it. Apps, switched with keys 1 to 6 while it is open: Home (the to-do
-// list, Dave-isms collected, the shopping list, texts), Camera (with flash), the Pet Cam, Photos,
-// Flappy Cooper and Ethan's mixtape. It buzzes with a preview when a text comes in, and runs the
-// choices (keys 1, 2, 3...) and the call in Act 3.
+// Mason's phone: Tab opens it. Apps, switched with keys 1 to 7 while it is open: Home (the to-do
+// list, Dave-isms collected, the shopping list, texts, links), Camera (with flash), the Pet Cam,
+// Photos, Flappy Cooper, Ethan's mixtape and Calls. It buzzes with a preview when a text comes in,
+// and runs the choices (keys 1, 2, 3...) and the calls.
 (function () {
   var OC = (window.OC = window.OC || {});
-  var APPS = ['home', 'camera', 'petcam', 'photos', 'flappy', 'music'];
-  var APP_LABELS = { home: 'Home', camera: 'Camera', petcam: 'Pet Cam', photos: 'Photos', flappy: 'Flappy', music: 'Mixtape' };
+  var APPS = ['home', 'camera', 'petcam', 'photos', 'flappy', 'music', 'calls'];
+  var APP_LABELS = { home: 'Home', camera: 'Camera', petcam: 'Pet Cam', photos: 'Photos', flappy: 'Flappy', music: 'Mixtape', calls: 'Calls' };
 
   function el(id) {
     return document.getElementById(id);
@@ -29,6 +29,8 @@
     var reviewTimer = null;
     var flappy = OC.flappy ? OC.flappy.createFlappy({ w: 120, h: 180 }) : null;
     var track = -1;
+    var contacts = []; // { id, name }
+    var picked = 0;
 
     var api = {
       isOpen: false,
@@ -36,6 +38,9 @@
       onShoot: null, // set by main: takes a photo, returns it
       onMusic: null, // set by main: (trackIndex | -1)
       onApp: null, // (name) when the app changes
+      onCall: null, // (contactId) when Mason calls someone from the Calls app
+      onLink: null, // ({ title, body }) when Mason opens a link someone texted
+      onCallsChange: null,
       open: function () {
         if (!api.enabled) return;
         api.isOpen = true;
@@ -109,9 +114,37 @@
           if (api.isOpen) render();
         }
       },
-      // a text arriving from someone else
-      deliver: function (thread, from, text) {
-        messages.push({ thread: thread, from: from, text: text, mine: false, time: time });
+      // who is in the Calls app
+      setContacts: function (list) {
+        contacts = list.slice();
+        picked = Math.min(picked, Math.max(0, contacts.length - 1));
+        if (api.isOpen) render();
+      },
+      contacts: function () {
+        return contacts.slice();
+      },
+      // call the contact picked in the Calls app (Enter), or a contact by id
+      call: function (id) {
+        var c = id ? contacts.filter(function (x) { return x.id === id; })[0] : contacts[picked];
+        if (!c || !api.onCall) return false;
+        api.onCall(c.id);
+        return true;
+      },
+      // the newest link anyone texted, opened (Space on Home)
+      openLink: function () {
+        for (var i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].link) {
+            messages[i].link.opened = true;
+            if (api.onLink) api.onLink(messages[i].link);
+            if (api.isOpen) render();
+            return messages[i].link;
+          }
+        }
+        return null;
+      },
+      // a text arriving from someone else (link: { title, body } makes it a link Mason can open)
+      deliver: function (thread, from, text, link) {
+        messages.push({ thread: thread, from: from, text: text, mine: false, time: time, link: link || null });
         if (OC.audio) OC.audio.play('buzz', { gain: 0.8 });
         api.notify(from, text);
         if (api.isOpen) render();
@@ -148,6 +181,10 @@
           choiceState = { opts: opts, left: opts.seconds || 0, total: opts.seconds || 0, resolve: resolve };
         });
       },
+      // take the open choice away (the scene it belonged to ended)
+      cancelChoice: function () {
+        if (choiceState) finishChoice('cancel');
+      },
       choosing: function () {
         return !!choiceState;
       },
@@ -176,6 +213,11 @@
       act: function () {
         if (!api.isOpen) return;
         if (app === 'camera' && api.onShoot) api.onShoot();
+        else if (app === 'home') api.openLink();
+        else if (app === 'calls' && contacts.length) {
+          picked = (picked + 1) % contacts.length;
+          render();
+        }
         else if (app === 'flappy' && flappy) flappy.flap();
         else if (app === 'music') {
           var n = OC.audio && OC.audio.tracks ? OC.audio.tracks.length : 3;
@@ -249,15 +291,21 @@
       if (shopping.length) extras += '<div class="phone-line">Shopping list: ' + esc(shopping.join(', ')) + '</div>';
       el('phoneExtras').innerHTML = extras;
       var html = '';
+      var hasLink = false;
       ['dave', 'ethan', 'mom'].forEach(function (thread) {
         var list = messages.filter(function (m) { return m.thread === thread; });
         if (!list.length) return;
         html += '<div class="thread"><div class="who">' + { dave: 'Uncle Dave', ethan: 'Ethan', mom: 'Mom' }[thread] + '</div>';
         list.forEach(function (m) {
           html += '<div class="bubble ' + (m.mine ? 'mine' : '') + '">' + esc(m.text) + '</div>';
+          if (m.link) {
+            hasLink = true;
+            html += '<div class="bubble link' + (m.link.opened ? ' opened' : '') + '">' + esc(m.link.title) + '</div>';
+          }
         });
         html += '</div>';
       });
+      if (hasLink) html += '<div class="phone-small">Space: open the newest link.</div>';
       el('phoneMsgs').innerHTML = html || '<div class="empty">No messages.</div>';
       el('phoneMsgs').scrollTop = 1e6;
     }
@@ -266,7 +314,7 @@
       el('phoneApps').innerHTML = APPS.map(function (a, i) {
         return '<span class="' + (a === app ? 'on' : '') + '">' + (i + 1) + ' ' + APP_LABELS[a] + '</span>';
       }).join('');
-      ['home', 'petcam', 'photos', 'flappy', 'music'].forEach(function (a) {
+      ['home', 'petcam', 'photos', 'flappy', 'music', 'calls'].forEach(function (a) {
         el('app' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('hidden', a !== app);
       });
       var camera = app === 'camera' && api.isOpen;
@@ -285,6 +333,11 @@
         }).join('');
       }
       if (app === 'flappy' && flappy) drawFlappy();
+      if (app === 'calls') {
+        el('contactList').innerHTML = contacts.length
+          ? contacts.map(function (c, i) { return '<li class="' + (i === picked ? 'on' : '') + '">' + (i === picked ? '&#9654; ' : '') + esc(c.name) + '</li>'; }).join('')
+          : '<li class="empty">No one to call.</li>';
+      }
     }
 
     window.addEventListener('keydown', function (e) {
@@ -299,7 +352,11 @@
         return;
       }
       if (!api.isOpen || e.repeat) return;
-      if (/^Digit[1-6]$/.test(e.code)) api.app(APPS[Number(e.code.slice(5)) - 1]);
+      if (/^Digit[1-7]$/.test(e.code)) api.app(APPS[Number(e.code.slice(5)) - 1]);
+      else if (e.code === 'Enter' && app === 'calls') {
+        e.preventDefault();
+        api.call();
+      }
       else if (e.code === 'Space') {
         e.preventDefault();
         api.act();

@@ -259,6 +259,13 @@ body.sub-large #subtitle { font-size: clamp(17px, 3.3vmin, 34px); }
 #trackList { padding-left: 1.4em; margin: 4px 0; }
 #trackList li { margin: 6px 0; }
 #trackList li.on { color: #9fc3ff; }
+#contactList { list-style: none; padding: 0; margin: 4px 0; }
+#contactList li { margin: 8px 0; }
+#contactList li.on { color: #9fc3ff; }
+.bubble.link { color: #9fc3ff; text-decoration: underline; }
+#subtitle .who { color: #9fc3ff; }
+#subtitle .who.mine { color: #e8c89f; }
+.bubble.link.opened { color: #7d8da6; }
 #phone.camera-mode { display: none; }
 #phone.raised {
   z-index: 9; position: fixed; left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%);

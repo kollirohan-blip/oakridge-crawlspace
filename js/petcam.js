@@ -25,35 +25,74 @@
     var img = ctx.createImageData(W, H);
     var acc = 1;
     var label = '';
+    var FACING = new THREE.Vector3(21.9, 0.3, 6.3); // Cooper's bed
+    var WALL = new THREE.Vector3(25.9, 1.6, -2); // the corner: what it saw after someone turned it
+    var turned = 0; // 0 facing the room .. 1 facing the wall
+    var clip = null; // { t, label }
+    function aim() {
+      var at = FACING.clone().lerp(WALL, turned);
+      cam.lookAt(at);
+    }
 
     var api = {
       canvas: canvas,
       on: false,
       frames: 0,
       lastBrightness: 0,
+      // turned to face the wall (Day 2), or back
+      setTurned: function (v) {
+        turned = v ? 1 : 0;
+        aim();
+      },
+      turned: function () {
+        return turned > 0.5;
+      },
+      // play a saved clip: the camera being turned slowly to the wall, at this time of night
+      playClip: function (timeLabel) {
+        clip = { t: 0, label: timeLabel };
+        turned = 0;
+        aim();
+      },
+      playingClip: function () {
+        return !!clip;
+      },
       update: function (dt, clockLabel) {
         label = clockLabel || label;
+        if (clip) {
+          clip.t += dt;
+          turned = Math.min(1, Math.max(0, (clip.t - 1.5) / 6));
+          aim();
+          label = clip.label;
+          if (clip.t > 9) clip = null;
+        }
         if (!api.on) return;
         acc += dt;
         if (acc < 1 / FPS) return;
         acc = 0;
         api.renderNow();
       },
+      gain: 2.2, // how hard the night vision boosts the picture (lower in daylight)
+      beforeRender: null, // (isClip) a hook to change the scene for the camera alone (a night clip by day)
+      afterRender: null,
       renderNow: function () {
         var renderer = r.renderer;
+        var isClip = !!clip;
+        if (api.beforeRender) api.beforeRender(isClip);
+        var boost = isClip && api.clipGain ? api.clipGain : api.gain;
         ir.intensity = 1.3;
         renderer.setRenderTarget(rt);
         renderer.render(r.scene, cam);
         renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf);
         renderer.setRenderTarget(null);
         ir.intensity = 0;
+        if (api.afterRender) api.afterRender(isClip);
         var d = img.data;
         var total = 0;
         for (var y = 0; y < H; y++) {
           var src = (H - 1 - y) * W * 4; // the target is upside down
           for (var x = 0; x < W; x++) {
             var i = src + x * 4;
-            var lum = (buf[i] * 0.3 + buf[i + 1] * 0.59 + buf[i + 2] * 0.11) * 2.2 + 12 + (Math.random() - 0.5) * 22;
+            var lum = (buf[i] * 0.3 + buf[i + 1] * 0.59 + buf[i + 2] * 0.11) * boost + 12 + (Math.random() - 0.5) * 22;
             lum = Math.max(0, Math.min(255, lum));
             var o = (y * W + x) * 4;
             d[o] = lum * 0.72;
@@ -69,7 +108,7 @@
         ctx.fillText('LIVING ROOM', 4, 9);
         ctx.fillText(label, W - 4 - ctx.measureText(label).width, 9);
         ctx.fillStyle = '#ff4a3a';
-        ctx.fillText('● LIVE', 4, H - 4);
+        ctx.fillText(clip ? '▶ SAVED CLIP' : '● LIVE', 4, H - 4);
         api.lastBrightness = total / (W * H);
         api.frames++;
       },

@@ -235,7 +235,155 @@
       },
     };
 
+    // the pet cam itself, on top of the bookshelf
+    var camDev = new THREE.Group();
+    camDev.position.set(25.74, 1.96, 1.2);
+    scene.add(camDev);
+    mesh(new THREE.BoxGeometry(0.3, 0.02, 0.3), new THREE.MeshPhongMaterial({ color: 0x6b4a2e, specular: 0 }), 0.02, -0.01, 0, camDev); // a little wall shelf
+    mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshPhongMaterial({ color: 0xd8d8d8, specular: 0 }), 0, 0.05, 0, camDev);
+    mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.02, 8), basic(0x111111), -0.04, 0.06, 0.04, camDev).rotation.z = Math.PI / 2;
+    mesh(new THREE.BoxGeometry(0.012, 0.012, 0.01), basic(0x3aff6a), -0.05, 0.09, -0.03, camDev);
+    var petcamDevice = {
+      at: { x: 25.74, y: 2.0, z: 1.2 },
+      turn: function (toWall) {
+        camDev.rotation.y = toWall ? -2.2 : 0.62;
+      },
+    };
+    petcamDevice.turn(false);
+
+    // ---- pencil marks on the guest closet's door frame: WES 6 to WES 15, and one fresh line ----------
+    function marksTexture(fresh) {
+      var c = document.createElement('canvas');
+      c.width = 96;
+      c.height = 1024;
+      var g = c.getContext('2d');
+      var PX = 1024 / 1.5; // the plane runs from 0.6 m to 2.1 m
+      function y(h) {
+        return (2.1 - h) * PX;
+      }
+      if (!fresh) {
+        var H = [1.16, 1.22, 1.28, 1.33, 1.39, 1.45, 1.52, 1.6, 1.68, 1.75];
+        H.forEach(function (h, i) {
+          g.strokeStyle = 'rgba(70,66,60,' + (0.35 + i * 0.03) + ')';
+          g.lineWidth = 3;
+          g.beginPath();
+          g.moveTo(4, y(h));
+          g.lineTo(44, y(h) + (i % 2 ? 1 : -1));
+          g.stroke();
+          g.fillStyle = 'rgba(70,66,60,0.55)';
+          g.font = '15px monospace';
+          g.fillText('WES ' + (6 + i), 46, y(h) + 5);
+        });
+      } else {
+        g.strokeStyle = 'rgba(30,28,26,0.95)';
+        g.lineWidth = 4;
+        g.beginPath();
+        g.moveTo(2, y(1.96));
+        g.lineTo(52, y(1.96) - 2);
+        g.stroke();
+        g.fillStyle = 'rgba(30,28,26,0.95)';
+        g.font = 'bold 15px monospace';
+        g.fillText('WES,', 52, y(1.96) - 4);
+        g.fillText('home', 52, y(1.96) + 13);
+      }
+      var t = new THREE.CanvasTexture(c);
+      t.magFilter = THREE.LinearFilter;
+      return t;
+    }
+    function marksPlane(fresh, x) {
+      var m = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.15, 1.5),
+        new THREE.MeshPhongMaterial({ map: marksTexture(fresh), transparent: true, specular: 0, depthWrite: false })
+      );
+      m.position.set(x, 1.35, 17.74);
+      m.rotation.y = Math.PI / 2; // on the closet's side, by its front corner, facing the room
+      scene.add(m);
+      return m;
+    }
+    marksPlane(false, 1.904);
+    var freshMark = marksPlane(true, 1.906);
+    var growth = {
+      at: { x: 1.95, y: 1.45, z: 17.74 },
+      setFresh: function (v) {
+        freshMark.visible = !!v;
+      },
+    };
+
+    // ---- the shed: a team photo and a yearbook on the workbench, and Cooper's food bag ---------------
+    function canvasTex(w, h, draw) {
+      var c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      draw(c.getContext('2d'));
+      var t = new THREE.CanvasTexture(c);
+      t.magFilter = THREE.NearestFilter;
+      return t;
+    }
+    var lit = function (color) {
+      return new THREE.MeshPhongMaterial({ color: color, specular: 0 });
+    };
+    var teamPhoto = canvasTex(64, 48, function (g) {
+      g.fillStyle = '#e8e2d0';
+      g.fillRect(0, 0, 64, 48);
+      g.fillStyle = '#7d9a5a';
+      g.fillRect(3, 26, 58, 19);
+      g.fillStyle = '#9ab3c9';
+      g.fillRect(3, 3, 58, 23);
+      for (var row = 0; row < 2; row++) {
+        for (var i = 0; i < 7; i++) {
+          var x = 7 + i * 8 + row * 3;
+          var yy = 20 + row * 8;
+          g.fillStyle = '#d9b08c';
+          g.fillRect(x, yy, 4, 4);
+          g.fillStyle = '#26324f';
+          g.fillRect(x - 1, yy + 4, 6, 6);
+        }
+      }
+      g.strokeStyle = '#c0281e';
+      g.beginPath();
+      g.arc(13, 22, 5, 0, Math.PI * 2);
+      g.stroke();
+    });
+    var photoMesh = mesh(new THREE.BoxGeometry(0.22, 0.012, 0.17), [lit(0x5a3e28), lit(0x5a3e28), new THREE.MeshPhongMaterial({ map: teamPhoto, specular: 0 }), lit(0x5a3e28), lit(0x5a3e28), lit(0x5a3e28)], 29.05, 0.906, -5.25);
+    photoMesh.rotation.y = 0.2;
+    var bookTop = canvasTex(32, 40, function (g) {
+      g.fillStyle = '#5c1d1d';
+      g.fillRect(0, 0, 32, 40);
+      g.fillStyle = '#c9a94a';
+      g.font = '7px monospace';
+      g.fillText('OAKRIDGE', 1, 14);
+      g.fillText('  1999', 1, 26);
+    });
+    var book = mesh(new THREE.BoxGeometry(0.22, 0.035, 0.28), [lit(0x4a1717), lit(0x4a1717), new THREE.MeshPhongMaterial({ map: bookTop, specular: 0 }), lit(0x4a1717), lit(0xe0dccf), lit(0x4a1717)], 29.05, 0.918, -4.62);
+    book.rotation.y = -0.15;
+    var kibbleBag = new THREE.Group();
+    kibbleBag.position.set(26.35, 0, -4.15);
+    kibbleBag.rotation.y = 0.4;
+    scene.add(kibbleBag);
+    var bagLabel = canvasTex(32, 32, function (g) {
+      g.fillStyle = '#b8955e';
+      g.fillRect(0, 0, 32, 32);
+      g.fillStyle = '#7a2a1d';
+      g.fillRect(2, 8, 28, 12);
+      g.fillStyle = '#f0e2c0';
+      g.font = '6px monospace';
+      g.fillText('CHAMP', 4, 16);
+    });
+    var kraft = lit(0xb8955e);
+    mesh(new THREE.BoxGeometry(0.36, 0.3, 0.16), [kraft, kraft, kraft, kraft, new THREE.MeshPhongMaterial({ map: bagLabel, specular: 0 }), kraft], 0, 0.15, 0, kibbleBag);
+    mesh(new THREE.BoxGeometry(0.36, 0.06, 0.1), lit(0x9a7a48), 0, 0.33, 0, kibbleBag); // the top, rolled down neat
+    var shed = {
+      photo: { x: 29.05, y: 0.95, z: -5.25 },
+      yearbook: { x: 29.05, y: 0.95, z: -4.62 },
+      hook: { x: 27.07, y: 1.4, z: -7.36 },
+      boxes: { x: 28.85, y: 1.0, z: -6.95 },
+      kibble: { x: 26.35, y: 0.3, z: -4.15 },
+    };
+
     var api = {
+      petcamDevice: petcamDevice,
+      growth: growth,
+      shed: shed,
       vent: vent,
       stoveGlow: function (v) {
         ovenGlow.visible = !!v;
@@ -294,6 +442,8 @@
         blinkT = 0;
         treeLightMesh.visible = false;
         vent.set('loose');
+        growth.setFresh(true); // it was there all along; Mason only notices it on Day 2
+        petcamDevice.turn(false);
       },
       update: function (dt) {
         ball.update(dt);

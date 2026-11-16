@@ -80,6 +80,27 @@ test('a texture the model points to outside itself is packed inside it', () => {
   assert.equal(out.bin.length % 4, 0);
 });
 
+test('models in a subfolder are named folder-name, and their textures come from their own folder', () => {
+  const ref = (png) => glb(
+    { asset: { version: '2.0' }, buffers: [{ byteLength: 0 }], bufferViews: [], images: [{ uri: 'Textures/colormap.png' }] }
+  );
+  const d = tmpDir({ 'chair.glb': fakeGlb('c') });
+  for (const kit of ['food', 'car']) {
+    fs.mkdirSync(path.join(d, kit, 'Textures'), { recursive: true });
+    fs.writeFileSync(path.join(d, kit, 'thing.glb'), ref());
+    fs.writeFileSync(path.join(d, kit, 'Textures', 'colormap.png'), Buffer.from(kit === 'food' ? [1, 1, 1, 1] : [2, 2, 2, 2]));
+  }
+  const data = parseEmbedded(embed(d));
+  assert.deepEqual(Object.keys(data).sort(), ['car-thing', 'chair', 'food-thing']);
+  const imgOf = (buf) => {
+    const c = chunks(buf);
+    const v = c.json.bufferViews[c.json.images[0].bufferView];
+    return [...c.bin.slice(v.byteOffset, v.byteOffset + v.byteLength)];
+  };
+  assert.deepEqual(imgOf(data['food-thing']), [1, 1, 1, 1]);
+  assert.deepEqual(imgOf(data['car-thing']), [2, 2, 2, 2]);
+});
+
 test('a texture that is missing is an error naming it', () => {
   const model = glb({ asset: { version: '2.0' }, buffers: [{ byteLength: 0 }], bufferViews: [], images: [{ uri: 'Textures/gone.png' }] });
   const d = tmpDir({ 'food.glb': model });

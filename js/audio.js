@@ -480,6 +480,61 @@
       burst(c, out, t, { type: 'bandpass', freq: 1800, q: 3, peak: 0.6, decay: 0.025 });
       tone(c, out, t, { freq: 240, to: 120, peak: 0.12, decay: 0.05 });
     },
+    // the car running: a low engine drone and road noise under it, while driving
+    engine: function (c, out) {
+      var a = osc(c, 'sawtooth', 46);
+      var b = osc(c, 'square', 23);
+      var f = filt(c, 'lowpass', 260);
+      var g = gain(c, 0.09);
+      var road = noise(c);
+      road.loop = true;
+      var rf = filt(c, 'lowpass', 420);
+      var rg = gain(c, 0.12);
+      a.connect(f);
+      b.connect(f);
+      f.connect(g).connect(out);
+      road.connect(rf).connect(rg).connect(out);
+      [a, b, road].forEach(function (n) { n.start(); });
+      return { stop: function () { [a, b, road].forEach(function (n) { try { n.stop(); } catch (e) {} }); } };
+    },
+    // a phone ringing on the other end, twice, before they pick up
+    ring: function (c, out, o, t) {
+      for (var i = 0; i < 2; i++) {
+        tone(c, out, t + i * 1.4, { freq: 440, peak: 0.05, attack: 0.02, decay: 0.9 });
+        tone(c, out, t + i * 1.4, { freq: 480, peak: 0.05, attack: 0.02, decay: 0.9 });
+      }
+    },
+    // the shop door's chime
+    chime: function (c, out, o, t) {
+      tone(c, out, t, { freq: 1318, peak: 0.12, attack: 0.003, decay: 0.7 });
+      tone(c, out, t + 0.28, { freq: 1046, peak: 0.12, attack: 0.003, decay: 0.9 });
+    },
+    // tyres skidding on the road
+    brakes: function (c, out, o, t) {
+      var s = noise(c);
+      var f = filt(c, 'bandpass', 1300);
+      f.Q.value = 4;
+      var g = gain(c, 0);
+      s.connect(f).connect(g).connect(out);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.32, t + 0.08);
+      g.gain.linearRampToValueAtTime(0.22, t + 1.0);
+      g.gain.linearRampToValueAtTime(0, t + 1.4);
+      f.frequency.setValueAtTime(1500, t);
+      f.frequency.linearRampToValueAtTime(900, t + 1.4);
+      s.start(t);
+      s.stop(t + 1.5);
+    },
+    // the car radio between stations: a thin hiss under the talk show
+    radio: function (c, out) {
+      var s = noise(c);
+      s.loop = true;
+      var f = filt(c, 'bandpass', 2400);
+      var g = gain(c, 0.025);
+      s.connect(f).connect(g).connect(out);
+      s.start();
+      return { stop: function () { try { s.stop(); } catch (e) {} } };
+    },
     // Ethan's mixtape: three cheap loops (opts.track 0..2)
     mixtape: function (c, out, o) {
       var T = MIXTAPE[o.track || 0];

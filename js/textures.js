@@ -192,6 +192,30 @@
       g.fillStyle = '#3a3a3e';
       g.fillRect(0, 0, w, h);
     },
+    // the road to town
+    asphalt: function (g, w, h, r) {
+      g.fillStyle = '#2b2c2e';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 700, 0.18);
+    },
+    stripe: function (g, w, h) {
+      g.fillStyle = '#b8a24a';
+      g.fillRect(0, 0, w, h);
+    },
+    // the Gas-N-Go bulletin board
+    cork: function (g, w, h, r) {
+      g.fillStyle = '#8a6a44';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 600, 0.3);
+    },
+    shopfloor: function (g, w, h, r) {
+      g.fillStyle = '#bdb8aa';
+      g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(0,0,0,0.12)';
+      g.fillRect(0, 0, w, 2);
+      g.fillRect(0, 0, 2, h);
+      speckle(g, w, h, r, 200, 0.12);
+    },
     // the blinds in Dave's bedroom windows
     blinds: function (g, w, h, r) {
       g.fillStyle = '#8a7f6a';

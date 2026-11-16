@@ -63,6 +63,11 @@
       <ol id="trackList"></ol>
       <div class="phone-small">Space or click: next track. "these are BANGERS. no skips" - Ethan</div>
     </div>
+    <div class="phone-body hidden" id="appCalls">
+      <div class="phone-section">CALLS</div>
+      <ul id="contactList"></ul>
+      <div class="phone-small">Space or click: next contact. Enter: call.</div>
+    </div>
     <div class="phone-hint">Tab to put it away</div>
   </div>
   <div id="call" class="hidden"><div class="call-label">ON CALL</div><div id="callName"></div><div id="callLines"></div></div>
@@ -110,6 +115,7 @@
     <h2>CHAPTERS</h2>
     <div class="menu-items">
       <button data-chapter="act1">Night 1: Arrival</button>
+      <button data-chapter="day2">Day 2: Daylight</button>
       <button data-chapter="act2">Night 2: The deadbolt</button>
       <button data-chapter="act3">12:30 AM: The closet</button>
       <button data-chapter="act4">12:35 AM: The car</button>
@@ -178,10 +184,12 @@
 <script src="js/engine/food.js"></script>
 <script src="js/engine/tvSchedule.js"></script>
 <script src="js/engine/flappy.js"></script>
+<script src="js/engine/dialogue.js"></script>
 <script src="content/house.js"></script>
 <script src="content/text.js"></script>
 <script src="content/scares.js"></script>
 <script src="content/tv.js"></script>
+<script src="content/talks.js"></script>
 <script src="content/models.js"></script>
 <script src="js/models.js"></script>
 <script src="js/textures.js"></script>
@@ -193,13 +201,16 @@
 <script src="js/controller.js"></script>
 <script src="js/world.js"></script>
 <script src="js/wes.js"></script>
+<script src="js/person.js"></script>
 <script src="js/props.js"></script>
 <script src="js/decor.js"></script>
+<script src="js/places.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/petcam.js"></script>
 <script src="js/mirror.js"></script>
 <script src="js/cooper.js"></script>
 <script src="js/interact.js"></script>
+<script src="js/talk.js"></script>
 <script src="js/night1/dinner.js"></script>
 <script src="js/night1/cooperPlay.js"></script>
 <script src="js/night1/chores.js"></script>
@@ -207,6 +218,11 @@
 <script src="js/night1/tv.js"></script>
 <script src="js/night1/dread.js"></script>
 <script src="js/acts/act1.js"></script>
+<script src="js/day2/morning.js"></script>
+<script src="js/day2/deputy.js"></script>
+<script src="js/day2/lore.js"></script>
+<script src="js/day2/trip.js"></script>
+<script src="js/acts/day2.js"></script>
 <script src="js/acts/act2.js"></script>
 <script src="js/acts/act3.js"></script>
 <script src="js/acts/act4.js"></script>

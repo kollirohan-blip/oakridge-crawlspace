@@ -32,6 +32,11 @@
       finished: function () {
         return t >= opts.durationSec;
       },
+      // start a new stretch of the day (Day 2 jumps from morning to afternoon to dusk)
+      jump: function (next) {
+        opts = next;
+        t = 0;
+      },
     };
   }
 
