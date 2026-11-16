@@ -67,12 +67,25 @@
     };
 
     // read a note full screen; Mason stands still while he reads, then carries on
-    g.read = function (title, body) {
+    g.read = function (title, body, onClose, opts) {
       var wasFrozen = ctl.frozen;
       ctl.frozen = true;
       OC.hud.read(title, body, function () {
         ctl.frozen = wasFrozen;
-      });
+        if (onClose) onClose();
+      }, opts);
+    };
+
+    // the phone's camera and the pet cam
+    g.camera = OC.camera.create(g, r);
+    g.petcam = OC.petcam.create(r);
+    phone.setPetcamCanvas(g.petcam.canvas);
+    phone.onShoot = function () {
+      return g.camera.shoot();
+    };
+    phone.onMusic = function (track) {
+      if (g.state.music) g.state.music.stop();
+      g.state.music = track >= 0 && g.audio ? g.audio.play('mixtape', { track: track }) : null;
     };
 
     var current = { id: null, def: null, act: null };
@@ -242,6 +255,9 @@
       interact.suspend(phone.isOpen || phone.choosing() || g.state.cutscene || OC.hud.isReading());
       interact.update(dt);
       if (ctl.locked) phone.update(dt); // a timed choice must not run out while the game is paused
+      g.camera.update(dt);
+      g.petcam.on = g.state.petcamForce || (phone.isOpen && phone.currentApp() === 'petcam');
+      g.petcam.update(dt, g.clock ? g.clock.label() : '');
       props.update(dt);
       cooper.update(dt);
       if (current.act) current.act.update(dt);
@@ -283,6 +299,26 @@
         step = step || 0.05;
         for (var t = 0; t < seconds - 1e-9; t += step) tick(step);
         r.render();
+      },
+      // open the phone on an app ('home', 'camera', 'petcam', 'photos', 'flappy', 'music'), or close it
+      phoneApp: function (name) {
+        if (!name) return phone.close();
+        if (!phone.isOpen) phone.open();
+        phone.app(name);
+      },
+      shoot: function () {
+        return g.camera.shoot();
+      },
+      // answer the open choice, 1-based
+      choose: function (n) {
+        phone.answer(n);
+      },
+      // turn to look at a point
+      aim: function (x, y, z) {
+        var dx = x - ctl.pos.x;
+        var dz = z - ctl.pos.z;
+        ctl.yaw = Math.atan2(-dx, -dz);
+        ctl.pitch = Math.atan2(y - r.camera.position.y, Math.hypot(dx, dz));
       },
       goto: function (name, yaw) {
         var s = OC.house.stand[name];

@@ -86,10 +86,27 @@
     },
     // Read something (a note, a letter, a clipping) full screen until the player closes it with E,
     // Space or Esc. onClose runs once it is put away.
-    read: function (title, body, onClose) {
+    // closed captions from the TV (null hides them); alert: the red emergency style
+    cc: function (text, alert) {
+      var c = el('cc');
+      if (!text) {
+        c.classList.remove('on');
+        return;
+      }
+      if (c.textContent !== text) c.textContent = text;
+      c.classList.add('on');
+      c.classList.toggle('alert', !!alert);
+    },
+    // the microwave keypad: open with what the display shows, or closed
+    keypad: function (open, display) {
+      el('keypad').classList.toggle('on', !!open);
+      if (display !== undefined) el('kpDisplay').textContent = display;
+    },
+    read: function (title, body, onClose, opts) {
       var r = el('reader');
       el('readerTitle').textContent = title || '';
       el('readerBody').textContent = body;
+      r.classList.toggle('shaky', !!(opts && opts.shaky));
       r.classList.add('on');
       reading = true;
       var armed = false;

@@ -242,3 +242,61 @@ body.sub-large #subtitle { font-size: clamp(17px, 3.3vmin, 34px); }
   font-size: clamp(13px, 2vmin, 20px); text-align: left; align-items: flex-start;
 }
 #error-panel[hidden] { display: none; }
+
+/* ---- night one ---------------------------------------------------------------------------------- */
+/* phone apps */
+.phone-apps { display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 0.78em; color: #5d636c; margin-bottom: 6px; }
+.phone-apps span.on { color: #9fc3ff; }
+.phone-body.hidden { display: none; }
+.phone-line { color: #b7bcc4; margin: 3px 0; font-size: 0.92em; }
+.phone-small { color: #5d636c; font-size: 0.82em; margin-top: 8px; line-height: 1.35; }
+#petcamWrap canvas, #flappyCanvas { width: 100%; image-rendering: pixelated; border-radius: 6px; display: block; }
+#flappyCanvas { width: 70%; margin: 0 auto; }
+#photoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; overflow-y: auto; }
+#photoGrid figure { margin: 0; }
+#photoGrid img { width: 100%; image-rendering: pixelated; display: block; border-radius: 4px; }
+#photoGrid figcaption { color: #5d636c; font-size: 0.75em; }
+#trackList { padding-left: 1.4em; margin: 4px 0; }
+#trackList li { margin: 6px 0; }
+#trackList li.on { color: #9fc3ff; }
+#phone.camera-mode { display: none; }
+#phone.raised {
+  z-index: 9; position: fixed; left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%);
+  width: min(70vw, 560px); height: auto; padding-bottom: 16px;
+}
+body.at-title #phone.raised { display: none; }
+/* the camera viewfinder */
+#viewfinder { position: absolute; inset: 8vmin 10vmin; pointer-events: none; }
+#viewfinder.hidden { display: none; }
+.vf-corner { position: absolute; width: 6vmin; height: 6vmin; border: 2px solid rgba(255,255,255,0.75); }
+.vf-corner.tl { left: 0; top: 0; border-right: none; border-bottom: none; }
+.vf-corner.tr { right: 0; top: 0; border-left: none; border-bottom: none; }
+.vf-corner.bl { left: 0; bottom: 0; border-right: none; border-top: none; }
+.vf-corner.br { right: 0; bottom: 0; border-left: none; border-top: none; }
+.vf-label { position: absolute; top: 2vmin; left: 50%; transform: translateX(-50%); letter-spacing: 0.25em; font-size: clamp(11px, 1.8vmin, 16px); }
+.vf-hint { position: absolute; bottom: 2vmin; left: 50%; transform: translateX(-50%); white-space: nowrap; color: var(--dim); font-size: clamp(11px, 1.7vmin, 15px); }
+#vfReview { position: fixed; right: 3vmin; bottom: 3vmin; width: min(30vw, 300px); border: 3px solid #e8e6df; opacity: 0; transition: opacity .25s; image-rendering: pixelated; }
+#vfReview.on { opacity: 1; }
+#flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 11; }
+#flash.on { animation: flash 0.5s ease-out; }
+@keyframes flash { 0% { opacity: 0.95; } 100% { opacity: 0; } }
+/* closed captions on the TV */
+#cc {
+  position: absolute; left: 50%; top: 14vmin; transform: translateX(-50%); max-width: min(80vw, 760px);
+  background: rgba(0,0,0,0.85); color: #f2f2f2; padding: 4px 10px; font-size: clamp(13px, 2.1vmin, 20px);
+  line-height: 1.35; text-shadow: none; display: none; text-align: center;
+}
+#cc.on { display: block; }
+#cc.alert { background: #8d1010; color: #fff; letter-spacing: 0.04em; }
+/* the microwave keypad */
+#keypad {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(70vw, 420px);
+  background: rgba(10,12,14,0.94); border: 2px solid #3a3d42; border-radius: 10px; padding: 16px 20px;
+  text-align: center; display: none; text-shadow: none;
+}
+#keypad.on { display: block; }
+.kp-title { color: var(--dim); letter-spacing: 0.3em; font-size: clamp(11px, 1.7vmin, 15px); }
+#kpDisplay { font-size: clamp(36px, 8vmin, 72px); color: #4cff7a; letter-spacing: 0.1em; margin: 8px 0; text-shadow: 0 0 10px rgba(76,255,122,0.5); }
+.kp-hint { color: var(--dim); font-size: clamp(11px, 1.7vmin, 15px); line-height: 1.4; }
+/* Dave's handwriting, and the note that is not quite his */
+#reader.shaky .paper { font-family: "Segoe Script", "Bradley Hand", cursive; transform: rotate(1.6deg); background-color: #efe7a8; }

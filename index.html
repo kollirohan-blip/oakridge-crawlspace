@@ -22,13 +22,46 @@
   <div id="battery"><div id="batteryFill"></div><span id="batteryLabel">LIGHT</span></div>
   <div id="noise"><span>STAY QUIET</span><div id="noiseBar"><div id="noiseFill"></div></div></div>
   <div id="notif"></div>
+  <div id="cc"></div>
+  <div id="keypad">
+    <div class="kp-title">MICROWAVE</div>
+    <div id="kpDisplay">0:00</div>
+    <div class="kp-hint">Type the time on the number keys (2 3 0 is 2:30). Enter starts it. Backspace fixes it. E cancels.</div>
+  </div>
+  <div id="viewfinder" class="hidden">
+    <div class="vf-corner tl"></div><div class="vf-corner tr"></div><div class="vf-corner bl"></div><div class="vf-corner br"></div>
+    <div class="vf-label">PHOTO &middot; FLASH ON</div>
+    <div class="vf-hint">Click or Space: take a photo &nbsp;&middot;&nbsp; 1: home &nbsp;&middot;&nbsp; Tab: put it away</div>
+    <img id="vfReview" alt="">
+  </div>
   <div id="phone" class="hidden">
     <div class="phone-top"><span id="phoneTime"></span><span id="phoneBatt"></span></div>
-    <div class="phone-body">
+    <div class="phone-apps" id="phoneApps"></div>
+    <div class="phone-body" id="appHome">
       <div class="phone-section">TO DO</div>
       <ul id="phoneTasks"></ul>
+      <div id="phoneExtras"></div>
       <div class="phone-section">MESSAGES</div>
       <div id="phoneMsgs"></div>
+    </div>
+    <div class="phone-body hidden" id="appPetcam">
+      <div class="phone-section">PET CAM</div>
+      <div id="petcamWrap"></div>
+      <div class="phone-small">Cooper's camera, in the living room corner. It sends an alert when something moves.</div>
+    </div>
+    <div class="phone-body hidden" id="appPhotos">
+      <div class="phone-section">PHOTOS</div>
+      <div id="photoGrid"></div>
+    </div>
+    <div class="phone-body hidden" id="appFlappy">
+      <div class="phone-section">FLAPPY COOPER</div>
+      <canvas id="flappyCanvas" width="120" height="180"></canvas>
+      <div class="phone-small">Space or click to flap.</div>
+    </div>
+    <div class="phone-body hidden" id="appMusic">
+      <div class="phone-section">ETHAN'S MIXTAPE VOL. 3</div>
+      <ol id="trackList"></ol>
+      <div class="phone-small">Space or click: next track. "these are BANGERS. no skips" - Ethan</div>
     </div>
     <div class="phone-hint">Tab to put it away</div>
   </div>
@@ -40,6 +73,7 @@
   </div>
 </div>
 
+<div id="flash"></div>
 <div id="fade"><div id="fadeText"></div></div>
 
 <div id="reader"><div class="paper"><div id="readerTitle"></div><div id="readerBody"></div></div><div class="reader-hint">E to put it down</div></div>
@@ -142,6 +176,7 @@
 <script src="js/engine/scarePool.js"></script>
 <script src="js/engine/food.js"></script>
 <script src="js/engine/tvSchedule.js"></script>
+<script src="js/engine/flappy.js"></script>
 <script src="content/house.js"></script>
 <script src="content/text.js"></script>
 <script src="content/scares.js"></script>
@@ -156,6 +191,8 @@
 <script src="js/world.js"></script>
 <script src="js/props.js"></script>
 <script src="js/decor.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/petcam.js"></script>
 <script src="js/cooper.js"></script>
 <script src="js/interact.js"></script>
 <script src="js/acts/act1.js"></script>
