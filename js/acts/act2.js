@@ -55,6 +55,7 @@
       props.master.setStage('off');
       props.car.fixWindow();
       cooper.setPos(20.2, 6.5);
+      cooper.follow(); // clear any errand left over from the last act, so the stare takes
       cooper.stare(SLIDER);
       if (ctl.nav) ctl.nav.rebuild();
       tension(0.25);

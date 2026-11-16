@@ -53,6 +53,7 @@
       him.crouch = 0;
       him.raise = 0;
       cooper.setPos(6.2, 13.5); // shut out in the hall, out of the way
+      cooper.follow();
       cooper.stare({ x: 2.5, y: 1, z: 16 });
       if (ctl.nav) ctl.nav.rebuild();
       ctl.sprintAllowed = false;

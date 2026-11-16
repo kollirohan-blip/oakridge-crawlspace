@@ -22,5 +22,18 @@ submitting a frame, not how long the Vivobook's GPU takes to draw it. A real fra
 has not been measured. The scene is small (a couple of thousand triangles, low internal resolution),
 so it should be comfortable, but that is a judgment, not a measurement. Check it once by playing.
 
+## Finished game (2026-11-15)
+
+Same setup. Draw calls with all props, Cooper, the car and the intruder in the scene:
+
+| Scene | Draw calls |
+|---|---|
+| Act 1, living room / kitchen | 23 to 44 |
+| Act 2, the driveway (trees, car, house) | about 96 |
+| Act 2, laundry room | 28 |
+
+Still far below what integrated graphics struggle with. Path-finding for Cooper and the intruder takes
+about 3.5 ms per route across the whole house, and only runs a couple of times a second.
+
 To see your own numbers: open the game, click to play, open the browser console and run
 `OC.debug.stats()`.

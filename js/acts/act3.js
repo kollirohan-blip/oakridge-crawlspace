@@ -66,6 +66,7 @@
       props.car.headlights(false);
       if (ctl.nav) ctl.nav.rebuild();
       cooper.setPos(4.0, 16.4);
+      cooper.follow();
       cooper.stare(EYE);
       ctl.light.on = false;
       ctl.seat(1.6, 15.7, -Math.PI / 2, -0.5);
