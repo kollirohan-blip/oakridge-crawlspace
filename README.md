@@ -26,9 +26,8 @@ hatch actually is.
 The game saves a checkpoint at the start of each act. Reopening it continues from there; press **N**
 on the start screen to start over.
 
-**Internet:** the 3D library (Three.js r128) loads from a CDN. To play fully offline, save
-`https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js` as `vendor/three.min.js`; the game
-uses the local copy when it is there.
+**No internet needed:** the 3D library (Three.js r128, MIT licence) is included as
+`vendor/three.min.js`. If that file is ever missing, the game falls back to loading it from cdnjs.
 
 ## What is in it
 
