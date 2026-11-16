@@ -96,12 +96,13 @@
             { id: 'intro', when: function (s) { return s.elapsed > 1.5; }, do: function () { hud.say(t('act2.vo.open'), 10000); } },
             {
               id: 'inside',
-              when: function (s) { return s.room === 'foyer'; },
+              // wait until Mason is properly inside, clear of the door, before it shuts behind him
+              when: function (s) { return s.room === 'foyer' && ctl.pos.z > 0.75; },
               do: function () {
                 flags.insideAt = flags.elapsed;
                 director.complete('inside');
                 // Mason locks up behind himself
-                props.frontDoor.close();
+                props.frontDoor.close(ctl.pos);
                 flags.doorOpen = false;
                 if (ctl.nav) ctl.nav.rebuild();
                 sfx('doorLock', { pos: { x: 2.5, y: 1, z: 0 } });

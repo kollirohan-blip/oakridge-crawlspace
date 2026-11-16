@@ -81,7 +81,7 @@
       box(0.06, 0.06, 0.1, 'metal', 0.92, 1.0, 0, hinge); // knob
       box(0.05, 0.12, 0.08, 'metal', 0.92, 1.18, 0, hinge); // deadbolt
       var wall = { x0: 1.95, x1: 3.05, z0: -0.06, z1: 0.06, y0: 0, y1: 2.15, kind: 'door' };
-      world.boxes.push(wall);
+      var door = OC.doors.createDoor({ box: wall, boxes: world.boxes, closed: true });
       var target = 0;
       var api = {
         isOpen: false,
@@ -89,14 +89,15 @@
           if (api.isOpen) return;
           api.isOpen = true;
           target = -1.5;
-          var i = world.boxes.indexOf(wall);
-          if (i >= 0) world.boxes.splice(i, 1);
+          door.open();
         },
-        close: function () {
-          if (!api.isOpen) return;
+        // pass the player's position: the door will not close on them (returns false if it can't)
+        close: function (playerPos) {
+          if (!api.isOpen) return true;
+          if (!door.close(playerPos)) return false;
           api.isOpen = false;
           target = 0;
-          if (world.boxes.indexOf(wall) < 0) world.boxes.push(wall);
+          return true;
         },
         update: function (dt) {
           hinge.rotation.y += (target - hinge.rotation.y) * Math.min(1, dt * 4);
@@ -428,24 +429,26 @@
       box(0.04, 2.05, 0.9, 'door', 0, 1.025, 0.45, hinge);
       box(0.12, 0.06, 0.06, 'metal', 0, 1.0, 0.8, hinge);
       var wall = { x0: 4.94, x1: 5.06, z0: 21.05, z1: 21.95, y0: 0, y1: 2.1, kind: 'door' };
+      var door = OC.doors.createDoor({ box: wall, boxes: world.boxes, closed: false });
       var OPEN = -Math.PI / 2;
       var target = OPEN;
       var speed = 5;
       hinge.rotation.y = OPEN;
       var api = {
         closed: false,
-        close: function () {
+        // pass the player's position: the door will not close on them (returns false if it can't)
+        close: function (playerPos) {
+          if (!door.close(playerPos)) return false;
           api.closed = true;
           target = 0;
           speed = 5;
-          if (world.boxes.indexOf(wall) < 0) world.boxes.push(wall);
+          return true;
         },
         open: function (fast) {
           api.closed = false;
           target = OPEN;
           speed = fast ? 14 : 5;
-          var i = world.boxes.indexOf(wall);
-          if (i >= 0) world.boxes.splice(i, 1);
+          door.open();
         },
         update: function (dt) {
           hinge.rotation.y += (target - hinge.rotation.y) * Math.min(1, dt * speed);

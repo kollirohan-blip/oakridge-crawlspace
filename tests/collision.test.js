@@ -32,6 +32,24 @@ test('diagonal move into an inside corner of a room stays inside the room', () =
   assert.ok(p.x > 0 && p.z > 0);
 });
 
+// A door closing on someone standing in the doorway (Act 2's front door did this) must not trap them.
+const door = [{ x0: 1.95, x1: 3.05, z0: -0.06, z1: 0.06, y0: 0, y1: 2.15, kind: 'door' }];
+
+test('a body caught overlapping a box can still walk out of it', () => {
+  const p = resolveMove({ x: 2.5, z: 0.05 }, { x: 0, z: 1.0 }, door, 0.28);
+  assert.ok(p.z > 1.0, `should have walked clear, stopped at z=${p.z.toFixed(2)}`);
+});
+
+test('a body caught overlapping a box can slide along it', () => {
+  const p = resolveMove({ x: 2.5, z: 0.2 }, { x: 0.5, z: 0 }, door, 0.28);
+  assert.ok(Math.abs(p.x - 3.0) < 1e-6, `should have slid sideways, x=${p.x.toFixed(2)}`);
+});
+
+test('a body caught overlapping a box cannot push deeper into it', () => {
+  const p = resolveMove({ x: 2.5, z: 0.2 }, { x: 0, z: -1.0 }, door, 0.28);
+  assert.ok(p.z >= 0.2 - 1e-9, `must not move into the door, got z=${p.z.toFixed(3)}`);
+});
+
 test('zero move returns the same position', () => {
   const p = resolveMove({ x: 1, z: 2 }, { x: 0, z: 0 }, wallAtX4, 0.3);
   assert.deepEqual(p, { x: 1, z: 2 });

@@ -245,8 +245,11 @@
           hold: 0.8,
           enabled: function () { return flags.phase === 'bath' && !flags.doorLocked; },
           onUse: function () {
+            if (!props.bathDoor.close(ctl.pos)) {
+              hud.toast('Step back from the door first');
+              return;
+            }
             flags.doorLocked = true;
-            props.bathDoor.close();
             sfx('doorLock', { pos: DOOR });
             director.complete('lockDoor');
             hud.say(t('act4.thought.lockDoor'));

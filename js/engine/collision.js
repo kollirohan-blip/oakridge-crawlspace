@@ -20,12 +20,49 @@
     return false;
   }
 
+  // how far a circle sinks into a box (positive = overlapping)
+  function penetration(x, z, r, b) {
+    var cx = Math.min(Math.max(x, b.x0), b.x1);
+    var cz = Math.min(Math.max(z, b.z0), b.z1);
+    return r - Math.hypot(x - cx, z - cz);
+  }
+
+  // Like blocked(), but a box the body is already caught in (a door that closed on it) only blocks
+  // moves that would push it deeper; moving out of it or along it is allowed.
+  function blockedFrom(x, z, r, boxes, caught) {
+    for (var i = 0; i < boxes.length; i++) {
+      var b = boxes[i];
+      var k = caught.boxes.indexOf(b);
+      if (k >= 0) {
+        if (penetration(x, z, r, b) > caught.depth[k] + 1e-9) return true;
+      } else if (penetration(x, z, r, b) > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function caughtIn(x, z, r, boxes) {
+    var out = { boxes: [], depth: [] };
+    for (var i = 0; i < boxes.length; i++) {
+      var d = penetration(x, z, r, boxes[i]);
+      if (d > 0) {
+        out.boxes.push(boxes[i]);
+        out.depth.push(d);
+      }
+    }
+    return out;
+  }
+
   // Advance one axis by `step`, or as far as it can go without entering a box.
   function advance(x, z, step, axis, r, boxes) {
     if (step === 0) return axis === 'x' ? x : z;
     var cur = axis === 'x' ? x : z;
+    var caught = caughtIn(x, z, r, boxes);
     var free = function (t) {
-      return axis === 'x' ? !blocked(cur + step * t, z, r, boxes) : !blocked(x, cur + step * t, r, boxes);
+      return axis === 'x'
+        ? !blockedFrom(cur + step * t, z, r, boxes, caught)
+        : !blockedFrom(x, cur + step * t, r, boxes, caught);
     };
     if (free(1)) return cur + step;
     var lo = 0;
