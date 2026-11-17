@@ -9,7 +9,7 @@
   var D2 = OC.day2 || {};
 
   var MODULES = ['morning', 'deputy', 'lore', 'trip'];
-  var BASE_TEXT = ['day2.vo.afternoon', 'day2.thought.errand', 'day2.vo.end', 'day2.sms.daveEmail'];
+  var BASE_TEXT = ['day2.vo.afternoon', 'day2.thought.errand', 'day2.vo.end', 'day2.sms.daveEmail', 'n1.chore.doorStuck'];
   var TEXT = MODULES.reduce(function (all, m) {
     return D2[m] ? all.concat(D2[m].TEXT) : all;
   }, BASE_TEXT.slice());
@@ -215,6 +215,18 @@
       var all = MODULES.filter(function (m) { return mods[m]; }).map(function (m) { return mods[m]; });
       all.forEach(function (m) {
         m.items.forEach(function (it) { g.interact.add(it); });
+      });
+      // the front door: the shed and the car are outside (Night 1 and Night 2 each add their own door)
+      g.interact.add({
+        id: 'frontDoor', x: 2.5, y: 1.0, z: 0, radius: 0.5,
+        label: function () { return props.frontDoor.isOpen ? 'Close the front door' : 'Open the front door'; },
+        onUse: function () {
+          if (props.frontDoor.isOpen) {
+            if (!props.frontDoor.close(ctl.pos)) return hud.say(t('n1.chore.doorStuck'));
+          } else props.frontDoor.open();
+          sfx('slide', { pos: { x: 2.5, y: 1, z: 0 }, gain: 0.6 });
+          if (ctl.nav) ctl.nav.rebuild();
+        },
       });
 
       function setPhase(name) {

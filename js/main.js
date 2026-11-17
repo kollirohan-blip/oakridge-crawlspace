@@ -650,6 +650,25 @@
         var walkedIn = ctl.pos.z > 1.5 && !props.frontDoor.isOpen;
         report.doors.act2FrontDoor = walkedIn;
         if (!walkedIn) report.failures.push('act2 front door: walking in got stuck (z=' + ctl.pos.z.toFixed(2) + ')');
+        // Day 2: the shed and the car are outside, so Mason must be able to get out of the house. Find the
+        // front door from the foyer through the real picker, open it, and walk out holding W
+        startAct('day2');
+        ctl.setLocked(true);
+        OC.debug.advance(0.3);
+        var door2 = interact.items.filter(function (i) { return i.id === 'frontDoor'; })[0];
+        var out2 = false;
+        if (door2) {
+          ctl.teleport(2.5, 1.2, 0, 0);
+          if (pickable(aim(ctl.pos, 1.65, door2), door2)) {
+            OC.debug.use('frontDoor');
+            window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW' }));
+            OC.debug.advance(3);
+            window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyW' }));
+            out2 = ctl.pos.z < -1.5;
+          }
+        }
+        report.doors.day2WalkOut = out2;
+        if (!out2) report.failures.push('day2: no way out of the house (' + (door2 ? 'stuck at z=' + ctl.pos.z.toFixed(2) : 'no front door to use') + ')');
         // the Act 4 bathroom door must refuse to close on someone standing in it
         startAct('act4');
         ctl.setLocked(true);
