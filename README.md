@@ -50,11 +50,14 @@ on the start screen to start over.
   lot of phone light and it falters; keep checking Dave's window and the black TV shows you something.
   You can go down the hatch: on your belly, under the house, to where he sleeps, and the notebook he
   keeps about you. Then the house phone rings.
-- **Act 3, 12:30 AM.** A phone call, a dropped phone, and a gap in the closet door.
-- **Act 4, 12:35 AM.** The shower, the window, the car.
+- **12:30 AM, "The Call".** Dave calls about what the exterminator found. Three taps from inside the closet: leave
+  it, call Cooper, or open it (an ending of its own). A flash photo of the closet. A whisper, and a bluff.
+- **12:35 AM, "The Search".** The bathroom, the shower, two bare feet in the light under the door. Then get out
+  through your own house while he searches it room by room, trying handles and listening. He never runs.
+  Hide, but not in the same place twice. The chain on the front door. The car. Stay down.
 - **Epilogue.** What the police found.
 
-Acts 3 and 4 can be failed; you retry from the start of the act.
+12:30 and 12:35 can be failed; you retry from the start of that part.
 
 ## For development
 

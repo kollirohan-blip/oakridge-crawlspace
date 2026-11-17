@@ -282,6 +282,7 @@
       crouch: 0, // 0..1, the old intruder's crouch (blends toward the crouch pose)
       raise: 0, // 0..1, the crowbar arm lifted for a swing
       crowbar: false,
+      lift: 0, // metres up (or down, below something that hides his legs: the car door)
       show: function (v) {
         root.visible = !!v;
       },
@@ -377,7 +378,7 @@
         legL.knee.rotation.x = cur.kneeL + Math.max(0, -stride) * 0.5;
         legR.knee.rotation.x = cur.kneeR + Math.max(0, stride) * 0.5;
         crowbar.visible = api.crowbar || api.raise > 0.01;
-        root.position.set(api.pos.x, 0, api.pos.z);
+        root.position.set(api.pos.x, api.lift || 0, api.pos.z);
         root.rotation.y = api.heading;
       },
     };

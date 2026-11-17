@@ -2,7 +2,7 @@
 // the camera, none under a roof), flashes the sky for lightning (the whole yard lights for a quarter
 // second, twice), and runs the rain, wind and thunder. Indoors the rain is on the roof; under the
 // house it is a long way off.
-//   var w = OC.weather.create(g); w.setLevel(0..1); w.strike(); w.update(dt); w.flash (0..1 now)
+//   var w = OC.weather.create(g, { level }); w.setLevel(0..1); w.strike(); w.update(dt); w.flash (0..1 now)
 (function () {
   var OC = (window.OC = window.OC || {});
   var DROPS = 900;
@@ -12,12 +12,12 @@
   var LEN = 0.55;
   var WIND = 0.16; // slant
 
-  function create(g) {
+  function create(g, opts) {
     var scene = g.render.scene;
     var renderer = g.render.renderer;
     var world = g.world;
     var ctl = g.ctl;
-    var storm = OC.storm.createStorm();
+    var storm = OC.storm.createStorm({ level: (opts && opts.level) || 0 });
     var roofs = OC.house.roofs || [];
     function roofed(x, z) {
       for (var i = 0; i < roofs.length; i++) {

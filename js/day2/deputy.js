@@ -25,6 +25,7 @@
   };
 
   OC.day2.deputy = {
+    RAY_LOOK: RAY_LOOK,
     TEXT: ['day2.thought.cruiser', 'day2.thought.knock', 'day2.vo.ray'],
     create: function (g, ctx) {
       var t = g.t;

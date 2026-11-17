@@ -15,7 +15,7 @@ const SPEAKERS = ['Mason', 'Mom', 'Dave', 'Ethan', 'Ray', 'Dispatch', 'Cashier']
 
 test('Day 2 has every conversation the game starts', () => {
   const T = load();
-  ['mom', 'dave', 'ethan', 'ray', 'rayAgain', 'rayVisit', 'cashier', 'daveLandline'].forEach((id) => assert.ok(T[id], 'missing ' + id));
+  ['mom', 'dave', 'ethan', 'ray', 'rayAgain', 'rayVisit', 'cashier', 'daveLandline', 'daveLate'].forEach((id) => assert.ok(T[id], 'missing ' + id));
 });
 
 test('every conversation is a valid tree', () => {

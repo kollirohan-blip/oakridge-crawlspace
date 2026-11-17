@@ -149,6 +149,7 @@
       ctl.light.spot.distance = 22;
       ctl.light.falterT = 0;
       g.petcam.setTurned(false);
+      props.intruder.lift = 0;
       g.petcam.gain = 2.2;
       g.petcam.clipGain = 0;
       g.petcam.beforeRender = g.petcam.afterRender = null;
@@ -191,8 +192,8 @@
     g.onEnd = function (id, outcome) {
       if (outcome === 'retry') return startAct(id);
       saveHabits(); // every chapter adds to the log the later ones read
-      if (outcome === 'gag' && OC.epilogue) {
-        // the Tupperware: its own short ending, and it counts as finishing
+      if ((outcome === 'gag' || outcome === 'bad') && OC.epilogue) {
+        // the Tupperware, or the closet: a short ending of its own, and it counts as finishing
         if (current.act && current.act.dispose) current.act.dispose();
         interact.clear();
         saveCheckpoint(null);
@@ -202,7 +203,7 @@
           /* no storage: chapters just stay locked */
         }
         current.id = 'epilogue';
-        current.act = OC.epilogue.create(g, { variant: 'gag' });
+        current.act = OC.epilogue.create(g, { variant: outcome });
         return;
       }
       var next = ACT_ORDER[ACT_ORDER.indexOf(id) + 1];
@@ -459,7 +460,6 @@
         }
         // items used from a seat: checked from where the player actually sits
         var SEATED = {
-          act3: { ids: ['charger', 'phone'], at: function () {} },
           act4: { ids: ['ignition', 'down'], at: function () { ctl.seat(10.4, -9.95, Math.PI, -0.6); } },
         };
         ACT_ORDER.forEach(function (id) {
@@ -861,6 +861,123 @@
           }
           if (!dread.bedOpen) return 'bed never opened (stage ' + a.flags.stage + ') after ' + t + ' s';
           report.afk2Seconds = t;
+          return true;
+        });
+
+        // ---- 12:30 AM and 12:35 AM, played through ------------------------------------------------
+        async function answerUntil(pick, pred, max) {
+          var t = 0;
+          while (!pred() && t < max) {
+            D.advance(0.5);
+            t += 0.5;
+            await tick();
+            if (phone.choosing()) {
+              D.choose(pick);
+              await tick();
+            }
+          }
+          return pred();
+        }
+        function aimAt(p) {
+          var dx = p.x - ctl.pos.x;
+          var dz = p.z - ctl.pos.z;
+          ctl.yaw = Math.atan2(-dx, -dz);
+          ctl.pitch = Math.atan2(p.y - r.camera.position.y, Math.hypot(dx, dz));
+        }
+        await flow('act3Bluff', async function () {
+          startAct('act3');
+          ctl.setLocked(true);
+          var a = current.act;
+          if (!(await answerUntil(1, function () { return a.flags.phase === 'taps'; }, 140))) return 'never reached the taps (' + a.flags.phase + ')';
+          if (!(await waitFor(function () { return phone.choosing(); }, 6))) return 'no choice at the taps';
+          D.choose(1); // leave it
+          await tick();
+          if (!(await waitFor(function () { return a.flags.phase === 'photo'; }, 20))) return 'never asked for the photo';
+          aimAt(props.closet.eyeAt);
+          D.phoneApp('camera');
+          var p = D.shoot();
+          D.phoneApp(null);
+          if (!p || p.subject !== 'eye') return 'the photo did not show him (' + (p && p.subject) + ')';
+          if (props.intruder.visible()) return 'he stayed in the room after the flash';
+          if (!(await waitFor(function () { return a.flags.phase === 'choice' && phone.choosing(); }, 40))) return 'Ethan never got the bluff choice';
+          D.choose(3);
+          await tick();
+          if (!(await waitFor(function () { return a.flags.phase === 'walk'; }, 40))) return 'never got up to walk';
+          if (ctl.frozen) return 'still sitting';
+          ctl.teleport(6, 18.5, Math.PI, 0);
+          D.advance(1);
+          ctl.teleport(3.5, 21.5, -Math.PI / 2, 0);
+          D.advance(0.5);
+          if (!a.flags.ending) return 'reaching the bathroom did not end the act';
+          return true;
+        });
+        await flow('act3Closet', async function () {
+          startAct('act3');
+          ctl.setLocked(true);
+          var a = current.act;
+          if (!(await answerUntil(2, function () { return a.flags.phase === 'taps'; }, 140))) return 'never reached the taps';
+          if (!(await waitFor(function () { return phone.choosing(); }, 6))) return 'no choice at the taps';
+          D.choose(3); // open it
+          await tick();
+          D.advance(4);
+          if (!props.intruder.visible()) return 'nobody in the closet';
+          await new Promise(function (res) { setTimeout(res, 5200); });
+          if (current.id !== 'epilogue' || current.act.variant !== 'bad') return 'no closet ending (' + current.id + ')';
+          return true;
+        });
+        function act4Out(a) {
+          // lock up, shower on, wait for him to go, unlock
+          D.use('bathDoor');
+          D.use('shower');
+        }
+        await flow('act4Caught', async function () {
+          startAct('act4');
+          ctl.setLocked(true);
+          var a = current.act;
+          act4Out(a);
+          if (!(await waitFor(function () { return a.flags.unlockReady; }, 60))) return 'he never left the bathroom door';
+          ctl.teleport(4.2, 21.5, -Math.PI / 2, 0);
+          D.use('bathDoor');
+          if (a.flags.phase !== 'sneak') return 'could not unlock the door (' + a.flags.phase + ')';
+          // stand in the office doorway with the light on, facing him
+          var sp = a.search.pos();
+          ctl.light.on = true;
+          ctl.teleport(7.4, 11.5, 0, 0);
+          if (!(await waitFor(function () { return a.flags.phase === 'fail'; }, 60))) return 'he never found Mason in plain sight (' + a.search.job() + ' at ' + sp.x.toFixed(1) + ',' + sp.z.toFixed(1) + ')';
+          return true;
+        });
+        await flow('act4HideTwice', async function () {
+          startAct('act4');
+          ctl.setLocked(true);
+          var a = current.act;
+          act4Out(a);
+          if (!(await waitFor(function () { return a.flags.unlockReady; }, 60))) return 'he never left';
+          ctl.teleport(4.2, 21.5, -Math.PI / 2, 0);
+          D.use('bathDoor');
+          var couch = OC.acts.act4.HIDES.filter(function (h) { return h.id === 'couch'; })[0];
+          a.search.send('master');
+          a.hide(couch);
+          D.advance(4);
+          a.unhide();
+          D.advance(1);
+          a.hide(couch);
+          D.advance(0.2); // the search notices on its next frame
+          if (a.search.job() !== 'checkHide') return 'he did not come to check the second time (' + a.search.job() + ')';
+          if (!(await waitFor(function () { return a.flags.phase === 'fail'; }, 120))) return 'he came but never found him';
+          return true;
+        });
+        await flow('act4Car', async function () {
+          startAct('act4');
+          ctl.setLocked(true);
+          var a = current.act;
+          a.flags.phase = 'run'; // straight to outside: the house part is checked above
+          ctl.teleport(11.5, -9.6, 0, 0);
+          if (!D.use('car')) return 'could not get in the car';
+          if (!D.use('ignition')) return 'no ignition';
+          if (!(await waitFor(function () { return a.flags.phase === 'exposed'; }, 12))) return 'he never came out of the house';
+          if (!D.use('down')) return 'could not get down';
+          if (!(await waitFor(function () { return a.flags.atWindow; }, 40))) return 'he never came to the window';
+          if (!(await waitFor(function () { return a.flags.phase === 'won'; }, 50))) return 'never saved (' + a.flags.phase + ')';
           return true;
         });
 

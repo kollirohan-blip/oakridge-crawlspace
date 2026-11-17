@@ -299,6 +299,48 @@
       },
     },
 
+    // ---- 12:30 AM: Dave calls Mason's phone, and the storm takes the call -------------------------
+    daveLate: {
+      start: 'hi',
+      nodes: {
+        hi: {
+          say: [
+            ['Dave', "Hey, bud. Sorry. I know it's late. Couldn't sleep. Hotel walls are paper."],
+            ['Dave', 'Weird question. Have you been hearing anything? In the walls?'],
+          ],
+          choices: [
+            { id: 'yes', text: 'Yes. All night.', next: 'yes', log: 'toldDaveWalls' },
+            { id: 'why', text: 'Why?', next: 'why' },
+          ],
+        },
+        yes: { say: [['Dave', '...Okay. Okay. So.']], next: 'wrappers' },
+        why: { say: [['Dave', 'Humor me.'], ['Mason', '...Yeah. I have.']], next: 'wrappers' },
+        wrappers: {
+          say: [
+            ['Dave', 'The bug guy called back. I sent him pictures from under the house, the stuff I thought was droppings.'],
+            ['Dave', "He says it isn't droppings. It's food wrappers. Candy bars. Soup labels. Folded up real small."],
+            ['Dave', "Rats don't fold, Mason."],
+          ],
+          choices: [
+            { id: 'hatch', text: 'Dave, did you open the hatch before you left?', next: 'hatch' },
+            { id: 'notebook', text: "Somebody's been writing down everything I do.", next: 'notebook', log: 'toldDaveNotebook' },
+          ],
+        },
+        notebook: {
+          say: [['Dave', 'Writing down... what?'], ['Mason', 'And the hatch was open tonight. Did you open it before you left?']],
+          next: 'hatch',
+        },
+        hatch: {
+          say: [
+            ['Dave', "The hatch? No. I haven't opened that hatch since the day we moved in. I lost the key years ago."],
+            ['Dave', "Mason. Listen to me. I want you to get the dog, go out to your car, and-"],
+          ],
+          next: 'lost',
+        },
+        lost: { say: [['Dave', '...the lock... ...my key... ...Mason?'], ['Mason', 'Dave? Dave, you cut out. Dave?']], end: true },
+      },
+    },
+
     // ---- the Gas-N-Go ---------------------------------------------------------------------------
     cashier: {
       start: 'hi',

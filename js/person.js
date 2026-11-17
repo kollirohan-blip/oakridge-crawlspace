@@ -111,6 +111,7 @@
       group: root,
       pos: { x: 0, z: 0 },
       heading: 0,
+      lift: 0, // metres up or down (bent to look in a car window)
       show: function (v) {
         root.visible = !!v;
       },
@@ -165,7 +166,7 @@
         armR.rotation.x = sw * 0.7;
         talkT = Math.max(0, talkT - dt);
         head.rotation.x = talkT > 0 ? Math.sin(talkT * 9) * 0.08 : 0;
-        root.position.set(api.pos.x, 0, api.pos.z);
+        root.position.set(api.pos.x, api.lift || 0, api.pos.z);
         root.rotation.y = api.heading;
       },
     };

@@ -14,7 +14,8 @@
 
     var api = {
       album: [],
-      // fn(cam) -> null | { subject, undo() }: called just before the picture is taken
+      // fn(cam) -> null | { subject, undo(), flash? }: called just before the picture is taken (flash: a
+      // strength for this shot, 1 = normal; something close needs less or it burns out)
       beforeShot: null,
       shoot: function () {
         if (cooldown > 0) return null;
@@ -25,8 +26,9 @@
         var spot = g.ctl.light.spot;
         var spotWas = spot.intensity;
         flash.position.copy(r.camera.position);
-        flash.intensity = 1.7;
-        spot.intensity = 3.4;
+        var k = staged && staged.flash ? staged.flash : 1;
+        flash.intensity = 1.7 * k;
+        spot.intensity = 3.4 * k;
         r.render();
         // copy the frame while it is still in the drawing buffer (same task as the render)
         var src = r.renderer.domElement;

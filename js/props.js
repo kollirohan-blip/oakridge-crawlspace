@@ -474,6 +474,12 @@
         burst: function () {
           target = 1.4;
         },
+        // the right door open this far, at once (a crack, for one flash photo)
+        ajar: function (angle) {
+          target = hinge = angle;
+          right.rotation.y = hinge;
+          right.position.set(1.88 - Math.cos(hinge) * 0.43, 1.06, 17.57 - Math.sin(hinge) * 0.43);
+        },
         reset: function () {
           target = 0;
           hinge = 0;
