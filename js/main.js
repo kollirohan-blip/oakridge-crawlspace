@@ -23,7 +23,9 @@
     var world = OC.world.build(r.scene, OC.house);
     var props = OC.props.build(world, OC.house);
     OC.decor.build(world, props, OC.house);
+    if (OC.decor2) OC.decor2.build(world, props, OC.house); // what night two changes
     if (OC.places) OC.places.build(world); // the road to town and the Gas-N-Go, far off
+    if (OC.crawl) OC.crawl.build(world); // under the house (also far off, so it is never seen from above)
     world.commit();
     if (OC.models) OC.models.commit(world.group); // the fitted furniture and the yard, merged by material
     var ctl = OC.controller.create(r.camera, world.boxes);
@@ -42,7 +44,9 @@
       return 'grass';
     }
     ctl.onStep = function () {
-      if (OC.audio) OC.audio.play('step', { surface: surfaceAt(ctl.pos.x, ctl.pos.z), gain: 0.55 });
+      if (!OC.audio) return;
+      if (ctl.prone) OC.audio.play('crawlStep', { gain: 0.7 });
+      else OC.audio.play('step', { surface: surfaceAt(ctl.pos.x, ctl.pos.z), gain: 0.55 });
     };
     if (OC.audio) {
       OC.audio.setOcclusion(function (pos) {
@@ -100,6 +104,8 @@
       return !!g.state.modal;
     };
 
+    // under the house: the nest, the dust, the borrowed lights
+    g.crawl = OC.crawl ? OC.crawl.create(world, r.scene) : null;
     // the bathroom mirror, the phone's camera and the pet cam
     g.mirror = OC.mirror.create(r, ctl);
     g.photo = OC.camera.create(g, r); // the phone camera (g.camera is the Three.js camera)
@@ -132,6 +138,16 @@
       props.reset();
       world.setDaylight(def.daylight || 0, r.renderer); // night, unless the act is a day
       if (OC.places) OC.places.lightsAt(world, 'home');
+      if (g.crawl) {
+        g.crawl.lights(false);
+        g.crawl.showNotebook(true);
+      }
+      if (r.scene.fog) r.scene.fog.density = 0.04 - 0.028 * (def.daylight || 0);
+      ctl.light.drain = 1;
+      ctl.light.power = 2.4;
+      ctl.light.spot.angle = 0.55;
+      ctl.light.spot.distance = 22;
+      ctl.light.falterT = 0;
       g.petcam.setTurned(false);
       g.petcam.gain = 2.2;
       g.petcam.clipGain = 0;
@@ -174,7 +190,7 @@
 
     g.onEnd = function (id, outcome) {
       if (outcome === 'retry') return startAct(id);
-      if (id === 'act1') saveHabits();
+      saveHabits(); // every chapter adds to the log the later ones read
       if (outcome === 'gag' && OC.epilogue) {
         // the Tupperware: its own short ending, and it counts as finishing
         if (current.act && current.act.dispose) current.act.dispose();
@@ -317,6 +333,7 @@
       g.photo.update(dt);
       g.petcam.on = g.state.petcamForce || (phone.isOpen && phone.currentApp() === 'petcam');
       g.petcam.update(dt, g.clock ? g.clock.label() : '');
+      if (g.crawl) g.crawl.update(dt, { x: ctl.pos.x, z: ctl.pos.z, yaw: ctl.yaw }, ctl.light.on && ctl.light.falterT <= 0);
       props.update(dt);
       cooper.update(dt);
       if (current.act) current.act.update(dt);
@@ -384,6 +401,13 @@
       act1: function () {
         return current.id === 'act1' ? current.act : null;
       },
+      // start night two with these habit gates, whatever the log says (for checks): { breaker, lightFalters, tvReflection }, familiar
+      night2: function (gates, familiar) {
+        g.state.forcePlan = gates ? { gates: Object.assign({ breaker: false, lightFalters: false, tvReflection: false }, gates), familiar: familiar || 'microwave' } : null;
+        startAct('act2');
+        g.state.forcePlan = null;
+        return current.act;
+      },
       dread: function () {
         return current.act && current.act.dread ? current.act.dread.stage() : null;
       },
@@ -424,11 +448,11 @@
           return !!OC.pick.pickTarget(cam, [probe], ctl.boxes);
         }
         function standing(it) {
-          for (var d = 0.8; d <= 1.81; d += 0.33) {
+          for (var d = it.eye ? 0.5 : 0.8; d <= 1.81; d += 0.33) {
             for (var a = 0; a < Math.PI * 2; a += Math.PI / 16) {
               var p = { x: it.x + Math.cos(a) * d, z: it.z + Math.sin(a) * d };
               if (OC.collision.blocked(p.x, p.z, R, ctl.boxes)) continue;
-              if (pickable(aim(p, 1.65, it), it)) return true;
+              if (pickable(aim(p, it.eye || 1.65, it), it)) return true;
             }
           }
           return false;
@@ -460,13 +484,13 @@
         // the Act 2 front door: unlock it, then walk in holding W, the way a player does
         startAct('act2');
         ctl.setLocked(true);
-        OC.debug.use('bush');
+        OC.debug.use('rock');
         ctl.teleport(2.5, -1.2, Math.PI, 0);
         OC.debug.use('frontDoor');
         window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW' }));
         OC.debug.advance(3);
         window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyW' }));
-        var walkedIn = ctl.pos.z > 2 && !props.frontDoor.isOpen;
+        var walkedIn = ctl.pos.z > 1.5 && !props.frontDoor.isOpen;
         report.doors.act2FrontDoor = walkedIn;
         if (!walkedIn) report.failures.push('act2 front door: walking in got stuck (z=' + ctl.pos.z.toFixed(2) + ')');
         // the Act 4 bathroom door must refuse to close on someone standing in it
@@ -720,6 +744,123 @@
           }
           if (a.dread.stage() !== 'bed') return 'stuck at ' + a.dread.stage() + ' after ' + t + ' s';
           report.afkSeconds = t;
+          return true;
+        });
+
+        // ---- Night 2, played through the real items --------------------------------------------------
+        function night2(gates) {
+          D.night2(gates);
+          ctl.setLocked(true);
+          D.advance(0.3);
+          return current.act;
+        }
+        // the key from the fake rock, the door, and in on foot
+        function getIn(a) {
+          D.use('rock');
+          ctl.teleport(2.5, -1.2, Math.PI, 0);
+          D.use('frontDoor');
+          key('KeyW');
+          D.advance(3);
+          key('KeyW', true);
+          return a.director.done('inside');
+        }
+        // close the slider, find the latch broken, fetch the broom, jam the track
+        function lockUp(a) {
+          D.use('slider');
+          D.use('slider');
+          D.use('broom');
+          D.use('slider');
+          return a.director.done('secure');
+        }
+        async function waitFor(pred, max) {
+          var t = 0;
+          while (!pred() && t < max) {
+            D.advance(1, 0.1);
+            t += 1;
+            await tick();
+          }
+          return pred();
+        }
+        await flow('night2Breaker', async function () {
+          var a = night2({ breaker: true });
+          if (!getIn(a)) return 'did not get in';
+          a.ctx.lights.set('kitchen', true);
+          if (!lockUp(a)) return 'could not lock up';
+          ctl.teleport(9, 6, 0, 0);
+          var dread = a.mods.dread.state;
+          if (!(await waitFor(function () { return dread.breaker === 'tripped'; }, 120))) return 'the breaker never tripped';
+          D.advance(1);
+          if (a.ctx.lights.hasPower() || world.lightById.kitchen.intensity > 0) return 'the lights stayed on';
+          if (!D.use('breaker')) return 'the breaker could not be reset';
+          if (!a.ctx.lights.hasPower() || world.lightById.kitchen.intensity <= 0) return 'the lights did not come back';
+          if (props.changes.prints.showing() !== 'both') return 'no new footprints';
+          return true;
+        });
+        await flow('night2Tv', async function () {
+          var a = night2({ tvReflection: true });
+          if (!getIn(a) || !lockUp(a)) return 'could not get in and lock up';
+          ctl.teleport(19.3, 4.9, 0, -0.1); // behind the couch, facing the dark TV
+          var dread = a.mods.dread.state;
+          if (!(await waitFor(function () { return dread.tv === 'showing'; }, 90))) return 'the TV never showed it (' + dread.tv + ')';
+          ctl.teleport(19.3, 4.9, Math.PI, 0); // he turns around
+          D.advance(1.2);
+          if (dread.tv !== 'done') return 'it was still there after he turned (' + dread.tv + ')';
+          return true;
+        });
+        await flow('night2Light', async function () {
+          var a = night2({ lightFalters: true });
+          if (!getIn(a) || !lockUp(a)) return 'could not get in and lock up';
+          ctl.teleport(6, 18, Math.PI, 0); // the dark end of the hall, light on
+          ctl.light.on = true;
+          var dread = a.mods.dread.state;
+          if (!(await waitFor(function () { ctl.light.on = true; return dread.faltered; }, 120))) return 'the light never faltered';
+          if (ctl.light.falterT <= 0) return 'faltered, but the light did not cut out';
+          D.advance(4);
+          if (ctl.light.falterT > 0) return 'the light never came back';
+          return true;
+        });
+        await flow('night2Crawl', async function () {
+          var a = night2({ breaker: false, tvReflection: true });
+          if (!getIn(a)) return 'did not get in';
+          D.goto('hatch', 0);
+          D.use('hatch');
+          await tick();
+          D.choose(2); // go down
+          await tick();
+          if (!(await waitFor(function () { return a.flags.inCrawl; }, 5))) return 'never got under the house';
+          D.advance(1);
+          if (!ctl.prone || r.camera.position.y > 0.6) return 'not lying down (eye ' + r.camera.position.y.toFixed(2) + ')';
+          var x0 = ctl.pos.x;
+          ctl.yaw = -Math.PI / 2; // east
+          key('KeyW');
+          D.advance(2);
+          key('KeyW', true);
+          var moved = ctl.pos.x - x0;
+          if (moved < 1.2 || moved > 2.2) return 'crawled ' + moved.toFixed(2) + ' m in 2 s';
+          ctl.teleport(OC.crawl.HATCH.x, OC.crawl.HATCH.z + 0.8, 0, 0.4);
+          D.use('crawl.climb');
+          if (!(await waitFor(function () { return !a.flags.inCrawl; }, 5))) return 'could not climb out';
+          D.advance(1.5);
+          if (ctl.prone || ctl.frozen) return 'still lying down after climbing out';
+          if (OC.layout.roomAt(OC.house, ctl.pos.x, ctl.pos.z) !== 'laundry') return 'came up somewhere else';
+          if (Math.abs(r.scene.fog.density - 0.04) > 0.005) return 'the fog stayed thick (' + r.scene.fog.density + ')';
+          if (world.lightById.laundry.position.x > 100) return 'the laundry light stayed under the house';
+          return true;
+        });
+        await flow('night2Afk', async function () {
+          // gets in, then never touches anything again: the night must still reach bed
+          var a = night2({ breaker: true });
+          if (!getIn(a)) return 'did not get in';
+          ctl.teleport(9, 6, 0, 0);
+          var dread = a.mods.dread.state;
+          var t = 0;
+          while (!dread.bedOpen && t < 720) {
+            D.advance(5, 0.1);
+            t += 5;
+            await tick();
+          }
+          if (!dread.bedOpen) return 'bed never opened (stage ' + a.flags.stage + ') after ' + t + ' s';
+          report.afk2Seconds = t;
           return true;
         });
 

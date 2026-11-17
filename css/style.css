@@ -306,6 +306,15 @@ body.at-title #phone.raised { display: none; }
 #kpDisplay { font-size: clamp(36px, 8vmin, 72px); color: #4cff7a; letter-spacing: 0.1em; margin: 8px 0; text-shadow: 0 0 10px rgba(76,255,122,0.5); }
 .kp-hint { color: var(--dim); font-size: clamp(11px, 1.7vmin, 15px); line-height: 1.4; }
 /* Dave's handwriting, and the note that is not quite his */
+#readerBody s { text-decoration-thickness: 0.14em; text-decoration-color: #141414; opacity: 0.75; }
+/* his notebook: small, careful capitals in pencil on a composition book's page */
+#reader.notebook .paper { background-color: #e6e2d6; color: #2c2c30; transform: rotate(0.6deg); font-family: var(--mono); letter-spacing: 0.02em; }
+#reader.notebook #readerBody { font-size: clamp(13px, 2.2vmin, 20px); text-transform: lowercase; }
+/* something read off a screen (Dave's tablet, his email) */
+#reader.screen .paper { background: #10141c; background-image: none; color: #dfe6f2; transform: none; border: 10px solid #1a1b1e; border-radius: 14px; font-family: var(--mono); }
+#reader.screen #readerTitle { color: #7d8aa0; }
+#reader.screen #readerBody { font-size: clamp(13px, 2.2vmin, 20px); }
+#readerBody .scrawl { font-family: "Segoe Script", "Bradley Hand", cursive; font-size: 2.1em; letter-spacing: 0.12em; color: #fff; display: inline-block; transform: rotate(-4deg); }
 #reader.shaky .paper { font-family: "Segoe Script", "Bradley Hand", cursive; transform: rotate(1.6deg); background-color: #efe7a8; }
 
 body.phone-raised #hud { z-index: 9; }

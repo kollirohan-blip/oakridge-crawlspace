@@ -147,28 +147,57 @@
 
     // ---- the TV ---------------------------------------------------------------------------------
     var tv = (function () {
+      // 256x144: the shows (js/tvshows.js) draw at this size; older painters draw at 64x36 and are scaled
+      var SW = 256;
+      var SH = 144;
       var c = document.createElement('canvas');
-      c.width = 64;
-      c.height = 36;
+      c.width = SW;
+      c.height = SH;
       var g = c.getContext('2d');
       var tex = new THREE.CanvasTexture(c);
-      tex.magFilter = THREE.NearestFilter;
-      var screen = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.75), new THREE.MeshBasicMaterial({ map: tex }));
-      screen.position.set(19.5, 0.95, 0.43);
+      tex.magFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearFilter;
+      tex.generateMipmaps = false;
+      var screen = new THREE.Mesh(new THREE.PlaneGeometry(2.42, 1.36), new THREE.MeshBasicMaterial({ map: tex }));
+      screen.position.set(19.5, 1.255, 0.405);
       scene.add(screen);
       var light = world.lightById.tv;
       var acc = 0;
       var t = 0;
       function blank() {
         g.fillStyle = '#050608';
-        g.fillRect(0, 0, 64, 36);
+        g.fillRect(0, 0, SW, SH);
+        // the glass, catching a little of the room
+        g.fillStyle = 'rgba(255,255,255,0.025)';
+        g.beginPath();
+        g.moveTo(SW * 0.55, 0);
+        g.lineTo(SW * 0.75, 0);
+        g.lineTo(SW * 0.45, SH);
+        g.lineTo(SW * 0.25, SH);
+        g.fill();
         tex.needsUpdate = true;
+      }
+      // a painter marked hires draws at 256x144; any other draws at 64x36
+      function run(fn, time) {
+        if (fn.hires) fn(g, time);
+        else {
+          g.save();
+          g.scale(SW / 64, SH / 36);
+          fn(g, time);
+          g.restore();
+        }
       }
       blank();
       var api = {
         on: false,
         // night one paints its own channels: fn(ctx2d, t) on the 64x36 canvas
         painter: null,
+        // paint the dark screen once while it is off (what it reflects); clear() wipes it
+        glimpse: function (fn) {
+          run(fn, t);
+          tex.needsUpdate = true;
+        },
+        clear: blank,
         setOn: function (v) {
           api.on = !!v;
           if (!v) {
@@ -184,24 +213,12 @@
           if (acc < 0.09) return;
           acc = 0;
           if (api.painter) {
-            api.painter(g, t);
+            run(api.painter, t);
             tex.needsUpdate = true;
             return;
           }
-          // a news-ish look: a blue desk, a lower-third bar, and a little static
-          g.fillStyle = '#16233f';
-          g.fillRect(0, 0, 64, 36);
-          g.fillStyle = '#2b3d66';
-          g.fillRect(8, 6, 20, 20);
-          g.fillStyle = '#c9cdd6';
-          g.fillRect(0, 28, 64, 5);
-          g.fillStyle = '#7d1f1f';
-          g.fillRect(0, 28, 10 + ((t * 8) % 54), 5);
-          for (var i = 0; i < 90; i++) {
-            var v = (Math.random() * 120 + 60) | 0;
-            g.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')';
-            g.fillRect((Math.random() * 64) | 0, (Math.random() * 36) | 0, 1, 1);
-          }
+          // nobody chose a channel: late-night storm coverage
+          if (OC.tvShows) OC.tvShows.draw('storm', g, t);
           tex.needsUpdate = true;
         },
       };
@@ -699,12 +716,14 @@
       bathDoor: bathDoor,
       laundryDoor: laundryDoor,
       decor: null, // js/decor.js attaches the night-one props here
+      changes: null, // js/decor2.js: the things night two moves
       // put the props that acts did not reset themselves before Phase 1 back to their defaults
       reset: function () {
         laundryDoor.reset();
         setLights({ bath: 0 }); // added in Phase 1: the older acts do not set it themselves
         tv.painter = null;
         if (api.decor) api.decor.reset();
+        if (api.changes) api.changes.reset();
       },
       intruder: intruder,
       shards: shards,

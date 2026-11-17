@@ -84,6 +84,14 @@
     api.seen = function (name) {
       return !!seen[name];
     };
+    // which caption of this channel is up, and how many seconds into it (the picture follows these)
+    api.lineIndex = function () {
+      return Math.floor((chanT + EPS) / (data.lineSec || 5)) % api.channel().lines.length;
+    };
+    api.lineTime = function () {
+      var sec = data.lineSec || 5;
+      return chanT - Math.floor((chanT + EPS) / sec) * sec;
+    };
     return api;
   }
 

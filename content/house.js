@@ -64,7 +64,7 @@
       { b: [5.9, 0.92, 0.2, 6.7, 1.2, 0.65], tex: 'appliance', model: 'kitchenMicrowave' }, // microwave
       { b: [8.4, 0, 3.6, 10.4, 0.78, 5.0], tex: 'cabinet', model: 'table', solid: true }, // table
       { b: [7.95, 0, 3.85, 8.4, 0.95, 4.35], tex: 'fabric', model: 'chairCushion', rot: 1, solid: true }, // chairs
-      { b: [10.4, 0, 3.85, 10.85, 0.95, 4.35], tex: 'fabric', model: 'chairCushion', rot: 3, solid: true },
+      // (the east chair is a prop, js/decor2.js: on night two someone moves it)
       { b: [12.0, 0, 6.6, 12.8, 0.7, 7.4], tex: 'metal', solid: true }, // kibble bin
       { b: [10.95, 0, 6.65, 11.45, 0.1, 7.15], tex: 'metal' }, // Cooper's bowl
       // upper cabinets, and the counter's clutter (Dave's soup)
@@ -82,7 +82,8 @@
       { b: [7.77, 1.03, 0.22, 7.85, 1.14, 0.3], model: 'food-can' },
       // living room
       { b: [17.8, 0, 0.15, 21.2, 0.5, 0.65], tex: 'cabinet', model: 'cabinetTelevision', solid: true }, // TV stand
-      { b: [18.3, 0.55, 0.25, 20.7, 1.35, 0.42], tex: 'black' }, // TV
+      { b: [18.22, 0.52, 0.24, 20.78, 1.99, 0.4], tex: 'black' }, // the TV: Dave's pride, 100 inches
+      { b: [19.2, 0.5, 0.26, 19.8, 0.52, 0.38], tex: 'black' }, // its foot
       { b: [17.5, 0, 3.6, 21.0, 0.95, 4.5], tex: 'fabric', model: 'loungeSofaLong', rot: 2, solid: true }, // couch
       { b: [18.2, 0, 2.0, 20.3, 0.4, 2.8], tex: 'cabinet', model: 'tableCoffee', solid: true }, // coffee table
       { b: [17.4, 0.003, 1.3, 21.1, 0.012, 3.5], model: 'rugRectangle' },
@@ -152,6 +153,19 @@
       { b: [-1.9, 0, -1.0, -0.9, 1.0, -0.4], tex: 'metal', solid: true },
       { b: [7.0, 0, -13.46, 7.12, 1.1, -13.34], tex: 'wood' },
       { b: [6.85, 1.1, -13.6, 7.3, 1.35, -13.2], tex: 'metal' },
+      // ---- night two's fixtures ----
+      // floor registers: the hall, the living room, the kitchen
+      { b: [6.35, 0, 13.3, 6.85, 0.012, 13.6], tex: 'metal' },
+      { b: [14.95, 0, 7.15, 15.45, 0.012, 7.45], tex: 'metal' },
+      { b: [12.15, 0, 2.85, 12.65, 0.012, 3.15], tex: 'metal' },
+      // the wall phone in the kitchen (its handset is a prop)
+      { b: [7.38, 1.24, 7.86, 7.62, 1.56, 7.9], tex: 'appliance' },
+      // the junk drawer, at the west end of the counter
+      { b: [5.45, 0.7, 0.75, 5.85, 0.86, 0.762], tex: 'cabinet' },
+      { b: [5.58, 0.77, 0.762, 5.72, 0.79, 0.78], tex: 'metal' },
+      // Dave's key hook by the laundry door: a little plaque, a hook, no key
+      { b: [4.87, 1.44, 11.5, 4.9, 1.56, 11.7], tex: 'wood' },
+      { b: [4.85, 1.46, 11.59, 4.87, 1.48, 11.61], tex: 'metal' },
       // light switches
       { b: [1.56, 1.19, 0.1, 1.64, 1.31, 0.12], tex: 'appliance' },
       { b: [5.1, 1.19, 2.86, 5.12, 1.31, 2.94], tex: 'appliance' },
@@ -314,6 +328,15 @@
       vent: { x: 5.6, z: -1.6, outdoor: true },
       shedDoor: { x: 27.4, z: -2.8, outdoor: true },
       shedInside: { x: 27.4, z: -5.2, outdoor: true },
+      // night two
+      rock: { x: 4.5, z: -2.2, outdoor: true },
+      tablet: { x: 8.1, z: 1.45 },
+      junkDrawer: { x: 5.65, z: 1.5 },
+      groceries: { x: 9.4, z: 5.6 },
+      photoTable: { x: 4.2, z: 1.4 },
+      breaker: { x: 1.0, z: 10.5 },
+      landline: { x: 7.1, z: 6.9 },
+      keyHook: { x: 4.1, z: 11.6 },
     },
     spawns: {
       living: { x: 22.5, z: 5.5, yaw: 0.53 },

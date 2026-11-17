@@ -108,7 +108,7 @@
                 ctx.complete('email');
                 hud.say(t('day2.thought.email'), 6000);
               }
-            });
+            }, { style: 'screen' });
           },
         },
       ];

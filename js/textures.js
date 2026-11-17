@@ -216,6 +216,46 @@
       g.fillRect(0, 0, 2, h);
       speckle(g, w, h, r, 200, 0.12);
     },
+    // under the house: packed dirt, cinder block, the underside of the floor, pink insulation
+    dirt: function (g, w, h, r) {
+      g.fillStyle = '#4a3b2c';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 900, 0.22);
+      for (var i = 0; i < 14; i++) {
+        g.fillStyle = r() < 0.5 ? 'rgba(20,14,8,0.35)' : 'rgba(120,100,78,0.25)';
+        g.fillRect((r() * w) | 0, (r() * h) | 0, 2 + ((r() * 4) | 0), 1 + ((r() * 2) | 0));
+      }
+    },
+    block: function (g, w, h, r) {
+      g.fillStyle = '#4f4e4a';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 500, 0.16);
+      g.fillStyle = 'rgba(30,30,30,0.55)';
+      g.fillRect(0, 0, w, 2);
+      g.fillRect(0, h / 2, w, 2);
+      g.fillRect(0, 0, 2, h / 2);
+      g.fillRect(w / 2, h / 2, 2, h / 2);
+    },
+    subfloor: function (g, w, h, r) {
+      g.fillStyle = '#5a4630';
+      g.fillRect(0, 0, w, h);
+      for (var y = 0; y < h; y += 8) {
+        g.fillStyle = 'rgba(0,0,0,' + (0.25 + r() * 0.2) + ')';
+        g.fillRect(0, y, w, 1);
+        g.fillStyle = 'rgba(255,220,170,' + r() * 0.08 + ')';
+        g.fillRect(0, y + 1, w, 6);
+      }
+      speckle(g, w, h, r, 300, 0.14);
+    },
+    insulation: function (g, w, h, r) {
+      g.fillStyle = '#b77f86';
+      g.fillRect(0, 0, w, h);
+      speckle(g, w, h, r, 900, 0.2);
+      for (var i = 0; i < 8; i++) {
+        g.fillStyle = 'rgba(70,40,45,0.3)';
+        g.fillRect(0, (r() * h) | 0, w, 1);
+      }
+    },
     // the blinds in Dave's bedroom windows
     blinds: function (g, w, h, r) {
       g.fillStyle = '#8a7f6a';

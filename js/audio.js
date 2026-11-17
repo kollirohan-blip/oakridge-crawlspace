@@ -535,6 +535,193 @@
       s.start();
       return { stop: function () { try { s.stop(); } catch (e) {} } };
     },
+    // ---- night two: the storm ------------------------------------------------------------------------
+    // rain: one loop; set(level, where) moves it between outside (all of it), inside (on the roof) and
+    // under the house (a long way off)
+    rain: function (c, out) {
+      var s = noise(c);
+      s.loop = true;
+      var hp = filt(c, 'highpass', 500);
+      var lp = filt(c, 'lowpass', 6500);
+      var g = gain(c, 0);
+      s.connect(hp).connect(lp).connect(g).connect(out);
+      // the roof: a lower, drummier layer
+      var s2 = noise(c);
+      s2.loop = true;
+      var bp = filt(c, 'bandpass', 420, 0.7);
+      var g2 = gain(c, 0);
+      s2.connect(bp).connect(g2).connect(out);
+      s.start();
+      s2.start(0, 0.7);
+      return {
+        set: function (level, where, fast) {
+          var now = c.currentTime;
+          var open = where === 'out' ? 1 : where === 'in' ? 0.16 : 0.03;
+          var roof = where === 'out' ? 0.15 : where === 'in' ? 1 : 0.25;
+          g.gain.setTargetAtTime(0.2 * level * open, now, fast ? 0.04 : 0.35);
+          g2.gain.setTargetAtTime(0.3 * level * roof, now, fast ? 0.04 : 0.35);
+          lp.frequency.setTargetAtTime(where === 'out' ? 6500 : 1800, now, 0.35);
+        },
+        stop: function () { [s, s2].forEach(function (n) { try { n.stop(); } catch (e) {} }); },
+      };
+    },
+    wind: function (c, out) {
+      var s = noise(c);
+      s.loop = true;
+      var bp = filt(c, 'bandpass', 300, 1.6);
+      var g = gain(c, 0);
+      var lfo = osc(c, 'sine', 0.11);
+      var lg = gain(c, 140);
+      var lfo2 = osc(c, 'sine', 0.045);
+      var lg2 = gain(c, 0);
+      lfo.connect(lg).connect(bp.frequency);
+      lfo2.connect(lg2).connect(g.gain);
+      s.connect(bp).connect(g).connect(out);
+      [s, lfo, lfo2].forEach(function (n) { n.start(); });
+      return {
+        set: function (level, where, fast) {
+          var now = c.currentTime;
+          var v = 0.22 * level * (where === 'out' ? 1 : where === 'in' ? 0.4 : 0.1);
+          g.gain.setTargetAtTime(v, now, fast ? 0.05 : 0.6);
+          lg2.gain.setTargetAtTime(v * 0.6, now, 0.6);
+        },
+        stop: function () { [s, lfo, lfo2].forEach(function (n) { try { n.stop(); } catch (e) {} }); },
+      };
+    },
+    // a crack, then the long roll of it (opts.muffled: heard through a roof)
+    thunder: function (c, out, o, t) {
+      var s = noise(c);
+      var lp = filt(c, 'lowpass', o.muffled ? 300 : 1400);
+      var g = gain(c, 0);
+      s.connect(lp).connect(g).connect(out);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(o.muffled ? 0.5 : 0.9, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.5);
+      g.gain.linearRampToValueAtTime(0.35, t + 1.1);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 4.6);
+      lp.frequency.setValueAtTime(o.muffled ? 300 : 1400, t);
+      lp.frequency.exponentialRampToValueAtTime(90, t + 4.4);
+      var sub = osc(c, 'sine', 48);
+      var sg = gain(c, 0);
+      sub.connect(sg).connect(out);
+      sg.gain.setValueAtTime(0, t);
+      sg.gain.linearRampToValueAtTime(0.5, t + 0.08);
+      sg.gain.exponentialRampToValueAtTime(0.001, t + 3.5);
+      sub.frequency.setValueAtTime(52, t);
+      sub.frequency.exponentialRampToValueAtTime(30, t + 3.4);
+      s.start(t);
+      sub.start(t);
+      s.stop(t + 4.8);
+      sub.stop(t + 3.6);
+    },
+    // ---- night two: under the house --------------------------------------------------------------
+    // a footstep on the floorboards over your head: weight, then the board answering
+    overstep: function (c, out, o, t) {
+      var j = 0.85 + Math.random() * 0.3;
+      tone(c, out, t, { freq: 62 * j, to: 40, peak: 0.6, decay: 0.16 });
+      burst(c, out, t, { type: 'lowpass', freq: 260, peak: 0.5, decay: 0.07 });
+      tone(c, out, t + 0.07, { wave: 'sawtooth', freq: 300 * j, to: 240 * j, peak: 0.035, attack: 0.02, decay: 0.22 });
+    },
+    // someone lowering himself onto the floor: the long creak of the boards taking it, then the weight
+    sitDown: function (c, out, o, t) {
+      var v = osc(c, 'sawtooth', 190);
+      var f = filt(c, 'bandpass', 700, 6);
+      var g = gain(c, 0);
+      v.connect(f).connect(g).connect(out);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.16, t + 0.2);
+      g.gain.linearRampToValueAtTime(0.1, t + 1.3);
+      g.gain.linearRampToValueAtTime(0, t + 1.6);
+      v.frequency.setValueAtTime(230, t);
+      v.frequency.linearRampToValueAtTime(140, t + 1.5);
+      v.start(t);
+      v.stop(t + 1.7);
+      tone(c, out, t + 1.45, { freq: 55, to: 34, peak: 0.9, decay: 0.3 });
+      burst(c, out, t + 1.45, { type: 'lowpass', freq: 200, peak: 0.6, decay: 0.12 });
+      tone(c, out, t + 2.2, { wave: 'sawtooth', freq: 170, to: 150, peak: 0.04, attack: 0.05, decay: 0.5 });
+    },
+    // elbows and knees on dirt
+    crawlStep: function (c, out, o, t) {
+      burst(c, out, t, { type: 'lowpass', freq: 500 + Math.random() * 200, peak: 0.22, decay: 0.16 });
+      burst(c, out, t + 0.05, { type: 'highpass', freq: 2400, peak: 0.05, decay: 0.12 });
+    },
+    // water finding its way down
+    drip: function (c, out, o, t) {
+      tone(c, out, t, { freq: 1500 + Math.random() * 600, to: 700, peak: 0.12, attack: 0.002, decay: 0.07 });
+    },
+    // slow breathing through the nose, close: in, out, in, out (opts.count breaths)
+    breath: function (c, out, o, t) {
+      var n = o.count || 4;
+      var master = gain(c, 1);
+      master.connect(out);
+      out = master;
+      for (var i = 0; i < n; i++) {
+        [[0, 1700, 1.0, 0.11], [1.35, 900, 1.25, 0.09]].forEach(function (b) {
+          var s = noise(c);
+          var f = filt(c, 'bandpass', b[1], 1.4);
+          var g = gain(c, 0);
+          var at = t + i * 3.1 + b[0];
+          s.connect(f).connect(g).connect(out);
+          g.gain.setValueAtTime(0, at);
+          g.gain.linearRampToValueAtTime(b[3], at + b[2] * 0.45);
+          g.gain.linearRampToValueAtTime(0, at + b[2]);
+          s.start(at);
+          s.stop(at + b[2] + 0.05);
+        });
+      }
+      // cut off mid-breath: whoever it is heard you
+      return { stop: function () { master.gain.setTargetAtTime(0, c.currentTime, 0.02); } };
+    },
+    // ---- night two: the house ------------------------------------------------------------------
+    // the landline on the kitchen wall: an old two-tone bell, ring ... ring, until it is stopped
+    landline: function (c, out) {
+      return repeater(c, 4, function (t) {
+        for (var i = 0; i < 2; i++) {
+          var at = t + i * 0.55;
+          for (var k = 0; k < 9; k++) {
+            tone(c, out, at + k * 0.045, { wave: 'square', freq: k % 2 ? 1180 : 1420, peak: 0.07, attack: 0.002, decay: 0.05 });
+          }
+        }
+      });
+    },
+    // the main breaker going, and being thrown back
+    breaker: function (c, out, o, t) {
+      burst(c, out, t, { type: 'lowpass', freq: 900, peak: 0.8, decay: 0.05 });
+      tone(c, out, t, { freq: 120, to: 60, peak: 0.5, decay: 0.12 });
+      burst(c, out, t + 0.03, { freq: 2600, q: 2, peak: 0.3, decay: 0.02 });
+    },
+    // a wet bare foot on a hard floor
+    wetStep: function (c, out, o, t) {
+      burst(c, out, t, { type: 'lowpass', freq: 700, peak: 0.3, decay: 0.07 });
+      burst(c, out, t + 0.02, { type: 'bandpass', freq: 2600, q: 2, peak: 0.1, decay: 0.05 });
+    },
+    // his mother's lullaby, hummed low, through a wall: eight notes, the last one held
+    lullaby: function (c, out, o, t) {
+      var notes = [[57, 0.9], [60, 0.9], [64, 1.4], [62, 0.9], [60, 0.9], [57, 1.4], [55, 0.9], [57, 2.6]];
+      var at = t;
+      notes.forEach(function (n) {
+        var v = osc(c, 'triangle', mtof(n[0] - 12));
+        var v2 = osc(c, 'sine', mtof(n[0]));
+        var vib = osc(c, 'sine', 4.6);
+        var vg = gain(c, 1.6);
+        vib.connect(vg).connect(v.frequency);
+        var f = filt(c, 'lowpass', 520);
+        var g = gain(c, 0);
+        var g2 = gain(c, 0.25);
+        v.connect(f);
+        v2.connect(g2).connect(f);
+        f.connect(g).connect(out);
+        g.gain.setValueAtTime(0, at);
+        g.gain.linearRampToValueAtTime(0.16, at + 0.18);
+        g.gain.linearRampToValueAtTime(0.11, at + n[1] * 0.7);
+        g.gain.linearRampToValueAtTime(0, at + n[1]);
+        [v, v2, vib].forEach(function (x) {
+          x.start(at);
+          x.stop(at + n[1] + 0.05);
+        });
+        at += n[1] * 0.92;
+      });
+    },
     // Ethan's mixtape: three cheap loops (opts.track 0..2)
     mixtape: function (c, out, o) {
       var T = MIXTAPE[o.track || 0];

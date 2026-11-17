@@ -237,6 +237,68 @@
       },
     },
 
+    // ---- night two: the house phone rings, and it is only Dave ------------------------------------
+    daveLandline: {
+      start: 'hi',
+      nodes: {
+        hi: {
+          say: [
+            ['Dave', "Mason! There he is. You weren't picking up your cell."],
+            ['Mason', 'I was... busy. Is everything okay?'],
+            ['Dave', "Storm's all over the news here. Wanted to make sure the house hasn't floated away."],
+          ],
+          choices: [
+            { id: 'someone', text: "Dave, somebody's been in the house.", next: 'someone', log: 'toldDave' },
+            { id: 'power', text: "The power's been weird.", next: 'power' },
+          ],
+        },
+        someone: {
+          say: [
+            ['Dave', 'In the house? You mean Ray? Ray said you seemed a little jumpy. No offense.'],
+            ['Mason', "Not Ray. Things are moved. The bed's made. I don't make beds."],
+            ['Dave', 'Huh. ...You sure that was not your buddy?'],
+          ],
+          next: 'buddy',
+        },
+        power: {
+          say: [
+            ['Dave', "Yeah, that breaker's touchy. It's in the laundry room. If it trips, you just flip it back."],
+            ['Dave', 'Hey, tell your buddy thanks, by the way.'],
+          ],
+          next: 'buddy',
+        },
+        buddy: {
+          say: [
+            ['Mason', 'What buddy?'],
+            ['Dave', 'The fella who answered the house phone this afternoon. While you were at the store.'],
+            ['Dave', "Quiet guy. Real polite. Said you'd stepped out. I figured it was Ethan."],
+          ],
+          choices: [
+            { id: 'far', text: "Ethan's at his mom's. Two hundred miles from here.", next: 'far' },
+            { id: 'sound', text: 'What did he sound like?', next: 'sound', log: 'askedAboutVoice' },
+          ],
+        },
+        far: {
+          say: [['Dave', 'Huh! Well, somebody picked up.'], ['Dave', "Probably a crossed line. Storm does that. That phone's older than you are."]],
+          next: 'bye',
+        },
+        sound: {
+          say: [
+            ['Dave', 'Soft. Like a guy in a library. Called me sir.'],
+            ['Dave', 'Asked when I was coming home. I said Thursday. He said, "Good."'],
+          ],
+          next: 'bye',
+        },
+        bye: {
+          say: [
+            ['Dave', "Anyway! Lock up, get some sleep. You're doing great, bud."],
+            ['Dave', 'Oh, and Mason? Leave a light on. That house gets dark.'],
+          ],
+          end: true,
+        },
+      },
+    },
+
     // ---- the Gas-N-Go ---------------------------------------------------------------------------
     cashier: {
       start: 'hi',

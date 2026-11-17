@@ -88,6 +88,7 @@
       g.state.gag = false;
       g.state.modal = null;
       g.photo.reset();
+      g.habits.startChapter('dayTwo');
       phone.setShopping([]);
 
       var flags = { elapsed: 0, phase: 'morning', lightPhase: 'morning', ending: false };

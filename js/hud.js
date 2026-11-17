@@ -118,11 +118,29 @@
       el('keypad').classList.toggle('on', !!open);
       if (display !== undefined) el('kpDisplay').textContent = display;
     },
+    // body: a string, or a list of pages ({ title?, body } or strings) turned with E. ~~words~~ in a
+    // body are shown crossed out. opts: { shaky, style: 'notebook' }
     read: function (title, body, onClose, opts) {
       var r = el('reader');
-      el('readerTitle').textContent = title || '';
-      el('readerBody').textContent = body;
+      var pages = Array.isArray(body) ? body : [body];
+      var at = 0;
+      function show() {
+        var p = pages[at];
+        var text = typeof p === 'string' ? p : p.body;
+        var head = (typeof p === 'object' && p.title) || title || '';
+        el('readerTitle').textContent = head + (pages.length > 1 ? '   ' + (at + 1) + ' / ' + pages.length : '');
+        // crossed-out words: everything is escaped first, so the note's text can never be markup
+        var esc = String(text).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; });
+        el('readerBody').innerHTML = esc.replace(/~~(.+?)~~/g, '<s>$1</s>').replace(/\^\^(.+?)\^\^/g, '<span class="scrawl">$1</span>');
+        var hint = r.querySelector('.reader-hint');
+        if (hint) hint.textContent = at < pages.length - 1 ? 'E to turn the page' : 'E to put it down';
+        var paper = r.querySelector('.paper');
+        if (paper) paper.scrollTop = 0;
+      }
+      show();
       r.classList.toggle('shaky', !!(opts && opts.shaky));
+      r.classList.toggle('notebook', !!(opts && opts.style === 'notebook'));
+      r.classList.toggle('screen', !!(opts && opts.style === 'screen'));
       r.classList.add('on');
       reading = true;
       var armed = false;
@@ -130,6 +148,13 @@
       function close(e) {
         if (!armed) return;
         if (e.type === 'keydown' && e.code !== 'KeyE' && e.code !== 'Space' && e.code !== 'Escape') return;
+        if (at < pages.length - 1 && !(e.type === 'keydown' && e.code === 'Escape')) {
+          at++;
+          show();
+          armed = false;
+          setTimeout(function () { armed = true; }, 200);
+          return;
+        }
         document.removeEventListener('keydown', close);
         document.removeEventListener('mousedown', close);
         r.classList.remove('on');

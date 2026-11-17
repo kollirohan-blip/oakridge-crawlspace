@@ -72,8 +72,9 @@
         tasks = list.slice();
         if (api.isOpen) render();
       },
-      setCollected: function (n, total) {
-        collected = { n: n, total: total };
+      // a count shown on Home (label defaults to Dave-isms); pass null to hide it
+      setCollected: function (n, total, label) {
+        collected = n === null ? null : { n: n, total: total, label: label || 'Dave-isms found' };
         if (api.isOpen) render();
       },
       setShopping: function (list) {
@@ -287,7 +288,7 @@
         })
         .join('') || '<li class="empty">Nothing on the list.</li>';
       var extras = '';
-      if (collected) extras += '<div class="phone-line">Dave-isms found: ' + collected.n + ' / ' + collected.total + '</div>';
+      if (collected) extras += '<div class="phone-line">' + esc(collected.label) + ': ' + collected.n + ' / ' + collected.total + '</div>';
       if (shopping.length) extras += '<div class="phone-line">Shopping list: ' + esc(shopping.join(', ')) + '</div>';
       el('phoneExtras').innerHTML = extras;
       var html = '';

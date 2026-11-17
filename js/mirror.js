@@ -49,6 +49,9 @@
     var api = {
       active: false,
       frames: 0,
+      // hooks to stage something for the mirror alone (what it shows that the room does not)
+      beforeRender: null,
+      afterRender: null,
       at: { x: (X0 + X1) / 2, y: (Y0 + Y1) / 2, z: ZM },
       update: function () {
         var e = r.camera.position;
@@ -67,9 +70,11 @@
         cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
         cam.updateMatrixWorld();
         glass.visible = false;
+        if (api.beforeRender) api.beforeRender();
         r.renderer.setRenderTarget(rt);
         r.renderer.render(r.scene, cam);
         r.renderer.setRenderTarget(null);
+        if (api.afterRender) api.afterRender();
         glass.visible = true;
         api.frames++;
       },

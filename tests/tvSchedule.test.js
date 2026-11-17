@@ -128,3 +128,19 @@ test('once armed, the next channel change shows the reflection, once', () => {
 test('arming an unknown event is an error', () => {
   assert.throws(() => createTv(data).arm('ghost'), /unknown tv event: ghost/);
 });
+
+const DATA_FOR_LINES = { lineSec: 5, channels: [{ n: 1, id: 'a', name: 'A', lines: ['a1', 'a2', 'a3'] }, { n: 2, id: 'b', name: 'B', lines: ['b1', 'b2', 'b3'] }], alert: { delay: 999, duration: 4, lines: ['x'] } };
+
+test('lineIndex() and lineTime() say which caption is up and how far into it, so the picture can follow', () => {
+  const tv = createTv(DATA_FOR_LINES);
+  tv.power(true);
+  tv.tick(0.1);
+  for (let i = 0; i < 70; i++) tv.tick(0.1); // 7.1 s
+  assert.equal(tv.lineIndex(), 1);
+  assert.ok(Math.abs(tv.lineTime() - 2.1) < 1e-6, String(tv.lineTime()));
+  tv.next();
+  assert.equal(tv.lineIndex(), 0);
+  assert.equal(tv.lineTime(), 0);
+  for (let i = 0; i < 160; i++) tv.tick(0.1); // 16 s on a 3-line channel: back round to line 0
+  assert.equal(tv.lineIndex(), 0);
+});
