@@ -10,6 +10,23 @@
   var toastTimer = null;
   var flashImageTimer = null;
   var reading = false;
+  var achQueue = [];
+
+  // the achievement corner: one at a time, each for a few seconds
+  function showAchievement() {
+    var box = el('achv');
+    if (!box || !achQueue.length) return;
+    el('achvTitle').textContent = achQueue[0];
+    box.classList.add('on');
+    if (OC.audio) OC.audio.play('chime', { gain: 0.3 });
+    setTimeout(function () {
+      box.classList.remove('on');
+      setTimeout(function () {
+        achQueue.shift();
+        showAchievement();
+      }, 450);
+    }, 3400);
+  }
 
   var hud = {
     // night: a number (NIGHT 2) or a label of its own (DAY 2)
@@ -72,6 +89,11 @@
       i.classList.add('on');
       clearTimeout(flashImageTimer);
       flashImageTimer = setTimeout(function () { i.classList.remove('on'); }, ms || 1500);
+    },
+    // a new achievement (over endings and menus too); several wait their turn
+    achievement: function (title) {
+      achQueue.push(title);
+      if (achQueue.length === 1) showAchievement();
     },
     toast: function (text, ms) {
       var t = el('toast');

@@ -350,3 +350,77 @@ body.at-title #phone.raised { display: none; }
 @keyframes photoIn { from { transform: scale(1.15) rotate(-1.5deg); filter: brightness(3); } to { transform: scale(1) rotate(-1.5deg); filter: none; } }
 body.phone-raised #hud { z-index: 9; }
 body.phone-raised #phoneHint, body.phone-raised #rec, body.phone-raised #battery, body.phone-raised #crosshair, body.phone-raised #prompt, body.phone-raised #toast, body.phone-raised #subtitle { visibility: hidden; }
+
+/* ---- Phase 6: the epilogue's picture, the tape, achievements, the title's view of the house -------- */
+body.in-epilogue #crosshair, body.in-epilogue #battery, body.in-epilogue #phoneHint, body.in-epilogue #prompt,
+body.in-epilogue #notif, body.in-epilogue #noise, body.in-epilogue #hold { visibility: hidden; }
+
+/* what is on Mason's phone: cards down the right of the porch shot */
+#evidence {
+  position: fixed; right: 3.5vmin; top: 9vmin; bottom: 16vmin; width: min(28vw, 290px); z-index: 7;
+  display: none; flex-direction: column; gap: 1vmin; overflow: hidden; text-shadow: 0 0 3px #000;
+}
+#evidence.on { display: flex; }
+#evidence .ev-head { font-size: clamp(10px, 1.5vmin, 13px); letter-spacing: 0.25em; color: var(--dim); }
+#evidence .ev-card {
+  background: rgba(8,10,16,0.82); border-left: 3px solid var(--red); padding: 0.9vmin 1.2vmin;
+  font-size: clamp(11px, 1.75vmin, 16px); line-height: 1.35; animation: epIn 0.8s ease-out both; flex: none;
+}
+#evidence .ev-card.dim { border-left-color: rgba(255,255,255,0.25); color: var(--dim); font-size: clamp(10px, 1.55vmin, 14px); padding: 0.6vmin 1.2vmin; }
+#evidence .ev-card img { display: block; height: 10.5vmin; max-width: 100%; image-rendering: pixelated; margin-bottom: 0.7vmin; }
+
+/* his notebook, read out: a composition book page; the last line is the real time you pressed play */
+#epilogueLines .ep-paper {
+  background: #e6e2d6; color: #2c2c30; padding: 4vmin 5vmin; width: min(80vw, 600px); text-align: left;
+  transform: rotate(-0.6deg); box-shadow: 0 0 40px rgba(0,0,0,0.6); text-transform: lowercase; text-shadow: none;
+}
+#epilogueLines .ep-paper-title { font-size: clamp(11px, 1.7vmin, 15px); letter-spacing: 0.3em; text-transform: uppercase; color: #6b6455; margin-bottom: 2vmin; }
+#epilogueLines .ep-paper-line { font-size: clamp(13px, 2.2vmin, 20px); line-height: 1.6; animation: epIn 0.9s ease-out both; }
+#epilogueLines .ep-paper-last {
+  margin-top: 3.5vmin; font-family: "Segoe Script", "Bradley Hand", cursive; font-size: clamp(15px, 2.8vmin, 26px);
+  color: #3a2420; transform: rotate(-1.5deg); animation: epIn 2.4s ease-out both;
+}
+
+/* the news, on a TV: a lower third and a ticker */
+#epilogueLines .ep-news {
+  width: min(86vw, 820px); aspect-ratio: 16 / 9; position: relative; overflow: hidden; text-align: left;
+  background: radial-gradient(ellipse at 60% 35%, #2a3a58, #0b1220 70%); border: 6px solid #111; animation: epIn 0.8s ease-out both;
+}
+#epilogueLines .ep-news-tag { position: absolute; left: 4%; top: 6%; background: #c8241b; color: #fff; padding: 0.6vmin 1.4vmin; letter-spacing: 0.15em; font-size: clamp(12px, 2vmin, 18px); }
+#epilogueLines .ep-news-head {
+  position: absolute; left: 0; right: 0; bottom: 27%; background: rgba(238,238,238,0.95); color: #101418; text-shadow: none;
+  padding: 1.2vmin 4%; font-size: clamp(14px, 2.6vmin, 26px); letter-spacing: 0.04em; font-weight: bold;
+}
+#epilogueLines .ep-news-line { position: absolute; left: 4%; right: 4%; bottom: 13%; color: #e6ecf5; font-size: clamp(12px, 2vmin, 18px); }
+#epilogueLines .ep-news-ticker {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 9%; background: #0a0a0a; color: #ffd24a; white-space: nowrap;
+  overflow: hidden; font-size: clamp(11px, 1.8vmin, 16px); display: flex; align-items: center;
+}
+#epilogueLines .ep-news-ticker span { display: inline-block; padding-left: 100%; animation: ticker 22s linear infinite; }
+@keyframes ticker { to { transform: translateX(-100%); } }
+
+/* a new achievement, top right, over everything */
+#achv {
+  position: fixed; right: 3vmin; top: 3vmin; z-index: 13; pointer-events: none; text-shadow: none;
+  background: rgba(6,8,12,0.92); border: 1px solid rgba(255,255,255,0.18); border-left: 3px solid var(--red); padding: 1vmin 1.8vmin;
+  opacity: 0; transform: translateY(-8px); transition: opacity .35s, transform .35s;
+}
+#achv.on { opacity: 1; transform: none; }
+#achv .achv-k { font-size: clamp(9px, 1.3vmin, 12px); letter-spacing: 0.3em; color: var(--dim); }
+#achvTitle { font-size: clamp(13px, 2.1vmin, 20px); margin-top: 0.4vmin; }
+
+/* the achievements screen: scrolls with the wheel */
+.ach-list { width: min(86vw, 640px); max-height: 56vh; overflow-y: auto; display: grid; gap: 1vmin; margin-bottom: 3vmin; text-align: left; padding-right: 1vmin; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.22) transparent; }
+.ach { border-left: 3px solid rgba(255,255,255,0.15); padding: 0.8vmin 1.6vmin; opacity: 0.55; }
+.ach.on { border-left-color: var(--red); opacity: 1; }
+.ach-title { font-size: clamp(13px, 2.1vmin, 20px); letter-spacing: 0.05em; }
+.ach-desc { font-size: clamp(11px, 1.7vmin, 16px); color: var(--dim); margin-top: 0.3vmin; }
+
+/* the title: the menu on the left, the house showing through on the right */
+#menus #title {
+  background: linear-gradient(90deg, rgba(3,4,8,0.92) 0%, rgba(3,4,8,0.78) 28%, rgba(3,4,8,0.22) 52%, rgba(3,4,8,0) 100%);
+  align-items: flex-start; text-align: left; padding-left: 7vw;
+}
+#menus #title .menu-items { align-items: flex-start; }
+#menus #title .menu-items button { padding-left: 0; }
+#menus #title .keys, #menus #title .small { padding: 0; max-width: 56vw; text-wrap: balance; }

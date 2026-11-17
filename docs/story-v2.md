@@ -491,6 +491,12 @@ All of these are player-independent unless marked "you":
 6. **The epilogue:** evidence and endings, the notebook, "You left the light on", the title-screen
    change, achievements.
 7. **The pass:** scare and pacing, HRTF audio, writing and humor, credits.
+8. **Learn from the neighbours** *(Rohan, 2026-11-17: "when the game is done - Go online and search up
+   games similar to these, fears to fathom and see what seperates us from them and make it not a carbon
+   copy but take the positives and negatives")*:
+   - research Fears to Fathom and the games like it (what players praise, what they complain about);
+   - write down what separates Oakridge from them, in `docs/research-similar-games.md`;
+   - adopt the strengths in our own way and steer clear of the weaknesses, without copying any game.
 
 ## Critical files
 - **Docs:** this file and `docs/design-v2.md`.

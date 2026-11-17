@@ -3,7 +3,7 @@
 // decides what they do.
 (function () {
   var OC = (window.OC = window.OC || {});
-  var SCREENS = ['title', 'pause', 'chapters', 'settings'];
+  var SCREENS = ['title', 'pause', 'chapters', 'achievements', 'settings'];
 
   function el(id) {
     return document.getElementById(id);
@@ -18,7 +18,7 @@
     function show(name) {
       current = name;
       // the title screen is a clean screen: no in-game REC stamp or meters behind it
-      document.body.classList.toggle('at-title', name === 'title' || name === 'chapters' || (name === 'settings' && back !== 'pause'));
+      document.body.classList.toggle('at-title', name === 'title' || name === 'chapters' || name === 'achievements' || (name === 'settings' && back !== 'pause'));
       SCREENS.forEach(function (s) {
         el(s).classList.toggle('on', s === name);
       });
@@ -57,6 +57,27 @@
       form[k].addEventListener('change', readForm);
     });
 
+    // ---- achievements: earned ones lit, the rest dim with a hint (the endings' hints give nothing away)
+    function fillAchievements() {
+      var list = opts.achievements ? opts.achievements() : [];
+      var box = el('achList');
+      box.innerHTML = '';
+      list.forEach(function (a) {
+        var row = document.createElement('div');
+        row.className = 'ach' + (a.unlocked ? ' on' : '');
+        var h = document.createElement('div');
+        h.className = 'ach-title';
+        h.textContent = a.title;
+        var d = document.createElement('div');
+        d.className = 'ach-desc';
+        d.textContent = a.unlocked || !a.hint ? a.desc : a.hint;
+        row.appendChild(h);
+        row.appendChild(d);
+        box.appendChild(row);
+      });
+      box.scrollTop = 0;
+    }
+
     // ---- buttons ----------------------------------------------------------------------------------
     el('menus').addEventListener('click', function (e) {
       var b = e.target.closest('button');
@@ -73,6 +94,11 @@
       if (act === 'chapters') {
         back = 'title';
         return show('chapters');
+      }
+      if (act === 'achievements') {
+        back = 'title';
+        fillAchievements();
+        return show('achievements');
       }
       if (act === 'back') return show(back);
       if (act === 'fullscreen') {
@@ -91,6 +117,7 @@
         c.hidden = !state.continueLabel;
         if (state.continueLabel) c.textContent = 'Continue (' + state.continueLabel + ')';
         el('mChapters').hidden = !state.chaptersUnlocked;
+        el('mAchievements').textContent = 'Achievements' + (state.achievements ? ' (' + state.achievements + ')' : '');
         show('title');
       },
       showPause: function () {

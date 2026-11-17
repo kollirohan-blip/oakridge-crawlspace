@@ -83,6 +83,10 @@
 <div id="reader"><div class="paper"><div id="readerTitle"></div><div id="readerBody"></div></div><div class="reader-hint">E to put it down</div></div>
 
 <div id="epilogue"><div class="ep-play">PLAY &#9654;</div><div id="epilogueLines"></div></div>
+<!-- what is on Mason's phone, beside the picture on the porch -->
+<div id="evidence"></div>
+<!-- a new achievement, in the corner over everything -->
+<div id="achv"><div class="achv-k">ACHIEVEMENT</div><div id="achvTitle"></div></div>
 
 <!-- Menus: the title screen, the pause menu (Esc), chapter select and settings -->
 <div id="menus">
@@ -93,6 +97,7 @@
       <button data-act="continue" id="mContinue">Continue</button>
       <button data-act="new">New game</button>
       <button data-act="chapters" id="mChapters">Chapters</button>
+      <button data-act="achievements" id="mAchievements">Achievements</button>
       <button data-act="settings">Settings</button>
       <button data-act="fullscreen">Full screen</button>
     </div>
@@ -120,6 +125,12 @@
       <button data-chapter="act4">12:35 AM: The car</button>
       <button data-act="back">Back</button>
     </div>
+  </div>
+
+  <div id="achievements" class="menu">
+    <h2>ACHIEVEMENTS</h2>
+    <div id="achList" class="ach-list"></div>
+    <div class="menu-items"><button data-act="back">Back</button></div>
   </div>
 
   <div id="settings" class="menu">
@@ -178,6 +189,8 @@
 <script src="js/engine/settings.js"></script>
 <script src="js/engine/content.js"></script>
 <script src="js/engine/habits.js"></script>
+<script src="js/engine/evidence.js"></script>
+<script src="js/engine/achievements.js"></script>
 <script src="js/engine/tension.js"></script>
 <script src="js/engine/scarePool.js"></script>
 <script src="js/engine/food.js"></script>

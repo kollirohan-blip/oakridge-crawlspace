@@ -26,8 +26,8 @@ Double-click `index.html`. It opens in your browser; click to start.
 Headphones help: the sounds are positional, and the scratching under the floor comes from where the
 hatch actually is.
 
-The game saves a checkpoint at the start of each act. Reopening it continues from there; press **N**
-on the start screen to start over.
+The game saves a checkpoint at the start of each act. Reopening it offers **Continue** from there;
+**New game** starts over.
 
 **No internet needed:** the 3D library (Three.js r128, MIT licence) is included as
 `vendor/three.min.js`. If that file is ever missing, the game falls back to loading it from cdnjs.
@@ -55,7 +55,15 @@ on the start screen to start over.
 - **12:35 AM, "The Search".** The bathroom, the shower, two bare feet in the light under the door. Then get out
   through your own house while he searches it room by room, trying handles and listening. He never runs.
   Hide, but not in the same place twice. The chain on the front door. The car. Stay down.
-- **Epilogue.** What the police found.
+- **Epilogue, "What Can Be Proven?"** Dawn on the porch steps, a deputy's car in the drive, and what is on
+  your phone. The ending is built from what you actually did: the photos you took, whether you left his
+  notebook or brought it out, whether you called the deputy in the daytime. His notebook is read back to you
+  with your real habits in it and the real time you pressed play. The news, Dave, the cashier, and one of three
+  verdicts. Then the house, two weeks later, in daylight, and a note on the fridge.
+
+Six endings in all (three verdicts, one for calling Ray, the closet, and the Tupperware). After any of them the
+title screen has a light on in the guest room window, and chapter select opens. Eighteen achievements, kept in
+the browser between plays (some only show a hint until you earn them).
 
 12:30 and 12:35 can be failed; you retry from the start of that part.
 
@@ -69,9 +77,11 @@ on the start screen to start over.
   picker, the doors that close behind you must not trap you, and Night 1's flows (all five dinners,
   the TV, the photo, the pet cam, the mirror, the laundry door, a pause in a modal, a mid-night
   restart, a player who never moves) and Night 2's (the breaker, the black TV, the faltering light, the
-  crawl, a player who never moves) must play through. Returns a promise; `ok: true` means all of it passed.
+  crawl, a player who never moves), the later acts' and the endings' (the strong and the empty-handed
+  verdicts, leaving an ending for a new night, pausing, restarting and quitting in the middle of one, the
+  title's light and achievements) must play through. Returns a promise; `ok: true` means all of it passed.
 - `OC.debug.night2({ breaker, lightFalters, tvReflection })` starts Night 2 with chosen habit gates.
-- `tools/night1-run.js`, `tools/day2-run.js`, `tools/night2-run.js`: scripted runs of each chapter for
+- `tools/night1-run.js`, `tools/day2-run.js`, `tools/night2-run.js`, `tools/ending-run.js`: scripted runs for
   the Playwright MCP's `browser_run_code`. Each saves screenshots and returns every console error.
 - `node tools/bundle.js` packs the whole game into one HTML file (`dist/`), to play anywhere.
 - `npm test` runs the logic tests (Node 20, no install needed).
@@ -87,7 +97,8 @@ content/text.js         every line of story text, by id (the game refuses to sta
 js/engine/              pure logic, tested in Node: layout, collision, sight lines, the act director,
                         path-finding, the figure in the window, the bluff, the noise meter, the clock,
                         the habit log, the tension Director, the scare pool, dinner, the TV, Flappy Cooper,
-                        conversations, the storm, the footsteps overhead
+                        conversations, the storm, the footsteps overhead, the evidence behind the endings,
+                        achievements
 js/night1/              night one's routine and dread, composed by js/acts/act1.js
 js/day2/, js/night2/    day two and night two, composed by js/acts/day2.js and js/acts/act2.js
 content/talks.js        every conversation, as trees
@@ -95,7 +106,7 @@ js/tvshows.js           what is on TV: the shows, drawn on the screen
 js/crawl.js, places.js  under the house; the road and the Gas-N-Go
 content/scares.js, tv.js the scare pool and the TV channels
 js/                     rendering, the controller, props, Cooper, audio (all synthesized), the phone
-js/acts/act1-4.js       the four acts; js/epilogue.js
+js/acts/act1-4.js       the four acts; js/epilogue.js, every ending
 tests/                  node --test
 docs/design.md          the design; docs/superpowers/plans/ the build plan; docs/perf.md
 ```

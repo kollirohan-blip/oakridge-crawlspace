@@ -60,6 +60,7 @@
     'snack:c': 'bought a salad. nobody wants that',
     sawShopper: 'i went to the store too. he looked right at me',
     sawRoadside: 'watched him drive home. he saw me. good',
+    flappyTen: 'plays the game on his phone where the dog flies. he got to ten',
   };
   // what goes on the first page when he never saw the boy do anything worth writing down
   var NOTHING_SEEN = ['came in a grey car', 'the dog likes him. the dog likes me better'];

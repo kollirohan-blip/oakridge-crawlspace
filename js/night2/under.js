@@ -14,7 +14,7 @@
     'n2.crawl.moon', 'n2.crawl.notebookTitle', 'n2.crawl.notebookThought', 'n2.crawl.bookPrompt', 'n2.crawl.bookPhoto',
     'n2.crawl.bookTake', 'n2.crawl.bookLeave', 'n2.crawl.bookPhotoDone', 'n2.crawl.bookTaken', 'n2.crawl.bookLeft',
     'n2.crawl.steps', 'n2.crawl.stepsStop', 'n2.crawl.sit', 'n2.crawl.ring', 'n2.crawl.gone', 'n2.crawl.out',
-    'n2.crawl.lightDies', 'n2.crawl.lightBack',
+    'n2.crawl.lightDies', 'n2.crawl.lightBack', 'n2.crawl.nestPhoto',
   ];
 
   function create(g, ctx) {
@@ -254,6 +254,20 @@
         ctx.later(10.5, function () { say('n2.crawl.gone', 5000); });
       }
     }
+
+    // a photo of the nest is proof the police can use (the epilogue counts it): his things, close enough to see
+    var NEST_AT = { x: C.NEST.x, y: 0.1, z: C.NEST.z };
+    g.photo.beforeShot = function (cam) {
+      if (!flags.inCrawl || st.nestPhoto) return null;
+      var near = Math.hypot(cam.x - NEST_AT.x, cam.z - NEST_AT.z) < 3.2;
+      return near && OC.sightline.inView(cam, NEST_AT, 0.55) ? { subject: 'nest', flash: 0.55, undo: function () {} } : null;
+    };
+    g.photo.onPhoto = function (photo) {
+      if (photo.subject !== 'nest' || st.nestPhoto) return;
+      st.nestPhoto = true;
+      ctx.log('photoNest');
+      ctx.later(1.2, function () { say('n2.crawl.nestPhoto', 5000); });
+    };
 
     return {
       items: items,

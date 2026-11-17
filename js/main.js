@@ -89,6 +89,58 @@
       }
     }
 
+    // achievements: marks from everything Mason does (the habit log) and from each ending, kept across
+    // playthroughs; a new one shows in the corner
+    var achievements = (function () {
+      try {
+        return OC.achievements.restore(JSON.parse(localStorage.getItem('oakridge.achievements')));
+      } catch (e) {
+        return OC.achievements.createAchievements();
+      }
+    })();
+    function saveAchievements() {
+      try {
+        localStorage.setItem('oakridge.achievements', JSON.stringify(achievements.serialize()));
+      } catch (e) {
+        /* no storage: they last until the tab closes */
+      }
+    }
+    function announce(list) {
+      if (!list.length) return;
+      saveAchievements();
+      list.forEach(function (a) { OC.hud.achievement(a.title); });
+    }
+    g.achievements = achievements;
+    g.unlock = function (marks) {
+      announce(achievements.note(marks));
+    };
+    g.habits.entries().forEach(function (e) { achievements.noteEntry(e); }); // a save from before achievements: quietly
+    saveAchievements();
+    var logHabit = g.habits.log;
+    g.habits.log = function (action, detail, when) {
+      var e = logHabit(action, detail, when);
+      announce(achievements.noteEntry(e));
+      return e;
+    };
+    // when the player really started: the last line of his notebook, in the epilogue
+    var bootTime = Date.now();
+    function saveBegan() {
+      try {
+        localStorage.setItem('oakridge.began', String(Date.now()));
+      } catch (e) {
+        /* no storage: the time the page opened stands in */
+      }
+    }
+    g.began = function () {
+      var v = 0;
+      try {
+        v = Number(localStorage.getItem('oakridge.began')) || 0;
+      } catch (e) {
+        v = 0;
+      }
+      return new Date(v || bootTime);
+    };
+
     // read a note full screen; Mason stands still while he reads, then carries on
     g.read = function (title, body, onClose, opts) {
       var wasFrozen = ctl.frozen;
@@ -156,6 +208,7 @@
       phone.setContacts(def.contacts || []);
       if (props.decor && props.decor.petcamDevice) props.decor.petcamDevice.turn(false);
       document.getElementById('epilogue').classList.remove('on'); // an ending screen must not cover a new night
+      document.body.classList.remove('in-epilogue');
       g.state.cutscene = false;
       g.clock = OC.clock.gameClock(def.clockDef);
       var spawnName = new URLSearchParams(location.search).get('spawn');
@@ -189,38 +242,41 @@
       }
     }
 
+    // an ending: the epilogue ('main'), or the Tupperware ('gag') or the closet ('bad'), which count as finishing
+    function startEpilogue(variant) {
+      if (current.act && current.act.dispose) current.act.dispose();
+      interact.clear();
+      saveCheckpoint(null); // finished: the next visit starts fresh
+      try {
+        localStorage.setItem('oakridge.finished', '1'); // unlocks chapter select, and a light in the title's window
+      } catch (e) {
+        /* no storage: chapters just stay locked */
+      }
+      if (variant === 'gag' || variant === 'bad') g.unlock(['ending:' + variant]);
+      g.clock = OC.clock.gameClock({ startMin: 6 * 60 + 12, endMin: 6 * 60 + 40, durationSec: 900 });
+      current.id = 'epilogue';
+      current.variant = variant || 'main'; // Restart plays this same ending again
+      current.def = { stamp: content.t('ep.stamp') }; // the epilogue changes it for the later visit
+      document.body.classList.add('in-epilogue');
+      current.act = OC.epilogue.create(g, { variant: variant || 'main', def: current.def });
+    }
+    g.startEpilogue = startEpilogue;
+    // quitting to the title from an ending: it cannot be continued (there is no checkpoint after it), so
+    // put it all away now instead of leaving the cards, the cruiser and the hum behind the title
+    function leaveEnding() {
+      if (current.id !== 'epilogue' || !current.act) return;
+      if (current.act.dispose) current.act.dispose();
+      current.act = null;
+      document.body.classList.remove('in-epilogue');
+      world.setDaylight(0, r.renderer); // the title is at night, even if he quit in the afternoon visit
+    }
     g.onEnd = function (id, outcome) {
       if (outcome === 'retry') return startAct(id);
       saveHabits(); // every chapter adds to the log the later ones read
-      if ((outcome === 'gag' || outcome === 'bad') && OC.epilogue) {
-        // the Tupperware, or the closet: a short ending of its own, and it counts as finishing
-        if (current.act && current.act.dispose) current.act.dispose();
-        interact.clear();
-        saveCheckpoint(null);
-        try {
-          localStorage.setItem('oakridge.finished', '1');
-        } catch (e) {
-          /* no storage: chapters just stay locked */
-        }
-        current.id = 'epilogue';
-        current.act = OC.epilogue.create(g, { variant: outcome });
-        return;
-      }
+      if ((outcome === 'gag' || outcome === 'bad') && OC.epilogue) return startEpilogue(outcome);
       var next = ACT_ORDER[ACT_ORDER.indexOf(id) + 1];
       if (next && OC.acts[next]) return startAct(next);
-      if (!next && OC.epilogue) {
-        if (current.act && current.act.dispose) current.act.dispose();
-        interact.clear();
-        saveCheckpoint(null); // finished: the next visit starts fresh
-        try {
-          localStorage.setItem('oakridge.finished', '1'); // unlocks chapter select
-        } catch (e) {
-          /* no storage: chapters just stay locked */
-        }
-        current.id = 'epilogue';
-        current.act = OC.epilogue.create(g);
-        return;
-      }
+      if (!next && OC.epilogue) return startEpilogue('main');
       OC.hud.setFadeText('TO BE CONTINUED');
     };
     g.startAct = startAct;
@@ -267,6 +323,7 @@
       menu.showTitle({
         continueLabel: saved && saved !== 'act1' && NAMES[saved] ? NAMES[saved] : null,
         chaptersUnlocked: chaptersUnlocked(),
+        achievements: achievements.unlocked().length + '/' + OC.achievements.LIST.length,
       });
     }
     // enter the game: start the sound (needs this click) and capture the mouse
@@ -280,6 +337,9 @@
     }
     var menu = OC.menu.create({
       settings: settings,
+      achievements: function () {
+        return achievements.list();
+      },
       onSettings: function (s) {
         settings = s;
         applySettings(s);
@@ -288,12 +348,15 @@
       onChoice: function (action, arg) {
         if (action === 'new') {
           saveCheckpoint(null);
+          saveBegan();
           startAct('act1');
         } else if (action === 'chapter') {
           startAct(arg);
         } else if (action === 'restart') {
-          startAct(current.id === 'epilogue' ? 'act1' : current.id);
+          if (current.id === 'epilogue') startEpilogue(current.variant);
+          else startAct(current.id);
         } else if (action === 'quit') {
+          leaveEnding();
           return showTitle();
         }
         begin(); // new, continue, chapter, resume, restart
@@ -303,6 +366,7 @@
 
     ctl.onLockChange = function (locked) {
       if (locked) {
+        if (!playing && current.id === 'act1' && !g.habits.entries().length) saveBegan(); // a fresh night one
         playing = true;
         menu.hide();
       } else if (playing) {
@@ -311,6 +375,77 @@
         showTitle();
       }
     };
+
+
+    // ---- the title screen's picture: the house from the side yard at night, calm. After any ending, a
+    // light is on in the guest room window (his old room).
+    var titleView = (function () {
+      var cam = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 160);
+      cam.rotation.order = 'YXZ';
+      var FROM = { x: -10.5, y: 1.6, z: -4 }; // off the porch's corner: the house fills the right of the screen
+      var AT = { x: 5.2, y: 1.45, z: 3.2 };
+      var MOON = 0.18;
+      var LAMP = 1.5;
+      var glow = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.1, 1.1),
+        new THREE.MeshBasicMaterial({ color: 0xffb35c, fog: false, transparent: true, opacity: 0.8 })
+      );
+      glow.position.set(0.13, 1.5, 16); // just inside the guest room's west window
+      glow.rotation.y = -Math.PI / 2; // facing out
+      glow.visible = false;
+      r.scene.add(glow);
+      var lamp = world.lightById.guest;
+      var lampWas = null;
+      var dayWas = null;
+      var on = false;
+      var time = 0;
+      function enter() {
+        on = true;
+        var lit = chaptersUnlocked();
+        glow.visible = lit;
+        if (lamp) {
+          lampWas = lamp.intensity;
+          if (lit) lamp.intensity = LAMP;
+        }
+        // a little moon, so the house reads as a house and not a black box
+        dayWas = world.daylight;
+        if (dayWas < MOON) world.setDaylight(MOON, r.renderer);
+      }
+      return {
+        active: function () {
+          return document.body.classList.contains('at-title');
+        },
+        render: function (dt) {
+          if (!on) enter();
+          time += dt;
+          if (Math.abs(cam.aspect - r.camera.aspect) > 1e-3) {
+            cam.aspect = r.camera.aspect;
+            cam.updateProjectionMatrix();
+          }
+          cam.position.set(FROM.x + Math.sin(time * 0.06) * 0.7, FROM.y + Math.sin(time * 0.13) * 0.04, FROM.z);
+          cam.lookAt(AT.x, AT.y, AT.z);
+          r.renderer.render(r.scene, cam);
+        },
+        leave: function () {
+          if (!on) return;
+          on = false;
+          glow.visible = false;
+          // put back only what is still ours: an act may have changed it since (an ending starting at dawn)
+          if (lamp && lampWas !== null && lamp.intensity === LAMP) lamp.intensity = lampWas;
+          if (dayWas !== null && dayWas < MOON && world.daylight === MOON) world.setDaylight(dayWas, r.renderer);
+          lampWas = null;
+          dayWas = null;
+        },
+        // for tuning the shot from the console: OC.debug.titlePose({x,y,z}, {x,y,z})
+        pose: function (from, at) {
+          if (from) FROM = from;
+          if (at) AT = at;
+        },
+        lit: function () {
+          return glow.visible;
+        },
+      };
+    })();
 
     var params = new URLSearchParams(location.search);
     var saved = loadCheckpoint();
@@ -322,6 +457,7 @@
     var samples = [];
     var last = performance.now();
     var phoneClock = 0;
+    var flappyTen = false;
 
     // one step of the simulation (everything except drawing)
     function tick(dt) {
@@ -331,6 +467,10 @@
       interact.suspend(phone.choosing() || g.state.cutscene || !!g.state.modal || OC.hud.isReading());
       interact.update(dt);
       if (ctl.locked) phone.update(dt); // a timed choice must not run out while the game is paused
+      if (!flappyTen && phone.flappy() && phone.flappy().best() >= 10) {
+        flappyTen = true;
+        g.habits.log('flappyTen', {}, { clock: g.clock ? g.clock.label() : '', t: 0 });
+      }
       g.photo.update(dt);
       g.petcam.on = g.state.petcamForce || (phone.isOpen && phone.currentApp() === 'petcam');
       g.petcam.update(dt, g.clock ? g.clock.label() : '');
@@ -354,7 +494,11 @@
       var t0 = performance.now();
       tick(dt);
       g.mirror.update();
-      r.render();
+      if (titleView.active()) titleView.render(dt);
+      else {
+        titleView.leave();
+        r.render();
+      }
       samples.push(performance.now() - t0);
       if (samples.length > 120) samples.shift();
       requestAnimationFrame(frame);
@@ -423,6 +567,9 @@
         var s = OC.house.stand[name];
         ctl.teleport(s.x, s.z, typeof yaw === 'number' ? yaw : ctl.yaw, 0);
       },
+      titlePose: function (from, at) {
+        titleView.pose(from, at);
+      },
       use: function (id) {
         var it = interact.items.filter(function (i) { return i.id === id; })[0];
         if (!it) throw new Error('no such item: ' + id);
@@ -438,6 +585,16 @@
       sweep: async function () {
         var R = OC.controller.RADIUS;
         var report = { failures: [], items: {}, doors: {} };
+        // the flows finish endings and earn achievements: put the player's own progress back afterwards
+        var STORE_KEYS = ['oakridge.finished', 'oakridge.checkpoint', 'oakridge.achievements', 'oakridge.habits', 'oakridge.began'];
+        var storeWas = {};
+        STORE_KEYS.forEach(function (k) {
+          try {
+            storeWas[k] = localStorage.getItem(k);
+          } catch (e) {
+            storeWas[k] = null;
+          }
+        });
         function aim(from, eyeY, it) {
           var dx = it.x - from.x;
           var dz = it.z - from.z;
@@ -981,7 +1138,120 @@
           return true;
         });
 
+
+        // ---- the epilogue: the evidence tiers, played through on dt ----------------------------------------
+        function playEpilogue(list) {
+          g.habits.reset();
+          list.forEach(function (l) { g.habits.log(l[0], l[1] || {}, { clock: l[2] || '', t: 0 }); });
+          g.startEpilogue('main');
+          var ep = current.act;
+          var seen = {};
+          for (var s = 0; s < 400 && ep.stage() !== 'done'; s += 0.5) {
+            D.advance(0.5);
+            seen[ep.stage()] = true;
+            if (ep.noteVisible()) seen.note = true;
+          }
+          return { ep: ep, seen: seen, shown: ep.shown().join('\n') };
+        }
+        await flow('epilogueStrong', async function () {
+          var p = playEpilogue([
+            ['photoWes', {}, '11:40 PM'], ['dinner', { kind: 'lasagna' }, '7:42 PM'], ['dayTwo'], ['coffee', {}, '10:15 AM'],
+            ['calledDeputy'], ['nightTwo'], ['crawl', { kind: 'tally' }], ['photoNest'], ['readNotebook'], ['photoEye'],
+            ['survived', { ray: true }],
+          ]);
+          if (p.ep.stage() !== 'done') return 'never finished (' + p.ep.stage() + ')';
+          if (p.ep.tier !== 'strong') return 'tier ' + p.ep.tier;
+          var missing = ['porch', 'found', 'notebook', 'news', 'verdict', 'house', 'fridge', 'note', 'hum'].filter(function (k) { return !p.seen[k]; });
+          if (missing.length) return 'skipped ' + missing.join(', ');
+          var want = ['ep.porch.ray', 'ep.card.photoNest', 'ep.found.counted', 'ep.book.last', 'ep.strong.2', 'ep.plan', 'ep.deputy', 'ep.fridge'];
+          var notShown = want.filter(function (id) { return p.shown.indexOf(content.t(id)) < 0; });
+          if (notShown.length) return 'never showed ' + notShown.join(', ');
+          if (p.shown.indexOf('7:42 ate the lasagna. good.') < 0) return 'the notebook did not read his real habits';
+          if (!achievements.has('endStrong') || !achievements.has('endRay')) return 'no ending achievements';
+          return true;
+        });
+        await flow('epilogueLittle', async function () {
+          var p = playEpilogue([]);
+          if (p.ep.stage() !== 'done') return 'never finished (' + p.ep.stage() + ')';
+          if (p.ep.tier !== 'little') return 'tier ' + p.ep.tier;
+          if (p.seen.notebook) return 'read out a notebook nobody found';
+          if (p.shown.indexOf(content.t('ep.found.little.1')) < 0 || p.shown.indexOf(content.t('ep.little.1')) < 0) return 'not the little ending';
+          if (p.shown.indexOf(content.t('ep.card.none')) < 0) return 'no empty-phone card';
+          if (!achievements.has('endLittle')) return 'no achievement';
+          return true;
+        });
+        await flow('epilogueLeaves', async function () {
+          playEpilogue([['photoWes'], ['photoEye']]);
+          startAct('act1');
+          ctl.setLocked(true);
+          if (document.body.classList.contains('in-epilogue')) return 'still marked as the epilogue';
+          if (document.getElementById('evidence').classList.contains('on')) return 'the evidence cards stayed up';
+          if (g.cache.policeCar && g.cache.policeCar.visible) return 'the cruiser stayed in the drive';
+          if (g.cache.fridgeNote && g.cache.fridgeNote.visible) return 'the note stayed on the fridge';
+          if (Math.abs(r.camera.fov - g.baseFov) > 0.5) return 'the camera stayed zoomed in';
+          return true;
+        });
+        // Esc during an ending pauses it like any night; Restart plays the same ending again; Quit leaves nothing behind
+        await flow('epiloguePause', async function () {
+          g.habits.reset();
+          [['photoWes'], ['photoEye']].forEach(function (l) { g.habits.log(l[0], {}, { clock: '', t: 0 }); });
+          g.startEpilogue('main');
+          ctl.setLocked(true);
+          var ep = current.act;
+          for (var s = 0; s < 300 && ep.stage() !== 'news'; s += 0.5) D.advance(0.5);
+          if (ep.stage() !== 'news') return 'never reached the news (' + ep.stage() + ')';
+          var before = ep.shown().length;
+          ctl.setLocked(false); // Esc: the pause menu
+          D.advance(30);
+          if (ep.stage() !== 'news' || ep.shown().length !== before) return 'the ending kept playing while paused (' + ep.stage() + ')';
+          ctl.setLocked(true);
+          D.advance(30);
+          if (ep.stage() === 'news') return 'the ending did not carry on after resume';
+          ctl.setLocked(false);
+          document.querySelector('#pause button[data-act="restart"]').click();
+          if (current.id !== 'epilogue' || current.act === ep) return 'Restart did not play the ending again (' + current.id + ')';
+          ep = current.act;
+          ctl.setLocked(true);
+          for (var u = 0; u < 300 && ep.stage() !== 'hum'; u += 0.5) D.advance(0.5);
+          if (ep.stage() !== 'hum') return 'the replay never reached the hum (' + ep.stage() + ')';
+          ctl.setLocked(false);
+          document.querySelector('#pause button[data-act="quit"]').click();
+          D.advance(20); // time at the title: nothing of the ending may carry on behind it
+          if (current.act === ep && ep.stage() === 'done') return 'the ending kept going behind the title';
+          if (document.body.classList.contains('in-epilogue')) return 'still marked as the epilogue at the title';
+          if (document.getElementById('epilogue').classList.contains('on')) return 'the ending screen covers the title';
+          if (document.getElementById('evidence').classList.contains('on')) return 'the evidence cards stayed up';
+          if (Math.abs(r.camera.fov - g.baseFov) > 0.5) return 'the camera stayed zoomed in';
+          return true;
+        });
+
+        await flow('titleLight', async function () {
+          try {
+            localStorage.setItem('oakridge.finished', '1');
+          } catch (e) {
+            return true; // no storage: no light to check
+          }
+          showTitle();
+          titleView.render(0.016);
+          if (!titleView.lit()) return 'no light in the guest room window';
+          document.getElementById('mAchievements').click();
+          var rows = document.querySelectorAll('#achList .ach').length;
+          if (rows !== OC.achievements.LIST.length) return 'achievements screen shows ' + rows + ' rows';
+          menu.hide();
+          titleView.leave();
+          if (titleView.lit()) return 'the light stayed on after the title';
+          return true;
+        });
+
         startAct('act1');
+        STORE_KEYS.forEach(function (k) {
+          try {
+            if (storeWas[k] === null) localStorage.removeItem(k);
+            else localStorage.setItem(k, storeWas[k]);
+          } catch (e) {
+            /* no storage */
+          }
+        });
         report.ok = report.failures.length === 0;
         return report;
       },

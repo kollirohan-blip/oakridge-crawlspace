@@ -35,7 +35,10 @@
       found[id] = true;
       ctx.log('collected', { kind: id });
       g.phone.setCollected(count(), TOTAL);
-      if (count() === TOTAL) ctx.later(1, function () { say('n1.joke.allFound', 6000); });
+      if (count() === TOTAL) {
+        ctx.log('collectedAll');
+        ctx.later(1, function () { say('n1.joke.allFound', 6000); });
+      }
     }
     g.phone.setCollected(0, TOTAL);
 
