@@ -17,7 +17,7 @@ Double-click `index.html`. It opens in your browser; click to start.
 | Mouse | look |
 | E | use (some things need E held down) |
 | F | phone light (it drains the battery) |
-| Tab | your phone. The game goes on while it is out: walk, look, and use things with E. 1 to 8 switch apps: home (to-do), texts, camera, pet cam, photos, Flappy Cooper, Ethan's mixtape, calls. The mouse wheel scrolls. Space or a click takes a photo, flaps, skips a track, opens the newest link (Texts) or picks the next contact (Calls); Enter calls |
+| Tab | your phone. The game goes on while it is out: walk, look, and use things with E. 1 to 8 switch apps: home (to-do), texts, camera, pet cam, photos, Flappy Cooper, Ethan's mixtape, calls. Texts has a chat for each person: scroll to pick, click to open, 2 to go back. The mouse wheel scrolls or picks; a click (or Space, or Enter) opens a chat or link, calls, takes a photo, flaps or skips a track |
 | Space | skip to the next line when someone is talking |
 | 1 2 3 ... | answer, when the game asks |
 | 0 to 9, Enter | the microwave keypad (2 3 0 is 2:30). E cancels |

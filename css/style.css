@@ -111,6 +111,20 @@ body.phone-open #subtitle { left: calc((100vw - min(34vw, 320px) - 8vmin) / 2); 
   position: absolute; left: calc(3.5vmin + max(14vmin, 90px) + 3vmin); bottom: calc(3.5vmin - 0.3vmin); font-size: clamp(11px, 1.8vmin, 16px);
   color: rgba(232,230,223,0.78); letter-spacing: 0.1em; white-space: nowrap;
 }
+/* Texts: the chat list, and a conversation */
+.chat-row { display: flex; align-items: center; gap: 8px; padding: 7px 6px; border-bottom: 1px solid #191d24; }
+.chat-row.on { background: #1b2638; border-radius: 9px; border-bottom-color: transparent; }
+.chat-avatar { width: 1.9em; height: 1.9em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: #0c0e12; flex: none; font-size: 0.9em; vertical-align: middle; }
+#msgHeader .chat-avatar { width: 1.6em; height: 1.6em; margin: 0 4px; }
+.chat-main { flex: 1; min-width: 0; }
+.chat-top { display: flex; justify-content: space-between; gap: 6px; }
+.chat-name { color: #e8e6df; }
+.chat-time { color: #5d636c; font-size: 0.78em; white-space: nowrap; }
+.chat-preview { color: #8a909a; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-row.unread .chat-name, .chat-row.unread .chat-preview { color: #ffffff; font-weight: bold; }
+#msgHeader { letter-spacing: 0.05em; display: flex; align-items: center; }
+#msgHeader .back { color: #9fc3ff; font-size: 1.4em; margin-right: 2px; line-height: 1; }
+#phoneMsgs .when { text-align: center; color: #5d636c; font-size: 0.75em; margin: 8px 0 4px; }
 #phoneMsgs .who { color: #9fc3ff; margin: 8px 0 3px; font-size: 0.85em; }
 #phoneMsgs .who.mine { color: #e8c89f; text-align: right; }
 #phoneMsgs .who .when { color: #5d636c; }

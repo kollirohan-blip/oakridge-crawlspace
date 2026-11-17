@@ -1,7 +1,9 @@
 // Mason's phone: Tab opens it, and the game goes on while it is out (walk, look, use things with E).
 // Apps, switched with keys 1 to 8 while it is open: Home (the to-do list, Dave-isms, the shopping list),
-// Texts (every message, and links to open), Camera (with flash), the Pet Cam, Photos, Flappy Cooper,
-// Ethan's mixtape and Calls. The mouse wheel scrolls whatever app is open. It buzzes with a preview
+// Texts (a chat for each person: the list, then the conversation; 2 again goes back), Camera (with
+// flash), the Pet Cam, Photos, Flappy Cooper, Ethan's mixtape and Calls. The mouse wheel scrolls, or
+// picks in a list; a click (or Space, or Enter) opens or does the app's thing. No instructions sit on
+// the phone: each app says how it works once, the first time it is opened. It buzzes with a preview
 // when a text comes in, and runs the choices (keys 1, 2, 3...) and the calls.
 (function () {
   var OC = (window.OC = window.OC || {});
@@ -9,6 +11,16 @@
   var APP_LABELS = { home: 'Home', messages: 'Texts', camera: 'Camera', petcam: 'Pet Cam', photos: 'Photos', flappy: 'Flappy', music: 'Mixtape', calls: 'Calls' };
   // what the mouse wheel scrolls in each app
   var SCROLLS = { home: 'appHome', messages: 'phoneMsgs', photos: 'photoGrid', music: 'trackList', calls: 'contactList' };
+  var NAMES = { dave: 'Uncle Dave', ethan: 'Ethan', mom: 'Mom' };
+  var COLORS = { dave: '#d9a01a', ethan: '#6ab0ff', mom: '#e88aa8' };
+  // said once, the first time each app is opened (nothing stays written on the phone)
+  var TIPS = {
+    messages: 'Scroll to pick, click to open. 2 goes back.',
+    camera: 'Click to take a photo.',
+    calls: 'Scroll to pick, click to call.',
+    flappy: 'Click to flap.',
+    music: 'Click for the next track.',
+  };
 
   function el(id) {
     return document.getElementById(id);
@@ -33,8 +45,12 @@
     var flappy = OC.flappy ? OC.flappy.createFlappy({ w: 120, h: 180 }) : null;
     var track = -1;
     var contacts = []; // { id, name }
-    var readCount = 0; // texts read (seen in the Texts app)
-    var readCountAtOpen = 0; // where the new ones started when the Texts app was opened
+    var readBy = {}; // thread -> how many of its messages have been seen
+    var freshFrom = {}; // thread -> where the new ones started when the chat was opened
+    var chat = null; // the open conversation's thread, or null for the chat list
+    var chatSel = 0; // the picked row in the chat list
+    var tipped = {};
+    var wheelAcc = 0;
     var picked = 0;
 
     var api = {
@@ -66,10 +82,12 @@
       },
       app: function (name) {
         if (APPS.indexOf(name) < 0) throw new Error('unknown app: ' + name);
+        if (name === 'messages' && app === 'messages' && chat) chat = null; // 2 again: back to the chats
+        else if (name !== app && name === 'messages') chat = null;
         app = name;
-        if (name === 'messages') {
-          readCountAtOpen = readCount;
-          readCount = messages.length;
+        if (api.isOpen && TIPS[name] && !tipped[name] && OC.hud) {
+          tipped[name] = true;
+          OC.hud.toast(TIPS[name], 3800);
         }
         if (api.onApp) api.onApp(name);
         render();
@@ -133,6 +151,30 @@
       contacts: function () {
         return contacts.slice();
       },
+      // the chats: open one (by thread, or the picked row), go back to the list, which is open
+      openChat: function (thread) {
+        var list = threads();
+        thread = thread || list[chatSel];
+        if (!thread) return false;
+        chat = thread;
+        chatSel = Math.max(0, list.indexOf(thread));
+        freshFrom[thread] = readBy[thread] || 0;
+        readBy[thread] = inThread(thread).length;
+        updateHint();
+        if (api.isOpen) render();
+        el('phoneMsgs').scrollTop = 1e6;
+        return true;
+      },
+      back: function () {
+        chat = null;
+        if (api.isOpen) render();
+      },
+      openThread: function () {
+        return chat;
+      },
+      threads: function () {
+        return threads();
+      },
       // call the contact picked in the Calls app (Enter), or a contact by id
       call: function (id) {
         var c = id ? contacts.filter(function (x) { return x.id === id; })[0] : contacts[picked];
@@ -155,7 +197,7 @@
       // a text arriving from someone else (link: { title, body } makes it a link Mason can open)
       deliver: function (thread, from, text, link) {
         messages.push({ thread: thread, from: from, text: text, mine: false, time: time, link: link || null });
-        if (api.isOpen && app === 'messages') readCount = messages.length;
+        if (api.isOpen && app === 'messages' && chat === thread) readBy[thread] = inThread(thread).length;
         updateHint();
         if (OC.audio) OC.audio.play('buzz', { gain: 0.8 });
         api.notify(from, text);
@@ -172,18 +214,30 @@
       // a text Mason sends
       send: function (thread, text) {
         messages.push({ thread: thread, from: 'Mason', text: text, mine: true, time: time });
-        if (readCount === messages.length - 1) readCount = messages.length; // your own text is read
+        if (api.isOpen && app === 'messages' && chat === thread) readBy[thread] = inThread(thread).length;
         updateHint();
         if (api.isOpen) render();
       },
       messages: function () {
         return messages.slice();
       },
-      unread: function () {
-        return Math.max(0, messages.length - readCount);
+      unread: function (thread) {
+        if (thread) return unreadIn(thread);
+        return threads().reduce(function (n, th) { return n + unreadIn(th); }, 0);
       },
-      // scroll the open app (the mouse wheel)
+      // the mouse wheel: scrolls, or in a list (the chats, the contacts) moves the pick
       scroll: function (dy) {
+        if ((app === 'messages' && !chat) || app === 'calls') {
+          wheelAcc += dy;
+          var steps = 0;
+          while (wheelAcc >= 60) { wheelAcc -= 60; steps++; }
+          while (wheelAcc <= -60) { wheelAcc += 60; steps--; }
+          if (!steps) return;
+          if (app === 'calls' && contacts.length) picked = Math.max(0, Math.min(contacts.length - 1, picked + steps));
+          else chatSel = Math.max(0, Math.min(threads().length - 1, chatSel + steps));
+          render();
+          return;
+        }
         var box = SCROLLS[app] && el(SCROLLS[app]);
         if (box) box.scrollTop += dy;
       },
@@ -235,11 +289,10 @@
       act: function () {
         if (!api.isOpen) return;
         if (app === 'camera' && api.onShoot) api.onShoot();
-        else if (app === 'messages' || app === 'home') api.openLink();
-        else if (app === 'calls' && contacts.length) {
-          picked = (picked + 1) % contacts.length;
-          render();
-        }
+        else if (app === 'messages') {
+          if (!chat) api.openChat();
+          else openLinkIn(chat);
+        } else if (app === 'calls' && contacts.length) api.call();
         else if (app === 'flappy' && flappy) flappy.flap();
         else if (app === 'music') {
           var n = OC.audio && OC.audio.tracks ? OC.audio.tracks.length : 3;
@@ -262,6 +315,37 @@
         if (choiceState.left <= 0) finishChoice('timeout');
       },
     };
+
+    function inThread(th) {
+      return messages.filter(function (m) { return m.thread === th; });
+    }
+    function unreadIn(th) {
+      var list = inThread(th);
+      var n = 0;
+      for (var i = readBy[th] || 0; i < list.length; i++) if (!list[i].mine) n++;
+      return n;
+    }
+    // the threads, the one with the newest message first
+    function threads() {
+      var order = [];
+      for (var i = messages.length - 1; i >= 0; i--) if (order.indexOf(messages[i].thread) < 0) order.push(messages[i].thread);
+      return order;
+    }
+    function nameOf(th) {
+      return NAMES[th] || th.charAt(0).toUpperCase() + th.slice(1);
+    }
+    function openLinkIn(th) {
+      var list = inThread(th);
+      for (var i = list.length - 1; i >= 0; i--) {
+        if (list[i].link) {
+          list[i].link.opened = true;
+          if (api.onLink) api.onLink(list[i].link);
+          if (api.isOpen) render();
+          return list[i].link;
+        }
+      }
+      return null;
+    }
 
     function finishChoice(id) {
       var s = choiceState;
@@ -312,35 +396,50 @@
       if (collected) extras += '<div class="phone-line">' + esc(collected.label) + ': ' + collected.n + ' / ' + collected.total + '</div>';
       if (shopping.length) extras += '<div class="phone-line">Shopping list: ' + esc(shopping.join(', ')) + '</div>';
       var unread = api.unread();
-      if (messages.length) extras += '<div class="phone-line' + (unread ? ' unread' : '') + '">' + (unread ? unread + ' new text' + (unread > 1 ? 's' : '') : 'Texts') + ': press 2</div>';
+      if (unread) extras += '<div class="phone-line unread">' + unread + ' new text' + (unread > 1 ? 's' : '') + '</div>';
       el('phoneExtras').innerHTML = extras;
     }
 
+    function avatar(th) {
+      return '<span class="chat-avatar" style="background:' + (COLORS[th] || '#8a909a') + '">' + esc(nameOf(th).replace('Uncle ', '').charAt(0)) + '</span>';
+    }
     function renderMessages() {
       var box = el('phoneMsgs');
-      var atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
       var html = '';
-      var hasLink = false;
-      // in the order they came, like a chat; a name over each run of messages from the same person
-      var NAMES = { dave: 'Uncle Dave', ethan: 'Ethan', mom: 'Mom' };
-      var last = null;
-      messages.forEach(function (m, i) {
-        var who = m.mine ? 'You to ' + (NAMES[m.thread] || m.thread) : m.from || NAMES[m.thread] || m.thread;
-        if (who !== last) {
-          html += '<div class="who' + (m.mine ? ' mine' : '') + '">' + esc(who) + (m.time ? ' <span class="when">' + esc(m.time) + '</span>' : '') + '</div>';
-          last = who;
+      if (!chat) {
+        // the chat list
+        var list = threads();
+        chatSel = Math.max(0, Math.min(chatSel, list.length - 1));
+        el('msgHeader').innerHTML = 'TEXTS';
+        list.forEach(function (th, i) {
+          var msgs = inThread(th);
+          var last = msgs[msgs.length - 1];
+          var n = unreadIn(th);
+          var preview = (last.mine ? 'You: ' : '') + (last.link && !last.mine ? last.link.title : last.text);
+          html += '<div class="chat-row' + (i === chatSel ? ' on' : '') + (n ? ' unread' : '') + '">' + avatar(th) +
+            '<div class="chat-main"><div class="chat-top"><span class="chat-name">' + esc(nameOf(th)) + '</span><span class="chat-time">' + esc(last.time || '') + '</span></div>' +
+            '<div class="chat-preview">' + esc(preview) + '</div></div>' + (n ? '<b class="badge">' + n + '</b>' : '') + '</div>';
+        });
+        box.innerHTML = html || '<div class="empty">No messages.</div>';
+        var row = box.querySelector('.chat-row.on');
+        if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+        return;
+      }
+      // one conversation
+      el('msgHeader').innerHTML = '<span class="back">&#8249;</span>' + avatar(chat) + ' ' + esc(nameOf(chat));
+      var atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+      var lastTime = null;
+      inThread(chat).forEach(function (m, i) {
+        if (m.time && m.time !== lastTime) {
+          html += '<div class="when">' + esc(m.time) + '</div>';
+          lastTime = m.time;
         }
-        var fresh = i >= readCountAtOpen ? ' fresh' : '';
+        var fresh = i >= (freshFrom[chat] || 0) && !m.mine ? ' fresh' : '';
         html += '<div class="bubble ' + (m.mine ? 'mine' : '') + fresh + '">' + esc(m.text) + '</div>';
-        if (m.link) {
-          hasLink = true;
-          html += '<div class="bubble link' + (m.link.opened ? ' opened' : '') + '">' + esc(m.link.title) + '</div>';
-        }
+        if (m.link) html += '<div class="bubble link' + (m.link.opened ? ' opened' : '') + '">&#128279; ' + esc(m.link.title) + '</div>';
       });
-      if (hasLink) html += '<div class="phone-small">Space: open the newest link.</div>';
-      box.innerHTML = html || '<div class="empty">No messages.</div>';
-      if (atBottom || !renderMessages.done) box.scrollTop = 1e6;
-      renderMessages.done = true;
+      box.innerHTML = html;
+      if (atBottom) box.scrollTop = 1e6;
     }
 
     function render() {
@@ -390,9 +489,12 @@
       }
       if (!api.isOpen || e.repeat) return;
       if (/^Digit[1-8]$/.test(e.code)) api.app(APPS[Number(e.code.slice(5)) - 1]);
-      else if (e.code === 'Enter' && app === 'calls') {
+      else if (e.code === 'Enter' && (app === 'calls' || (app === 'messages' && !chat))) {
         e.preventDefault();
-        api.call();
+        api.act();
+      } else if (e.code === 'Backspace' && app === 'messages' && chat) {
+        e.preventDefault();
+        api.back();
       }
       else if (e.code === 'Space') {
         e.preventDefault();
