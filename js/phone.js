@@ -1,11 +1,14 @@
-// Mason's phone: Tab opens it. Apps, switched with keys 1 to 7 while it is open: Home (the to-do
-// list, Dave-isms collected, the shopping list, texts, links), Camera (with flash), the Pet Cam,
-// Photos, Flappy Cooper, Ethan's mixtape and Calls. It buzzes with a preview when a text comes in,
-// and runs the choices (keys 1, 2, 3...) and the calls.
+// Mason's phone: Tab opens it, and the game goes on while it is out (walk, look, use things with E).
+// Apps, switched with keys 1 to 8 while it is open: Home (the to-do list, Dave-isms, the shopping list),
+// Texts (every message, and links to open), Camera (with flash), the Pet Cam, Photos, Flappy Cooper,
+// Ethan's mixtape and Calls. The mouse wheel scrolls whatever app is open. It buzzes with a preview
+// when a text comes in, and runs the choices (keys 1, 2, 3...) and the calls.
 (function () {
   var OC = (window.OC = window.OC || {});
-  var APPS = ['home', 'camera', 'petcam', 'photos', 'flappy', 'music', 'calls'];
-  var APP_LABELS = { home: 'Home', camera: 'Camera', petcam: 'Pet Cam', photos: 'Photos', flappy: 'Flappy', music: 'Mixtape', calls: 'Calls' };
+  var APPS = ['home', 'messages', 'camera', 'petcam', 'photos', 'flappy', 'music', 'calls'];
+  var APP_LABELS = { home: 'Home', messages: 'Texts', camera: 'Camera', petcam: 'Pet Cam', photos: 'Photos', flappy: 'Flappy', music: 'Mixtape', calls: 'Calls' };
+  // what the mouse wheel scrolls in each app
+  var SCROLLS = { home: 'appHome', messages: 'phoneMsgs', photos: 'photoGrid', music: 'trackList', calls: 'contactList' };
 
   function el(id) {
     return document.getElementById(id);
@@ -30,6 +33,8 @@
     var flappy = OC.flappy ? OC.flappy.createFlappy({ w: 120, h: 180 }) : null;
     var track = -1;
     var contacts = []; // { id, name }
+    var readCount = 0; // texts read (seen in the Texts app)
+    var readCountAtOpen = 0; // where the new ones started when the Texts app was opened
     var picked = 0;
 
     var api = {
@@ -62,6 +67,10 @@
       app: function (name) {
         if (APPS.indexOf(name) < 0) throw new Error('unknown app: ' + name);
         app = name;
+        if (name === 'messages') {
+          readCountAtOpen = readCount;
+          readCount = messages.length;
+        }
         if (api.onApp) api.onApp(name);
         render();
       },
@@ -146,6 +155,8 @@
       // a text arriving from someone else (link: { title, body } makes it a link Mason can open)
       deliver: function (thread, from, text, link) {
         messages.push({ thread: thread, from: from, text: text, mine: false, time: time, link: link || null });
+        if (api.isOpen && app === 'messages') readCount = messages.length;
+        updateHint();
         if (OC.audio) OC.audio.play('buzz', { gain: 0.8 });
         api.notify(from, text);
         if (api.isOpen) render();
@@ -161,10 +172,20 @@
       // a text Mason sends
       send: function (thread, text) {
         messages.push({ thread: thread, from: 'Mason', text: text, mine: true, time: time });
+        if (readCount === messages.length - 1) readCount = messages.length; // your own text is read
+        updateHint();
         if (api.isOpen) render();
       },
       messages: function () {
         return messages.slice();
+      },
+      unread: function () {
+        return Math.max(0, messages.length - readCount);
+      },
+      // scroll the open app (the mouse wheel)
+      scroll: function (dy) {
+        var box = SCROLLS[app] && el(SCROLLS[app]);
+        if (box) box.scrollTop += dy;
       },
       // a choice: resolves with the chosen option's id, or 'timeout'. Keys 1 to 9.
       // opts.seconds: a time limit, or leave it out for no limit.
@@ -214,7 +235,7 @@
       act: function () {
         if (!api.isOpen) return;
         if (app === 'camera' && api.onShoot) api.onShoot();
-        else if (app === 'home') api.openLink();
+        else if (app === 'messages' || app === 'home') api.openLink();
         else if (app === 'calls' && contacts.length) {
           picked = (picked + 1) % contacts.length;
           render();
@@ -290,38 +311,53 @@
       var extras = '';
       if (collected) extras += '<div class="phone-line">' + esc(collected.label) + ': ' + collected.n + ' / ' + collected.total + '</div>';
       if (shopping.length) extras += '<div class="phone-line">Shopping list: ' + esc(shopping.join(', ')) + '</div>';
+      var unread = api.unread();
+      if (messages.length) extras += '<div class="phone-line' + (unread ? ' unread' : '') + '">' + (unread ? unread + ' new text' + (unread > 1 ? 's' : '') : 'Texts') + ': press 2</div>';
       el('phoneExtras').innerHTML = extras;
+    }
+
+    function renderMessages() {
+      var box = el('phoneMsgs');
+      var atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
       var html = '';
       var hasLink = false;
-      ['dave', 'ethan', 'mom'].forEach(function (thread) {
-        var list = messages.filter(function (m) { return m.thread === thread; });
-        if (!list.length) return;
-        html += '<div class="thread"><div class="who">' + { dave: 'Uncle Dave', ethan: 'Ethan', mom: 'Mom' }[thread] + '</div>';
-        list.forEach(function (m) {
-          html += '<div class="bubble ' + (m.mine ? 'mine' : '') + '">' + esc(m.text) + '</div>';
-          if (m.link) {
-            hasLink = true;
-            html += '<div class="bubble link' + (m.link.opened ? ' opened' : '') + '">' + esc(m.link.title) + '</div>';
-          }
-        });
-        html += '</div>';
+      // in the order they came, like a chat; a name over each run of messages from the same person
+      var NAMES = { dave: 'Uncle Dave', ethan: 'Ethan', mom: 'Mom' };
+      var last = null;
+      messages.forEach(function (m, i) {
+        var who = m.mine ? 'You to ' + (NAMES[m.thread] || m.thread) : m.from || NAMES[m.thread] || m.thread;
+        if (who !== last) {
+          html += '<div class="who' + (m.mine ? ' mine' : '') + '">' + esc(who) + (m.time ? ' <span class="when">' + esc(m.time) + '</span>' : '') + '</div>';
+          last = who;
+        }
+        var fresh = i >= readCountAtOpen ? ' fresh' : '';
+        html += '<div class="bubble ' + (m.mine ? 'mine' : '') + fresh + '">' + esc(m.text) + '</div>';
+        if (m.link) {
+          hasLink = true;
+          html += '<div class="bubble link' + (m.link.opened ? ' opened' : '') + '">' + esc(m.link.title) + '</div>';
+        }
       });
       if (hasLink) html += '<div class="phone-small">Space: open the newest link.</div>';
-      el('phoneMsgs').innerHTML = html || '<div class="empty">No messages.</div>';
-      el('phoneMsgs').scrollTop = 1e6;
+      box.innerHTML = html || '<div class="empty">No messages.</div>';
+      if (atBottom || !renderMessages.done) box.scrollTop = 1e6;
+      renderMessages.done = true;
     }
 
     function render() {
+      var unread = api.unread();
       el('phoneApps').innerHTML = APPS.map(function (a, i) {
-        return '<span class="' + (a === app ? 'on' : '') + '">' + (i + 1) + ' ' + APP_LABELS[a] + '</span>';
+        var badge = a === 'messages' && unread ? ' <b class="badge">' + unread + '</b>' : '';
+        return '<span class="' + (a === app ? 'on' : '') + '">' + (i + 1) + ' ' + APP_LABELS[a] + badge + '</span>';
       }).join('');
-      ['home', 'petcam', 'photos', 'flappy', 'music', 'calls'].forEach(function (a) {
+      ['home', 'messages', 'petcam', 'photos', 'flappy', 'music', 'calls'].forEach(function (a) {
         el('app' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('hidden', a !== app);
       });
       var camera = app === 'camera' && api.isOpen;
       el('phone').classList.toggle('camera-mode', camera);
       el('viewfinder').classList.toggle('hidden', !camera);
       if (app === 'home') renderHome();
+      if (app === 'messages') renderMessages();
+      updateHint();
       if (app === 'photos') {
         el('photoGrid').innerHTML = photos.length
           ? photos.slice().reverse().map(function (p) { return '<figure><img src="' + p.url + '"><figcaption>' + esc(p.at) + '</figcaption></figure>'; }).join('')
@@ -353,7 +389,7 @@
         return;
       }
       if (!api.isOpen || e.repeat) return;
-      if (/^Digit[1-7]$/.test(e.code)) api.app(APPS[Number(e.code.slice(5)) - 1]);
+      if (/^Digit[1-8]$/.test(e.code)) api.app(APPS[Number(e.code.slice(5)) - 1]);
       else if (e.code === 'Enter' && app === 'calls') {
         e.preventDefault();
         api.call();
@@ -367,6 +403,25 @@
       if (!ctl.locked || !api.isOpen || e.button !== 0) return;
       api.act();
     });
+    // the mouse wheel scrolls the open app (the pointer is locked, so nothing else would)
+    document.addEventListener('wheel', function (e) {
+      if (!ctl.locked || !api.isOpen) return;
+      api.scroll(e.deltaY * (e.deltaMode === 1 ? 18 : 0.7));
+    }, { passive: true });
+    window.addEventListener('keydown', function (e) {
+      if (!ctl.locked || !api.isOpen) return;
+      if (e.code === 'PageDown') api.scroll(120);
+      else if (e.code === 'PageUp') api.scroll(-120);
+    });
+
+    // the controls by the light meter, with the count of unread texts
+    function updateHint() {
+      var h = el('phoneHint');
+      if (!h) return;
+      var n = api.unread();
+      h.innerHTML = '<b>TAB</b> PHONE' + (n ? ' <span class="badge">' + n + ' NEW</span>' : '');
+    }
+    updateHint();
 
     return api;
   }

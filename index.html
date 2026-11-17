@@ -19,7 +19,8 @@
   <div id="hold"><div id="holdFill"></div></div>
   <div id="subtitle"></div>
   <div id="toast"></div>
-  <div id="battery"><div id="batteryFill"></div><span id="batteryLabel">LIGHT</span></div>
+  <div id="battery"><div id="batteryFill"></div><span id="batteryLabel"><b>F</b> LIGHT</span></div>
+  <div id="phoneHint"><b>TAB</b> PHONE</div>
   <div id="noise"><span>STAY QUIET</span><div id="noiseBar"><div id="noiseFill"></div></div></div>
   <div id="notif"></div>
   <div id="cc"></div>
@@ -31,7 +32,7 @@
   <div id="viewfinder" class="hidden">
     <div class="vf-corner tl"></div><div class="vf-corner tr"></div><div class="vf-corner bl"></div><div class="vf-corner br"></div>
     <div class="vf-label">PHOTO &middot; FLASH ON</div>
-    <div class="vf-hint">Click or Space: take a photo &nbsp;&middot;&nbsp; 1: home &nbsp;&middot;&nbsp; Tab: put it away</div>
+    <div class="vf-hint">Click or Space: take a photo &nbsp;&middot;&nbsp; 1: home &nbsp;&middot;&nbsp; 2: texts &nbsp;&middot;&nbsp; Tab: put it away</div>
     <img id="vfReview" alt="">
   </div>
   <div id="phone" class="hidden">
@@ -41,7 +42,9 @@
       <div class="phone-section">TO DO</div>
       <ul id="phoneTasks"></ul>
       <div id="phoneExtras"></div>
-      <div class="phone-section">MESSAGES</div>
+    </div>
+    <div class="phone-body hidden" id="appMessages">
+      <div class="phone-section">TEXTS</div>
       <div id="phoneMsgs"></div>
     </div>
     <div class="phone-body hidden" id="appPetcam">
@@ -68,7 +71,7 @@
       <ul id="contactList"></ul>
       <div class="phone-small">Space or click: next contact. Enter: call.</div>
     </div>
-    <div class="phone-hint">Tab to put it away</div>
+    <div class="phone-hint">Tab: put it away &middot; wheel: scroll &middot; you can still walk and use things</div>
   </div>
   <div id="call" class="hidden"><div class="call-label">ON CALL</div><div id="callName"></div><div id="callLines"></div></div>
   <div id="choice" class="hidden">

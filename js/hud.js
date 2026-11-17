@@ -8,6 +8,7 @@
 
   var subtitleTimer = null;
   var toastTimer = null;
+  var flashImageTimer = null;
   var reading = false;
 
   var hud = {
@@ -58,6 +59,19 @@
       subtitleTimer = setTimeout(function () {
         s.classList.remove('on');
       }, ms || Math.max(2200, text.length * 55));
+    },
+    // a photo thrown up full screen for a moment: the flash photo that shows what the room does not
+    flashImage: function (url, ms) {
+      var i = el('flashImage');
+      if (!i) {
+        i = document.createElement('img');
+        i.id = 'flashImage';
+        el('hud').appendChild(i);
+      }
+      i.src = url;
+      i.classList.add('on');
+      clearTimeout(flashImageTimer);
+      flashImageTimer = setTimeout(function () { i.classList.remove('on'); }, ms || 1500);
     },
     toast: function (text, ms) {
       var t = el('toast');
@@ -163,6 +177,12 @@
       }
       document.addEventListener('keydown', close);
       document.addEventListener('mousedown', close);
+      document.addEventListener('wheel', wheel, { passive: true });
+      function wheel(e) {
+        if (!reading) return document.removeEventListener('wheel', wheel);
+        var paper = r.querySelector('.paper');
+        if (paper) paper.scrollTop += e.deltaY * (e.deltaMode === 1 ? 18 : 0.7);
+      }
     },
     isReading: function () {
       return reading;

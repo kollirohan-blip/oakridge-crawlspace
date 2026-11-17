@@ -327,7 +327,7 @@
       if (ctl.locked && g.clock) g.clock.tick(dt);
       ctl.update(dt);
       if (OC.audio) OC.audio.listen(r.camera);
-      interact.suspend(phone.isOpen || phone.choosing() || g.state.cutscene || !!g.state.modal || OC.hud.isReading());
+      interact.suspend(phone.choosing() || g.state.cutscene || !!g.state.modal || OC.hud.isReading());
       interact.update(dt);
       if (ctl.locked) phone.update(dt); // a timed choice must not run out while the game is paused
       g.photo.update(dt);
@@ -378,7 +378,7 @@
         g.mirror.update();
         r.render();
       },
-      // open the phone on an app ('home', 'camera', 'petcam', 'photos', 'flappy', 'music'), or close it
+      // open the phone on an app ('home', 'messages', 'camera', 'petcam', 'photos', 'flappy', 'music', 'calls'), or close it
       phoneApp: function (name) {
         if (!name) return phone.close();
         if (!phone.isOpen) phone.open();

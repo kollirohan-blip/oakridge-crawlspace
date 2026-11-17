@@ -104,8 +104,19 @@ body.phone-open #subtitle { left: calc((100vw - min(34vw, 320px) - 8vmin) / 2); 
 #batteryFill { height: 100%; width: 100%; background: rgba(232,230,223,0.85); transform-origin: left; }
 #battery.low #batteryFill { background: var(--red); }
 #batteryLabel {
-  position: absolute; left: 0; top: -2.6vmin; font-size: clamp(10px, 1.6vmin, 15px); color: var(--dim); letter-spacing: 0.1em;
+  position: absolute; left: 0; top: -2.8vmin; font-size: clamp(11px, 1.8vmin, 16px); color: rgba(232,230,223,0.78); letter-spacing: 0.1em; white-space: nowrap;
 }
+#batteryLabel b, #phoneHint b { color: var(--ink); font-weight: normal; border: 1px solid rgba(255,255,255,0.45); padding: 0 0.35em; margin-right: 0.3em; }
+#phoneHint {
+  position: absolute; left: calc(3.5vmin + max(14vmin, 90px) + 3vmin); bottom: calc(3.5vmin - 0.3vmin); font-size: clamp(11px, 1.8vmin, 16px);
+  color: rgba(232,230,223,0.78); letter-spacing: 0.1em; white-space: nowrap;
+}
+#phoneMsgs .who { color: #9fc3ff; margin: 8px 0 3px; font-size: 0.85em; }
+#phoneMsgs .who.mine { color: #e8c89f; text-align: right; }
+#phoneMsgs .who .when { color: #5d636c; }
+.bubble.fresh { box-shadow: inset 3px 0 0 #9fc3ff; }
+#phoneHint .badge, .phone-apps .badge { background: #c8102e; color: #fff; border-radius: 8px; padding: 0 0.45em; font-weight: bold; }
+body.phone-open #phoneHint { opacity: 0.4; }
 
 /* Phone */
 #notif {
@@ -129,7 +140,10 @@ body.phone-open #subtitle { left: calc((100vw - min(34vw, 320px) - 8vmin) / 2); 
 #phoneTasks { list-style: none; margin: 0 0 6px; padding: 0; }
 #phoneTasks li { padding: 3px 0; }
 #phoneTasks li.done { color: #6f7680; text-decoration: line-through; }
-#phoneMsgs { flex: 1; overflow-y: auto; }
+#phoneMsgs { flex: 1; overflow-y: auto; scrollbar-width: thin; }
+#appHome { overflow-y: auto; }
+.phone-line.unread { color: #9fc3ff; }
+#photoGrid, #trackList, #contactList { overflow-y: auto; }
 .thread { margin-bottom: 10px; }
 .thread .who { color: #9fc3ff; margin: 6px 0 4px; }
 .bubble { background: #1d232c; border-radius: 12px; padding: 6px 10px; margin: 3px 18% 3px 0; line-height: 1.35; }
@@ -317,5 +331,8 @@ body.at-title #phone.raised { display: none; }
 #readerBody .scrawl { font-family: "Segoe Script", "Bradley Hand", cursive; font-size: 2.1em; letter-spacing: 0.12em; color: #fff; display: inline-block; transform: rotate(-4deg); }
 #reader.shaky .paper { font-family: "Segoe Script", "Bradley Hand", cursive; transform: rotate(1.6deg); background-color: #efe7a8; }
 
+#flashImage { position: absolute; inset: 0; margin: auto; width: min(82vw, 1100px); image-rendering: pixelated; border: 8px solid #e8e6df; box-shadow: 0 0 60px rgba(0,0,0,0.9); display: none; transform: rotate(-1.5deg); }
+#flashImage.on { display: block; animation: photoIn 0.12s ease-out; }
+@keyframes photoIn { from { transform: scale(1.15) rotate(-1.5deg); filter: brightness(3); } to { transform: scale(1) rotate(-1.5deg); filter: none; } }
 body.phone-raised #hud { z-index: 9; }
-body.phone-raised #rec, body.phone-raised #battery, body.phone-raised #crosshair, body.phone-raised #prompt, body.phone-raised #toast, body.phone-raised #subtitle { visibility: hidden; }
+body.phone-raised #phoneHint, body.phone-raised #rec, body.phone-raised #battery, body.phone-raised #crosshair, body.phone-raised #prompt, body.phone-raised #toast, body.phone-raised #subtitle { visibility: hidden; }
