@@ -121,6 +121,10 @@
         tasks = list.slice();
         if (api.isOpen) render();
       },
+      // what the to-do list shows right now (the stall nudge reads it)
+      tasks: function () {
+        return tasks.slice();
+      },
       // a count shown on Home (label defaults to Dave-isms); pass null to hide it
       setCollected: function (n, total, label) {
         collected = n === null ? null : { n: n, total: total, label: label || 'Dave-isms found' };

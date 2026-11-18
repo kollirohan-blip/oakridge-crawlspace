@@ -3,7 +3,7 @@
 // decides what they do.
 (function () {
   var OC = (window.OC = window.OC || {});
-  var SCREENS = ['title', 'pause', 'chapters', 'achievements', 'settings'];
+  var SCREENS = ['title', 'pause', 'chapters', 'achievements', 'settings', 'bright'];
 
   function el(id) {
     return document.getElementById(id);
@@ -19,6 +19,7 @@
       current = name;
       // the title screen is a clean screen: no in-game REC stamp or meters behind it
       document.body.classList.toggle('at-title', name === 'title' || name === 'chapters' || name === 'achievements' || (name === 'settings' && back !== 'pause'));
+      document.body.classList.toggle('in-check', name === 'bright'); // the hall behind it, with no HUD on top
       SCREENS.forEach(function (s) {
         el(s).classList.toggle('on', s === name);
       });
@@ -30,6 +31,7 @@
       volume: el('sVolume'),
       vhs: el('sVhs'),
       fov: el('sFov'),
+      brightness: el('sBrightness'),
       subtitle: el('sSubtitle'),
       bob: el('sBob'),
     };
@@ -38,6 +40,7 @@
       form.volume.value = settings.volume;
       form.vhs.value = settings.vhs;
       form.fov.value = settings.fov;
+      form.brightness.value = settings.brightness;
       form.subtitle.value = settings.subtitle;
       form.bob.checked = settings.bob;
     }
@@ -47,6 +50,7 @@
         volume: Number(form.volume.value),
         vhs: Number(form.vhs.value),
         fov: Number(form.fov.value),
+        brightness: Number(form.brightness.value),
         subtitle: form.subtitle.value,
         bob: form.bob.checked,
       });
@@ -56,6 +60,14 @@
       form[k].addEventListener('input', readForm);
       form[k].addEventListener('change', readForm);
     });
+    // the first-run check's own slider: the same setting, changed live
+    var brightSlider = el('bBrightness');
+    function readBright() {
+      settings = OC.settings.normalize(Object.assign({}, settings, { brightness: Number(brightSlider.value) }));
+      opts.onSettings(settings);
+    }
+    brightSlider.addEventListener('input', readBright);
+    brightSlider.addEventListener('change', readBright);
 
     // ---- achievements: earned ones lit, the rest dim with a hint (the endings' hints give nothing away)
     function fillAchievements() {
@@ -121,7 +133,19 @@
         show('title');
       },
       showPause: function () {
+        el('stuckNote').hidden = true;
         show('pause');
+      },
+      // why "I'm stuck" can't move him right now, under the buttons
+      pauseNote: function (text) {
+        var n = el('stuckNote');
+        n.textContent = text;
+        n.hidden = false;
+      },
+      // the first-run brightness check, over the dark hall
+      showBright: function () {
+        brightSlider.value = settings.brightness;
+        show('bright');
       },
       hide: function () {
         show(null);

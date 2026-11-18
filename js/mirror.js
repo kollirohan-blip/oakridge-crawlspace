@@ -18,7 +18,8 @@
     rt.texture.wrapS = THREE.RepeatWrapping;
     rt.texture.repeat.x = -1; // the plane faces north, so its u runs east to west
     rt.texture.offset.x = 1;
-    var glass = new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0, Y1 - Y0), new THREE.MeshBasicMaterial({ map: rt.texture, color: 0xc8ccd0 }));
+    // toneMapped: false, because the reflection was drawn with the brightness curve already in it
+    var glass = new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0, Y1 - Y0), new THREE.MeshBasicMaterial({ map: rt.texture, color: 0xc8ccd0, toneMapped: false }));
     glass.position.set((X0 + X1) / 2, (Y0 + Y1) / 2, ZM);
     glass.rotation.y = Math.PI;
     r.scene.add(glass);

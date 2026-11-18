@@ -337,6 +337,9 @@
       breaker: { x: 1.0, z: 10.5 },
       landline: { x: 7.1, z: 6.9 },
       keyHook: { x: 4.1, z: 11.6 },
+      // "I'm stuck" moves you to the nearest of these, so every room has at least one
+      officeDesk: { x: 9.25, z: 10.5 },
+      masterRoom: { x: 9.5, z: 17.5 },
     },
     spawns: {
       living: { x: 22.5, z: 5.5, yaw: 0.53 },

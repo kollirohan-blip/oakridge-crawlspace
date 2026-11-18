@@ -13,6 +13,7 @@
     var completed = {};
     var fired = {};
     var advanced = false;
+    var idle = 0; // seconds ticked since the act began, or since the last task was done (the stuck nudge)
     var api = {};
 
     function known(id) {
@@ -29,6 +30,7 @@
       if (!known(id)) throw new Error('unknown task: ' + id);
       if (completed[id]) return false;
       completed[id] = true;
+      idle = 0;
       if (hooks.onTask) hooks.onTask(id);
       if (!advanced && shouldAdvance()) {
         advanced = true;
@@ -41,7 +43,12 @@
     api.list = function () {
       return def.tasks.map(function (t) { return { id: t.id, label: t.label, done: !!completed[t.id] }; });
     };
+    // how long since anything on the list was done (only ticked time counts, so a pause does not)
+    api.sinceTask = function () {
+      return idle;
+    };
     api.tick = function (dt, state) {
+      if (typeof dt === 'number' && dt > 0) idle += dt;
       (def.triggers || []).forEach(function (tr) {
         var once = tr.once !== false;
         if (once && fired[tr.id]) return;

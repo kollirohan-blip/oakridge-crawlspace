@@ -8,8 +8,9 @@
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   var KEY = 'oakridge.settings';
-  var DEFAULTS = { sensitivity: 1, volume: 0.9, vhs: 1, fov: 72, subtitle: 'medium', bob: true };
-  var RANGES = { sensitivity: [0.3, 3], volume: [0, 1], vhs: [0, 1], fov: [55, 95] };
+  // brightness: 1 leaves the picture exactly as it was made; above 1 lifts the shadows (render.js)
+  var DEFAULTS = { sensitivity: 1, volume: 0.9, vhs: 1, fov: 72, subtitle: 'medium', bob: true, brightness: 1 };
+  var RANGES = { sensitivity: [0.3, 3], volume: [0, 1], vhs: [0, 1], fov: [55, 95], brightness: [0.5, 2] };
   var SUBTITLES = ['small', 'medium', 'large'];
 
   function normalize(input) {

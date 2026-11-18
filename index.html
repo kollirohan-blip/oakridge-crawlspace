@@ -112,8 +112,22 @@
     <div class="menu-items">
       <button data-act="resume">Resume</button>
       <button data-act="settings">Settings</button>
+      <button data-act="stuck">I'm stuck</button>
       <button data-act="restart">Restart this chapter</button>
       <button data-act="quit">Quit to title</button>
+    </div>
+    <p id="stuckNote" class="stuck-note" hidden></p>
+  </div>
+
+  <div id="bright" class="menu">
+    <div class="bright-panel">
+      <p class="bright-line">Turn it up until you can just see Cooper.</p>
+      <label class="bright-row">Brightness <input type="range" id="bBrightness" min="0.5" max="2" step="0.05"></label>
+      <div class="menu-items bright-buttons">
+        <button data-act="brightDone">That's him</button>
+        <button data-act="brightSkip">Skip</button>
+      </div>
+      <p class="small">You can change it any time in Settings.</p>
     </div>
   </div>
 
@@ -142,6 +156,7 @@
       <label>Volume <input type="range" id="sVolume" min="0" max="1" step="0.05"></label>
       <label>VHS effect <input type="range" id="sVhs" min="0" max="1" step="0.05"></label>
       <label>Field of view <input type="range" id="sFov" min="55" max="95" step="1"></label>
+      <label>Brightness <input type="range" id="sBrightness" min="0.5" max="2" step="0.05"></label>
       <label>Subtitle size
         <select id="sSubtitle"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select>
       </label>
@@ -205,6 +220,7 @@
 <script src="js/engine/overhead.js"></script>
 <script src="js/engine/search.js"></script>
 <script src="js/engine/checkpoint.js"></script>
+<script src="js/engine/stuck.js"></script>
 <script src="content/house.js"></script>
 <script src="content/text.js"></script>
 <script src="content/scares.js"></script>
@@ -236,6 +252,7 @@
 <script src="js/interact.js"></script>
 <script src="js/talk.js"></script>
 <script src="js/talkback.js"></script>
+<script src="js/stuck.js"></script>
 <script src="js/night1/dinner.js"></script>
 <script src="js/night1/cooperPlay.js"></script>
 <script src="js/night1/chores.js"></script>

@@ -445,3 +445,13 @@ body.in-epilogue #notif, body.in-epilogue #noise, body.in-epilogue #hold { visib
 #menus #title .menu-items { align-items: flex-start; }
 #menus #title .menu-items button { padding-left: 0; }
 #menus #title .keys, #menus #title .small { padding: 0; max-width: 56vw; text-wrap: balance; }
+
+/* Phase 8: "I'm stuck" refused, and the first-run brightness check over the dark hall */
+.stuck-note { color: var(--dim); font-style: italic; font-size: clamp(12px, 1.9vmin, 18px); margin: 3vmin 6vw 0; max-width: 34em; }
+body.in-check #hud { display: none; }
+#menus #bright { background: none; justify-content: flex-end; padding-bottom: 6vmin; }
+.bright-panel { background: rgba(4,5,9,0.72); padding: 3vmin 5vmin; max-width: min(92vw, 560px); }
+.bright-line { font-size: clamp(14px, 2.4vmin, 22px); margin: 0 0 2.5vmin; }
+.bright-row { display: flex; justify-content: center; align-items: center; gap: 3vw; font-size: clamp(13px, 2.1vmin, 20px); margin-bottom: 2.5vmin; }
+.bright-row input[type=range] { width: min(50vw, 260px); accent-color: var(--red); }
+.bright-buttons { flex-direction: row; justify-content: center; gap: 4vmin; margin-bottom: 1.5vmin; }

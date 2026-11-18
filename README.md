@@ -29,6 +29,12 @@ hatch actually is.
 The game saves a checkpoint at the start of each act. Reopening it offers **Continue** from there;
 **New game** starts over.
 
+The first **New game** asks you to set the brightness: turn it up until you can just see Cooper down the
+dark hall (it is in Settings too). If you get caught on something, **I'm stuck** on the pause menu puts you
+somewhere close by that you could have walked to. It won't during 12:30, 12:35 or an ending, under the house,
+or away from home, and it says why. If a few minutes go by with nothing done on your list, Mason thinks out
+loud about where the thing he was meant to do is.
+
 **No internet needed:** the 3D library (Three.js r128, MIT licence) is included as
 `vendor/three.min.js`. If that file is ever missing, the game falls back to loading it from cdnjs.
 
@@ -37,7 +43,8 @@ The game saves a checkpoint at the start of each act. Reopening it offers **Cont
 - **Night 1, "The House Learns You".** A free routine full of choices: five dinners (one of them
   is a mistake), Cooper's tricks and fetch, the mail, the trash, the dishes, the mirror, a TV with
   four channels and captions, Dave's sticky notes and terrible magnets, a singing fish, a phone with
-  a camera and a pet cam. The house notices what you do. Once you have settled in: a flash photo of
+  a camera and a pet cam. The house notices what you do, and Mason notices when you are being silly (five
+  flushes, a whole minute of petting Cooper, the fridge again). Once you have settled in: a flash photo of
   the hallway, scratching that follows you under the floor, the shape in Dave's window, three soft
   knocks from the laundry room, and the pet cam at 2:13 AM.
 - **Day 2, "Daylight".** Sun, coffee, Cooper asleep in a patch of light, and a pet cam clip from
@@ -48,6 +55,7 @@ The game saves a checkpoint at the start of each act. Reopening it offers **Cont
   are wrong in the house, the food you bought vanishes, the hatch stands open, and a storm comes in.
   The night reads how you spent the last one: sleep with every light on and the breaker trips; use a
   lot of phone light and it falters; keep checking Dave's window and the black TV shows you something.
+  Each time, Mason works out that it was meant for him.
   You can go down the hatch: on your belly, under the house, to where he sleeps, and the notebook he
   keeps about you. Then the house phone rings.
 - **12:30 AM, "The Call".** Dave calls about what the exterminator found. Three taps from inside the closet: leave
@@ -65,7 +73,9 @@ Six endings in all (three verdicts, one for calling Ray, the closet, and the Tup
 title screen has a light on in the guest room window, and chapter select opens. Eighteen achievements, kept in
 the browser between plays (some only show a hint until you earn them).
 
-12:30 and 12:35 can be failed; you retry from the start of that part.
+12:30 and 12:35 can be failed. A fail sends you back to the last moment the game saved inside that part (out
+of the bathroom, at the front door, at the car), with everything you had done until then. Fail twice in the
+same place and Mason works out what went wrong. Each scare there only plays the first time.
 
 ## For development
 

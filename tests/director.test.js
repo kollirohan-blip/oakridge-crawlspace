@@ -83,3 +83,32 @@ test('list() gives task ids, labels and done flags for the phone', () => {
     { id: 'c', label: 'Task C', done: false },
   ]);
 });
+
+test('sinceTask() counts the time ticked since the act began, then since the last task done', () => {
+  const { d } = make();
+  assert.equal(d.sinceTask(), 0);
+  d.tick(2, {});
+  d.tick(1.5, {});
+  assert.ok(Math.abs(d.sinceTask() - 3.5) < 1e-9);
+  d.complete('a');
+  assert.equal(d.sinceTask(), 0);
+  d.tick(4, {});
+  assert.ok(Math.abs(d.sinceTask() - 4) < 1e-9);
+});
+
+test('a task completed a second time is not progress: sinceTask() keeps counting', () => {
+  const { d } = make();
+  d.complete('a');
+  d.tick(10, {});
+  d.complete('a');
+  assert.ok(Math.abs(d.sinceTask() - 10) < 1e-9);
+});
+
+test('sinceTask() ignores a missing or broken dt', () => {
+  const { d } = make();
+  d.tick(1, {});
+  d.tick(undefined, {});
+  d.tick(NaN, {});
+  d.tick(-5, {});
+  assert.ok(Math.abs(d.sinceTask() - 1) < 1e-9);
+});

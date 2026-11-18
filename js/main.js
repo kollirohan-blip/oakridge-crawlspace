@@ -16,6 +16,7 @@
       if (def && def.requiredText) required = required.concat(def.requiredText);
     });
     if (OC.checkpoint) required = required.concat(OC.checkpoint.TEXT); // the second-fail hints (Phase 8)
+    if (OC.stuck) required = required.concat(OC.stuck.TEXT); // "I'm stuck" and the stall nudge (Phase 8)
     var content = OC.content.createContent(OC.textData || {}, required);
     var missing = content.missing();
     if (missing.length) throw new Error('The game is missing story text for:\n' + missing.join('\n'));
@@ -198,6 +199,8 @@
     };
 
     var current = { id: null, def: null, act: null };
+    // "I'm stuck" on the pause menu, and the stall nudge (Phase 8, js/stuck.js)
+    var help = OC.stuckHelp.create({ g: g, ctl: ctl, hud: OC.hud, phone: phone, house: OC.house, current: function () { return current; } });
 
     // an act's own timers (its fades, end cards and the call to onEnd). They belong to the act that set them:
     // starting any act or ending, or quitting to the title, clears them, so a timer from an act that is gone
@@ -224,6 +227,7 @@
       var def = OC.acts[id];
       clearActTimers();
       OC.hud.clearFail(); // a fail card left up (quit to title from it, then New game) is not this act's
+      help.enter(id);
       if (current.act && current.act.dispose) current.act.dispose(); // stop the last act's loops and listeners
       interact.clear();
       props.reset();
@@ -301,6 +305,7 @@
     function startEpilogue(variant) {
       clearActTimers();
       OC.hud.clearFail();
+      help.enter('epilogue');
       if (current.act && current.act.dispose) current.act.dispose();
       interact.clear();
       saveCheckpoint(null); // finished: the next visit starts fresh
@@ -355,6 +360,7 @@
       document.getElementById('grain').style.opacity = 0.05 * s.vhs;
       document.body.classList.toggle('sub-small', s.subtitle === 'small');
       document.body.classList.toggle('sub-large', s.subtitle === 'large');
+      if (r.setBrightness) r.setBrightness(s.brightness);
       var narrowed = Math.abs(r.camera.fov - g.baseFov) > 0.5; // a set piece is zoomed in: leave it
       g.baseFov = s.fov;
       if (!narrowed) {
@@ -375,6 +381,42 @@
         return false;
       }
     }
+    // the first-run brightness check (Phase 8): remembered, so it is shown once
+    var BRIGHT_KEY = 'oakridge.brightChecked';
+    var brightDoneHere = false; // blocked storage still only shows it once per visit
+    function brightChecked() {
+      if (brightDoneHere) return true;
+      try {
+        return localStorage.getItem(BRIGHT_KEY) === '1';
+      } catch (e) {
+        return false;
+      }
+    }
+    function markBrightChecked() {
+      brightDoneHere = true;
+      try {
+        localStorage.setItem(BRIGHT_KEY, '1');
+      } catch (e) {
+        /* private window: once per visit */
+      }
+    }
+    // night one's house held still behind the check: every light off, the phone light off, Mason at the
+    // south end of the hall and Cooper sitting down it, looking back at him (far enough to be dark, near
+    // enough to be a dog and not a few pixels)
+    function showBrightCheck() {
+      startAct('act1');
+      var off = {};
+      Object.keys(world.lightById).forEach(function (id) { off[id] = 0; });
+      props.setLights(off);
+      ctl.light.on = false;
+      ctl.teleport(6, 8.6, Math.PI, 0);
+      cooper.stay();
+      cooper.setPos(6, 15.2);
+      cooper.heading = Math.PI / 2;
+      cooper.pose('sit');
+      menu.showBright();
+    }
+
     function showTitle() {
       var saved = loadCheckpoint();
       menu.showTitle({
@@ -406,7 +448,17 @@
         if (action === 'new') {
           saveCheckpoint(null);
           saveBegan();
+          if (!brightChecked()) return showBrightCheck(); // the first time: Cooper at the end of the dark hall
           startAct('act1');
+        } else if (action === 'brightDone' || action === 'brightSkip') {
+          markBrightChecked();
+          startAct('act1'); // night one from its real start, not from the hall
+        } else if (action === 'stuck') {
+          var why = help.refusal();
+          if (why) return menu.pauseNote(content.t('stuck.no.' + why));
+          if (!help.move()) return menu.pauseNote(content.t('stuck.no.away'));
+          OC.hud.cut(); // a blink, not a fade: he is just somewhere else
+          g.after(function () { OC.hud.fadeIn(); }, 350);
         } else if (action === 'chapter') {
           startAct(arg);
         } else if (action === 'restart') {
@@ -536,6 +588,7 @@
       props.update(dt);
       cooper.update(dt);
       if (current.act) current.act.update(dt);
+      if (ctl.locked) help.update(dt); // the stall nudge counts only time spent playing
       if (current.def) OC.hud.setStamp(current.def.stamp || current.def.night, g.clock.label());
       OC.hud.setBattery(ctl.light.battery);
       phoneClock -= dt;
@@ -575,6 +628,7 @@
       teleport: function (x, z, yaw, pitch) { ctl.teleport(x, z, yaw, pitch); },
       startAct: startAct,
       retry: function () { return retry; }, // checkpoints and fail counts (Phase 8)
+      stuck: function () { return help; }, // "I'm stuck" and the stall nudge (Phase 8)
       // run the simulation forward by `seconds` in fixed steps, independent of the browser's frame rate
       advance: function (seconds, step) {
         step = step || 0.05;
@@ -1734,6 +1788,163 @@
           return true;
         }
 
+
+        // ---- Phase 8: brightness and the safety net ---------------------------------------------------------
+        var clickEl = function (sel) {
+          var b = document.querySelector(sel);
+          if (!b) throw new Error('no ' + sel);
+          b.click();
+        };
+        await flow('brightnessCheck', async function () {
+          // the first New game shows Cooper at the end of the dark hall with a brightness slider; Done or Skip
+          // is remembered, and the next New game goes straight in
+          var had = null;
+          var before = settings.brightness;
+          try {
+            had = localStorage.getItem(BRIGHT_KEY);
+            localStorage.removeItem(BRIGHT_KEY);
+          } catch (e) { /* no storage: the in-visit flag still works */ }
+          brightDoneHere = false;
+          try {
+            ctl.setLocked(false); // at the title the mouse is free
+            clickEl('#title button[data-act="new"]');
+            if (menu.current() !== 'bright') return 'the first New game did not show the check';
+            if (OC.layout.roomAt(OC.house, ctl.pos.x, ctl.pos.z) !== 'hall') return 'not standing in the hall';
+            if (OC.layout.roomAt(OC.house, cooper.pos.x, cooper.pos.z) !== 'hall' || cooper.pos.z - ctl.pos.z < 5) return 'Cooper is not down the hall';
+            if (ctl.light.on) return 'the phone light is on';
+            if (Object.keys(world.lightById).some(function (id) { return world.lightById[id].intensity > 0; })) return 'a light is on';
+            if (!document.body.classList.contains('in-check') || document.body.classList.contains('at-title')) return 'the hall is not showing behind the check';
+            var slider = document.getElementById('bBrightness');
+            slider.value = '1.6';
+            slider.dispatchEvent(new Event('input', { bubbles: true }));
+            if (Math.abs(r.brightness() - 1.6) > 1e-6) return 'the slider did not change the picture (' + r.brightness() + ')';
+            if (settings.brightness !== 1.6) return 'the slider did not change the setting';
+            clickEl('#bright button[data-act="brightDone"]');
+            ctl.setLocked(true); // what the browser does when the click captures the mouse
+            if (menu.current() === 'bright' || document.body.classList.contains('in-check')) return 'still on the check after Done';
+            if (current.id !== 'act1' || OC.layout.roomAt(OC.house, ctl.pos.x, ctl.pos.z) === 'hall') return 'Done did not start night one from its start';
+            if (Math.abs(r.brightness() - 1.6) > 1e-6) return 'night one lost the brightness';
+            ctl.setLocked(false);
+            clickEl('#title button[data-act="new"]');
+            if (menu.current() === 'bright') return 'the check came back on the second New game';
+            // Skip counts as done too
+            brightDoneHere = false;
+            localStorage.removeItem(BRIGHT_KEY);
+            ctl.setLocked(false);
+            clickEl('#title button[data-act="new"]');
+            if (menu.current() !== 'bright') return 'no check after forgetting it';
+            clickEl('#bright button[data-act="brightSkip"]');
+            ctl.setLocked(true);
+            if (current.id !== 'act1' || menu.current() === 'bright') return 'Skip did not start the night';
+            ctl.setLocked(false);
+            clickEl('#title button[data-act="new"]');
+            if (menu.current() === 'bright') return 'Skip was not remembered';
+            return true;
+          } finally {
+            try {
+              if (had === null) localStorage.removeItem(BRIGHT_KEY);
+              else localStorage.setItem(BRIGHT_KEY, had);
+            } catch (e) { /* nothing to put back */ }
+            settings = OC.settings.normalize(Object.assign({}, settings, { brightness: before }));
+            applySettings(settings);
+            OC.settings.save(store, settings);
+            // the real buttons asked the browser for the mouse: let its answer arrive now, not in the middle
+            // of a later flow (it would pause that one)
+            try { if (document.pointerLockElement) document.exitPointerLock(); } catch (e) { /* not captured */ }
+            await wait(600);
+            ctl.setLocked(true);
+            menu.hide();
+          }
+        });
+        await flow('stuckMoves', async function () {
+          // wedged in the middle of the biggest thing in the living room (the couch): "I'm stuck" puts him on
+          // the nearest stand point he could have walked to, in the clear, and he says so
+          try {
+            startAct('act1');
+            ctl.setLocked(true);
+            D.advance(0.2);
+            var big = OC.house.furniture.filter(function (f) {
+              return f.solid && OC.layout.roomAt(OC.house, (f.b[0] + f.b[3]) / 2, (f.b[2] + f.b[5]) / 2) === 'living';
+            }).sort(function (a, b) { return (b.b[3] - b.b[0]) * (b.b[5] - b.b[2]) - (a.b[3] - a.b[0]) * (a.b[5] - a.b[2]); })[0];
+            if (!big) return 'no furniture in the living room';
+            var wedged = { x: (big.b[0] + big.b[3]) / 2, z: (big.b[2] + big.b[5]) / 2 };
+            if (ctl.nav.isFree(wedged.x, wedged.z)) return 'the middle of the ' + (big.id || 'furniture') + ' is free';
+            ctl.teleport(wedged.x, wedged.z, ctl.yaw, 0);
+            ctl.setLocked(false);
+            clickEl('#pause button[data-act="stuck"]');
+            if (!document.getElementById('stuckNote').hidden) return 'refused: ' + document.getElementById('stuckNote').textContent;
+            if (ctl.pos.x === wedged.x && ctl.pos.z === wedged.z) return 'he did not move';
+            if (!ctl.nav.isFree(ctl.pos.x, ctl.pos.z)) return 'he is still wedged';
+            var on = Object.keys(OC.house.stand).filter(function (n) {
+              var s = OC.house.stand[n];
+              return Math.abs(s.x - ctl.pos.x) < 1e-6 && Math.abs(s.z - ctl.pos.z) < 1e-6;
+            });
+            if (!on.length) return 'not on a stand point';
+            if (OC.layout.roomAt(OC.house, ctl.pos.x, ctl.pos.z) !== 'living') return 'moved out of the living room, to ' + on[0];
+            if (subEl.textContent !== content.t('stuck.moved')) return 'he said "' + subEl.textContent + '"';
+            report.stuckMovedTo = on[0];
+            return true;
+          } finally {
+            ctl.setLocked(true);
+          }
+        });
+        await flow('stuckRefused', async function () {
+          // a set piece, a cutscene and under the house: no move, Mason's reason on the menu, still paused
+          var note = document.getElementById('stuckNote');
+          async function refuses(want, setup, undo) {
+            ctl.setLocked(true);
+            D.advance(0.3);
+            if (setup) setup();
+            var at = { x: ctl.pos.x, z: ctl.pos.z };
+            ctl.setLocked(false);
+            clickEl('#pause button[data-act="stuck"]');
+            var got = note.hidden ? '(no note)' : note.textContent;
+            if (undo) undo();
+            if (got !== content.t('stuck.no.' + want)) return 'wanted ' + want + ', got "' + got + '"';
+            if (ctl.pos.x !== at.x || ctl.pos.z !== at.z) return 'it moved him anyway';
+            if (menu.current() !== 'pause') return 'it left the pause menu';
+            return null;
+          }
+          try {
+            var bad;
+            startAct('act4');
+            if ((bad = await refuses('scene'))) return 'The Search: ' + bad;
+            startAct('act1');
+            if ((bad = await refuses('busy', function () { g.state.cutscene = true; }, function () { g.state.cutscene = false; }))) return 'a cutscene: ' + bad;
+            startAct('act2');
+            if ((bad = await refuses('crawl', function () { current.act.flags.inCrawl = true; }, function () { current.act.flags.inCrawl = false; }))) return 'under the house: ' + bad;
+            ctl.setLocked(true);
+            ctl.setLocked(false);
+            if (!note.hidden) return 'the reason stayed up the next time he paused';
+            return true;
+          } finally {
+            ctl.setLocked(true);
+          }
+        });
+        await flow('stallNudge', async function () {
+          // three minutes of night one with nothing done: one line from Mason that says where, then nothing
+          // more for a few minutes
+          startAct('act1');
+          ctl.setLocked(true);
+          var lines = Object.keys(OC.stuck.HINTS.act1).map(function (id) { return content.t(OC.stuck.hintText('act1', id)); });
+          D.advance(170);
+          var early = await listen(1);
+          if (early.some(function (h) { return lines.indexOf(h) >= 0; })) return 'nudged before three minutes';
+          var heard = (await listen(40)).filter(function (h) { return lines.indexOf(h) >= 0; });
+          if (heard.length !== 1) {
+            var hs = help.state();
+            return 'heard ' + JSON.stringify(heard) + ' around three minutes in ' + JSON.stringify({
+              t: hs.t, act: hs.act, last: hs.lastNudge, given: hs.given, sub: hs.sub, since: current.act.director.sinceTask(),
+              tasks: phone.tasks().length, on: subEl.classList.contains('on'), cut: !!g.state.cutscene, modal: !!g.state.modal,
+              reading: OC.hud.isReading(), choosing: phone.choosing(), locked: ctl.locked,
+            });
+          }
+          // (the first line can still be up on its real-time timer: a second nudge would be another task)
+          var more = (await listen(60)).filter(function (h) { return lines.indexOf(h) >= 0 && h !== heard[0]; });
+          if (more.length || Object.keys(help.state().given).length !== 1) return 'nudged again a minute later: ' + JSON.stringify(more);
+          report.nudge = heard[0];
+          return true;
+        });
 
         // ---- the epilogue: the evidence tiers, played through on dt ----------------------------------------
         function playEpilogue(list) {
