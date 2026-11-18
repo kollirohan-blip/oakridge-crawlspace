@@ -275,9 +275,9 @@
         if (flags.ending) return;
         flags.ending = true;
         hud.fadeOut('');
-        setTimeout(function () { hud.setFadeText(t('day2.vo.end')); }, 1500);
-        setTimeout(function () { hud.setFadeText('NIGHT 2'); }, 9500);
-        setTimeout(function () { if (g.onEnd) g.onEnd('day2'); }, 12500);
+        g.after(function () { hud.setFadeText(t('day2.vo.end')); }, 1500);
+        g.after(function () { hud.setFadeText('NIGHT 2'); }, 9500);
+        g.after(function () { if (g.onEnd) g.onEnd('day2'); }, 12500);
       }
 
       return {

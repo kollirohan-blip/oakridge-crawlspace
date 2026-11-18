@@ -267,7 +267,7 @@
           props.car.breakWindow();
         }
         tension(1);
-        setTimeout(function () {
+        g.after(function () {
           hud.failScreen("YOU DIDN'T MAKE IT", t('act4.fail.' + reason), function () {
             hud.fadeIn();
             if (g.onEnd) g.onEnd('act4', 'retry');
@@ -299,8 +299,8 @@
           g.state.cutscene = true;
           stopLoops();
           hud.fadeOut('');
-          setTimeout(function () { hud.setFadeText(t(line)); }, 1500);
-          setTimeout(function () { if (g.onEnd) g.onEnd('act4'); }, 10500);
+          g.after(function () { hud.setFadeText(t(line)); }, 1500);
+          g.after(function () { if (g.onEnd) g.onEnd('act4'); }, 10500);
         }
         if (calledRay) {
           // it is Ray at the window
@@ -695,15 +695,17 @@
             later(4.2, function () { say('act4.thought.hood', 4500); });
             later(7.5, function () {
               sfx('creak', { pos: { x: 2.5, y: 1, z: 0 }, gain: 1.2 });
-              him.setPos(2.5, 0.4);
+              him.setPos(2.5, -0.3); // on the threshold, under the porch light
               him.crouch = 0;
               him.pose('stand', true);
-              him.faceTo(2.5, -4);
+              him.faceTo(10.4, -9.95); // at the car, through the windshield
+              him.pose('shush'); // in the open door in the storm, a finger to his lips. Not chasing.
               him.show(true);
               say('act4.thought.frontDoor');
               flags.phase = 'exposed';
               flags.exposedT = 0;
-              walk([{ x: 2.5, z: -2.6 }, { x: 7.6, z: -6.6, then: 'out' }], 1.0);
+              walk([{ x: 2.5, z: -0.3, wait: 1.8 }, { x: 2.5, z: -2.6 }, { x: 7.6, z: -6.6, then: 'out' }], 1.0);
+              later(1.8, function () { if (him.poseName() === 'shush') him.pose('stand'); });
             });
           },
         },

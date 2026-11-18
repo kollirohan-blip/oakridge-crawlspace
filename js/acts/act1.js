@@ -193,13 +193,13 @@
         g.state.cutscene = true;
         if (kind === 'gag') {
           hud.fadeOut('');
-          setTimeout(function () { if (g.onEnd) g.onEnd('act1', 'gag'); }, 1600);
+          g.after(function () { if (g.onEnd) g.onEnd('act1', 'gag'); }, 1600);
           return;
         }
         hud.fadeOut('');
-        setTimeout(function () { hud.setFadeText(t('act1.vo.end')); }, 1500);
-        setTimeout(function () { hud.setFadeText('NIGHT 2'); }, 9500);
-        setTimeout(function () { if (g.onEnd) g.onEnd('act1'); }, 12500);
+        g.after(function () { hud.setFadeText(t('act1.vo.end')); }, 1500);
+        g.after(function () { hud.setFadeText('NIGHT 2'); }, 9500);
+        g.after(function () { if (g.onEnd) g.onEnd('act1'); }, 12500);
       }
 
       // stress signs for the Director: how fast the view turns, backing up, the light

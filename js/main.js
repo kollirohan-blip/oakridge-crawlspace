@@ -183,8 +183,28 @@
 
     var current = { id: null, def: null, act: null };
 
+    // an act's own timers (its fades, end cards and the call to onEnd). They belong to the act that set them:
+    // starting any act or ending, or quitting to the title, clears them, so a timer from an act that is gone
+    // can't move the next one on (Restart during 12:30's fade used to jump to 12:35 2.6 s later, and Quit to
+    // title started the next act behind the title)
+    var actTimers = [];
+    g.after = function (fn, ms) { // like setTimeout
+      var id = setTimeout(function () {
+        var i = actTimers.indexOf(id);
+        if (i >= 0) actTimers.splice(i, 1);
+        fn();
+      }, ms);
+      actTimers.push(id);
+      return id;
+    };
+    function clearActTimers() {
+      actTimers.forEach(function (id) { clearTimeout(id); });
+      actTimers = [];
+    }
+
     function startAct(id) {
       var def = OC.acts[id];
+      clearActTimers();
       if (current.act && current.act.dispose) current.act.dispose(); // stop the last act's loops and listeners
       interact.clear();
       props.reset();
@@ -244,6 +264,7 @@
 
     // an ending: the epilogue ('main'), or the Tupperware ('gag') or the closet ('bad'), which count as finishing
     function startEpilogue(variant) {
+      clearActTimers();
       if (current.act && current.act.dispose) current.act.dispose();
       interact.clear();
       saveCheckpoint(null); // finished: the next visit starts fresh
@@ -356,6 +377,7 @@
           if (current.id === 'epilogue') startEpilogue(current.variant);
           else startAct(current.id);
         } else if (action === 'quit') {
+          clearActTimers();
           leaveEnding();
           return showTitle();
         }
@@ -1200,6 +1222,23 @@
           ctl.teleport(3.5, 21.5, -Math.PI / 2, 0);
           D.advance(0.5);
           if (!a.flags.ending) return 'reaching the bathroom did not end the act';
+          return true;
+        });
+        // an act's end timer dies with the act: end 12:30, restart it during the fade, and it stays 12:30
+        await flow('restartInFade', async function () {
+          startAct('act3');
+          ctl.setLocked(true);
+          var a = current.act;
+          a.flags.phase = 'walk';
+          ctl.teleport(6, 18.5, Math.PI, 0);
+          D.advance(1);
+          ctl.teleport(3.5, 21.5, -Math.PI / 2, 0);
+          D.advance(0.5);
+          if (!a.flags.ending) return 'reaching the bathroom did not end the act';
+          startAct('act3'); // Restart this chapter, inside the fade
+          var fresh = current.act;
+          await new Promise(function (res) { setTimeout(res, 3000); });
+          if (current.id !== 'act3' || current.act !== fresh) return "the old act's end timer moved the restart on to " + current.id;
           return true;
         });
         await flow('act3Closet', async function () {

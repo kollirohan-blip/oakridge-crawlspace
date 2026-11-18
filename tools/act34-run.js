@@ -243,7 +243,13 @@ async (page) => {
     D.advance(0.8);
     D.use('ignition');
     await T.until(() => T.act().flags.phase === 'exposed', 12);
-    D.advance(1);
+    D.advance(0.6);
+    return 'phase ' + T.act().flags.phase + ', in the door: ' + OC.game.props.intruder.poseName();
+  });
+  await shot('door'); // in the open front door, a finger to his lips
+  await ev('down', async () => {
+    const D = OC.debug;
+    D.advance(0.4);
     D.use('down');
     return 'phase ' + T.act().flags.phase;
   });

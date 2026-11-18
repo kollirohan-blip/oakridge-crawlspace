@@ -9,7 +9,10 @@
 (function () {
   var OC = (window.OC = window.OC || {});
 
-  var SKIN = 0x9a9086;
+  // grey-pale, but dark enough that the phone light at arm's length (colour x 2.4, it barely falls off up
+  // close) leaves it grey instead of burning it to white; a faint glow keeps him pale in the dark
+  var SKIN = 0x5c5650;
+  var SKIN_GLOW = 0x1c1a18;
   var DIRT = 0x6e655c;
   var HOODIE = 0x1b2335;
   var PANTS = 0x2a2c31;
@@ -162,14 +165,16 @@
   }
 
   // pose targets (radians, metres). Joints: spine, neck, head roll (tilt), shoulders, elbows, hips,
-  // knees, and how low the pelvis sits.
+  // knees, the right shoulder's twist (twR) and wrist, and how low the pelvis sits.
   var POSES = {
-    stand: { pelvis: 1.09, spine: 0.22, neck: 0.38, tilt: 0, nod: -0.1, lean: 0, armL: 0.12, armR: 0.12, elbowL: -0.2, elbowR: -0.2, hipL: 0.04, hipR: 0.04, kneeL: 0.08, kneeR: 0.08, inR: 0, finger: 0 },
-    tilt: { pelvis: 1.09, spine: 0.24, neck: 0.42, tilt: 0.5, nod: 0.05, lean: 0.04, armL: 0.1, armR: 0.1, elbowL: -0.15, elbowR: -0.15, hipL: 0.04, hipR: 0.04, kneeL: 0.08, kneeR: 0.08, inR: 0, finger: 0 },
-    crouch: { pelvis: 0.52, spine: 0.75, neck: 0.15, tilt: 0.15, nod: -0.25, lean: 0, armL: 0.6, armR: 0.6, elbowL: -0.9, elbowR: -0.9, hipL: 1.55, hipR: 1.55, kneeL: 2.35, kneeR: 2.35, inR: 0, finger: 0 },
-    crawl: { pelvis: 0.5, spine: 1.45, neck: -0.9, tilt: 0, nod: -0.3, lean: 0, armL: 1.4, armR: 1.4, elbowL: 0, elbowR: 0, hipL: 0, hipR: 0, kneeL: 1.55, kneeR: 1.55, inR: 0, finger: 0 },
-    shush: { pelvis: 1.09, spine: 0.2, neck: 0.32, tilt: 0.2, nod: -0.05, lean: 0, armL: 0.1, armR: 1.35, elbowL: -0.2, elbowR: -2.25, inR: 0.95, hipL: 0.04, hipR: 0.04, kneeL: 0.08, kneeR: 0.08, finger: 1 },
-    peek: { pelvis: 1.06, spine: 0.3, neck: 0.4, tilt: 0.35, nod: 0, lean: 0.22, armL: 0.1, armR: 0.25, elbowL: -0.2, elbowR: -0.5, hipL: 0.06, hipR: 0.06, kneeL: 0.1, kneeR: 0.1, inR: 0, finger: 0 },
+    stand: { pelvis: 1.09, spine: 0.22, neck: 0.38, tilt: 0, nod: -0.1, lean: 0, armL: 0.12, armR: 0.12, elbowL: -0.2, elbowR: -0.2, hipL: 0.04, hipR: 0.04, kneeL: 0.08, kneeR: 0.08, inR: 0, twR: 0, wristR: 0, finger: 0 },
+    tilt: { pelvis: 1.09, spine: 0.24, neck: 0.42, tilt: 0.5, nod: 0.05, lean: 0.04, armL: 0.1, armR: 0.1, elbowL: -0.15, elbowR: -0.15, hipL: 0.04, hipR: 0.04, kneeL: 0.08, kneeR: 0.08, inR: 0, twR: 0, wristR: 0, finger: 0 },
+    crouch: { pelvis: 0.52, spine: 0.75, neck: 0.15, tilt: 0.15, nod: -0.25, lean: 0, armL: 0.6, armR: 0.6, elbowL: -0.9, elbowR: -0.9, hipL: 1.55, hipR: 1.55, kneeL: 2.35, kneeR: 2.35, inR: 0, twR: 0, wristR: 0, finger: 0 },
+    crawl: { pelvis: 0.5, spine: 1.45, neck: -0.9, tilt: 0, nod: -0.3, lean: 0, armL: 1.4, armR: 1.4, elbowL: 0, elbowR: 0, hipL: 0, hipR: 0, kneeL: 1.55, kneeR: 1.55, inR: 0, twR: 0, wristR: 0, finger: 0 },
+    // the elbow down at his side, the forearm folded up, the shoulder turned in so the hand comes across to
+    // the middle of his face, the finger upright on his lips (tests/wes.test.js measures it)
+    shush: { pelvis: 1.09, spine: 0.2, neck: 0.32, tilt: 0.2, nod: -0.05, lean: 0, armL: 0.1, armR: 0.52, elbowL: -0.2, elbowR: -2.15, inR: 0.04, twR: -0.8, hipL: 0.04, hipR: 0.04, kneeL: 0.08, kneeR: 0.08, wristR: -0.61, finger: 1 },
+    peek: { pelvis: 1.06, spine: 0.3, neck: 0.4, tilt: 0.35, nod: 0, lean: 0.22, armL: 0.1, armR: 0.25, elbowL: -0.2, elbowR: -0.5, hipL: 0.06, hipR: 0.06, kneeL: 0.1, kneeR: 0.1, inR: 0, twR: 0, wristR: 0, finger: 0 },
   };
 
   function create(scene) {
@@ -180,13 +185,17 @@
       hoodie: new THREE.MeshPhongMaterial({ color: HOODIE, specular: 0x000000 }),
       print: new THREE.MeshPhongMaterial({ map: printTexture(), specular: 0x000000 }),
       pants: new THREE.MeshPhongMaterial({ color: PANTS, specular: 0x000000 }),
-      skin: new THREE.MeshPhongMaterial({ color: SKIN, specular: 0x000000 }),
+      skin: new THREE.MeshPhongMaterial({ color: SKIN, emissive: SKIN_GLOW, specular: 0x000000 }),
       dirt: new THREE.MeshPhongMaterial({ color: DIRT, specular: 0x000000 }),
-      fluff: new THREE.MeshPhongMaterial({ color: 0xc99aa0, specular: 0x000000 }),
+      fluff: new THREE.MeshPhongMaterial({ color: 0x5e4c4f, specular: 0x000000 }), // pink insulation, grey with dust
+      shadow: new THREE.MeshPhongMaterial({ color: 0x2a2521, specular: 0x000000 }), // inside the hood, behind the face
       iron: new THREE.MeshPhongMaterial({ color: 0x2a2d31, specular: 0x333333, shininess: 30 }),
     };
-    // the face glows a little: a pale face in a dark doorway has to read even where no light falls
-    var faceMat = new THREE.MeshBasicMaterial({ map: faceTexture(), color: 0x9a948c });
+    // the face glows a little (its own picture, faintly), so a pale face in a dark doorway reads even where
+    // no light falls; and it takes light like the rest of him, so a flashlight shows it instead of leaving a
+    // dark mask in a white frame. Lit at full phone light it stays under white.
+    var faceTex = faceTexture();
+    var faceMat = new THREE.MeshLambertMaterial({ map: faceTex, color: 0x4d4a45, emissive: 0x423f3b, emissiveMap: faceTex });
 
     function box(w, h, d, mat, x, y, z, parent) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -212,13 +221,18 @@
     box(0.06, 0.03, 0.05, mats.fluff, -0.15, 0.6, -0.02, spine); // insulation on his shoulders
     box(0.05, 0.025, 0.04, mats.fluff, 0.13, 0.6, 0.04, spine);
     var neck = joint(0, 0.6, 0.02, spine);
-    box(0.09, 0.08, 0.09, mats.skin, 0, 0.03, 0, neck);
+    var neckBox = box(0.09, 0.08, 0.09, mats.skin, 0, 0.03, 0, neck);
     var head = joint(0, 0.09, 0.03, neck);
     head.rotation.order = 'YXZ';
-    box(0.2, 0.25, 0.17, mats.skin, 0, 0.11, -0.02, head); // the head sits behind the face plane
-    var faceMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.21), faceMat);
-    faceMesh.position.set(0, 0.105, 0.1); // set back in the hood
+    // the head sits behind the face plane; only its sides and underside show, deep in the hood, so they
+    // stay in shadow (lit skin there made a pale frame round the face)
+    var headBox = box(0.2, 0.25, 0.17, mats.shadow, 0, 0.11, -0.02, head);
+    // as big as the front of the head, so no edge of skin shows round it (the picture fades to dark at its
+    // edges, into the hood)
+    var faceMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.25), faceMat);
+    faceMesh.position.set(0, 0.11, 0.1); // set back in the hood
     head.add(faceMesh);
+    var mouth = joint(0, 0.11 + 0.125 - (114 / 160) * 0.25, 0.1, head); // the middle of the smile on the face
     // the hood, always up: back, top and sides, the face set back in it
     box(0.27, 0.31, 0.06, mats.hoodie, 0, 0.12, -0.11, head);
     box(0.27, 0.05, 0.27, mats.hoodie, 0, 0.27, 0.0, head);
@@ -227,9 +241,9 @@
     // red-eye, for the camera's flash
     var redMat = new THREE.MeshBasicMaterial({ color: 0xff2a1a, fog: false });
     var haloMat = new THREE.MeshBasicMaterial({ color: 0xff3a20, fog: false, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
-    var redEyes = [-0.04, 0.04].map(function (x) {
+    var redEyes = [-0.034, 0.034].map(function (x) {
       var e = new THREE.Mesh(new THREE.PlaneGeometry(0.04, 0.03), redMat);
-      e.position.set(x, 0.14, 0.115);
+      e.position.set(x, 0.138, 0.115); // over the pupils painted on the face
       var halo = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.13), haloMat);
       halo.position.z = 0.002;
       e.add(halo);
@@ -277,6 +291,8 @@
 
     var api = {
       group: root,
+      // the parts tests and tuning measure: where his mouth is, the shush finger, the face over the head
+      parts: { head: head, headBox: headBox, neck: neckBox, face: faceMesh, mouth: mouth, hand: armR.hand, finger: armR.finger },
       pos: { x: 0, z: 0 },
       heading: 0,
       crouch: 0, // 0..1, the old intruder's crouch (blends toward the crouch pose)
@@ -372,6 +388,8 @@
         armL.el.rotation.x = cur.elbowL;
         armR.el.rotation.x = cur.elbowR;
         armR.sh.rotation.z = -cur.inR; // across to his mouth
+        armR.sh.rotation.y = cur.twR;
+        armR.hand.rotation.x = cur.wristR;
         armR.finger.visible = cur.finger > 0.5;
         legL.hip.rotation.x = -cur.hipL + stride * 0.45;
         legR.hip.rotation.x = -cur.hipR - stride * 0.45;
@@ -385,5 +403,5 @@
     return api;
   }
 
-  OC.wes = { create: create, POSES: Object.keys(POSES) };
+  OC.wes = { create: create, POSES: Object.keys(POSES), poseData: POSES };
 })();

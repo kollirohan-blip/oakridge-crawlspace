@@ -313,7 +313,7 @@
         sfx('sting', { gain: 0.9 });
         phone.endCall();
         tension(1);
-        setTimeout(function () {
+        g.after(function () {
           hud.failScreen("YOU DIDN'T MAKE IT", t('act3.fail.' + reason), function () {
             hud.fadeIn();
             if (g.onEnd) g.onEnd('act3', 'retry');
@@ -386,9 +386,9 @@
           sfx('whisper', { pos: { x: 1.2, y: 1.9, z: 17.3 }, gain: 1.4, ref: 1 });
           say('act3.bad.room', 3000);
           tension(1);
-          setTimeout(function () {
+          g.after(function () {
             hud.fadeOut('');
-            setTimeout(function () { if (g.onEnd) g.onEnd('act3', 'bad'); }, 2200);
+            g.after(function () { if (g.onEnd) g.onEnd('act3', 'bad'); }, 2200);
           }, 2300);
         });
         tension(0.9);
@@ -416,7 +416,7 @@
         director.complete('walk');
         g.state.cutscene = true;
         hud.fadeOut('12:35 AM');
-        setTimeout(function () { if (g.onEnd) g.onEnd('act3'); }, 2600);
+        g.after(function () { if (g.onEnd) g.onEnd('act3'); }, 2600);
       }
 
       return {

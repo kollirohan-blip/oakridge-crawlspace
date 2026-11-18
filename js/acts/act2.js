@@ -232,9 +232,9 @@
         flags.ending = true;
         g.state.cutscene = true;
         hud.fadeOut('');
-        setTimeout(function () { hud.setFadeText(t('act2.vo.end')); }, 1500);
-        setTimeout(function () { hud.setFadeText('12:30 AM'); }, 9500);
-        setTimeout(function () { if (g.onEnd) g.onEnd('act2'); }, 12500);
+        g.after(function () { hud.setFadeText(t('act2.vo.end')); }, 1500);
+        g.after(function () { hud.setFadeText('12:30 AM'); }, 9500);
+        g.after(function () { if (g.onEnd) g.onEnd('act2'); }, 12500);
       }
 
       // stress signs for the Director (as on night one)
