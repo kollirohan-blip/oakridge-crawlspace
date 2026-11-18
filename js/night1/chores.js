@@ -182,6 +182,7 @@
         onUse: function () {
           setLight(s.light, !lights[s.light]);
           ctx.sfx('switch', { pos: { x: s.x, y: s.y, z: s.z } });
+          ctx.log('switch', { kind: s.light });
         },
       });
     });

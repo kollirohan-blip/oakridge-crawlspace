@@ -1214,6 +1214,173 @@
           return true;
         });
 
+        // ---- P5 and P6: what gets noticed (js/talkback.js, js/engine/noticed.js) ----------------------
+        var subEl = document.getElementById('subtitle');
+        // run the game for a while and keep every subtitle that showed, in order
+        async function listen(secs, until) {
+          var heard = [];
+          for (var s = 0; s < secs; s += 0.25) {
+            D.advance(0.25);
+            await tick();
+            var now = subEl.classList.contains('on') ? subEl.textContent : '';
+            if (now && heard[heard.length - 1] !== now) heard.push(now);
+            if (until && heard.indexOf(g.t(until)) >= 0) break;
+          }
+          return heard;
+        }
+        function wait(ms) {
+          return new Promise(function (res) { setTimeout(res, ms); });
+        }
+        // night one's log, as if it had been played, then night two reads it (no forced gates)
+        function night2From(list) {
+          g.habits.reset();
+          list.forEach(function (e) { g.habits.log(e[0], e[1] || {}, { clock: e[2] || '', t: e[3] || 0 }); });
+          g.habits.startChapter('dayTwo');
+          return night2(null);
+        }
+        await flow('learnBreaker', async function () {
+          var a = night2From([['dinner', { kind: 'mac' }, '8:02 PM', 60], ['bed', { lights: 4 }, '1:55 AM', 900]]);
+          if (!a.plan.why || a.plan.why.breaker !== 'lightsOn') return 'the plan did not learn the lights (' + JSON.stringify(a.plan.why) + ')';
+          if (!getIn(a)) return 'did not get in';
+          a.ctx.lights.set('kitchen', true);
+          if (!lockUp(a)) return 'could not lock up';
+          ctl.teleport(9, 6, 0, 0);
+          var dread = a.mods.dread.state;
+          if (!(await waitFor(function () { return dread.breaker === 'tripped'; }, 120))) return 'the breaker never tripped';
+          // 1. the gate fires, 2. Mason says he knew, before the breaker panel line
+          var heard = await listen(14);
+          var iKnew = heard.indexOf(g.t('p8.knew.breaker'));
+          if (iKnew < 0) return 'Mason never said it (heard: ' + heard.join(' / ') + ')';
+          if (heard.indexOf(g.t('n2.gate.breaker')) > iKnew) return 'he said it before the power went';
+          if (heard.indexOf(g.t('n2.gate.breaker2')) < iKnew) return 'the panel line talked over it';
+          var log = g.habits.entries();
+          var trip = log.filter(function (e) { return e.action === 'breakerTripped'; })[0];
+          var knew = log.filter(function (e) { return e.action === 'knew' && e.detail.kind === 'breaker'; })[0];
+          if (!trip || !knew || knew.t < trip.t) return 'the gate and the line are not in the log in order';
+          if (!D.use('breaker')) return 'the breaker could not be reset';
+          // 3. the notebook under the house lists the same habit
+          D.advance(4);
+          D.goto('hatch', 0);
+          D.use('hatch');
+          await tick();
+          D.choose(2); // go down
+          await tick();
+          if (!(await waitFor(function () { return a.flags.inCrawl; }, 5))) return 'never got under the house';
+          D.advance(1);
+          D.use('crawl.notebook');
+          await wait(300);
+          var found = false;
+          for (var pg = 0; pg < 8 && !found; pg++) {
+            var head = document.getElementById('readerTitle').textContent;
+            var body = document.getElementById('readerBody').textContent;
+            if (head.indexOf('WHAT HE DOES') === 0 && body.indexOf(OC.noticed.GATES.breaker.note) >= 0) found = true;
+            else {
+              document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' }));
+              await wait(250);
+            }
+          }
+          if (!found) return 'the notebook does not list it';
+          document.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape' }));
+          await tick();
+          // 4. and having read it: he wrote it down first
+          var after = await listen(14, 'p8.knew.book');
+          if (after.indexOf(g.t('p8.knew.book')) < 0) return 'no line after reading it (heard: ' + after.join(' / ') + ')';
+          D.choose(3); // leave the notebook
+          await tick();
+          report.learnBreaker = heard.concat(after);
+          return true;
+        });
+        await flow('learnTvLight', async function () {
+          var a = night2From([['bed', { lights: 1 }, '1:50 AM', 900], ['phoneLight', { sec: 260 }], ['windowLook'], ['windowLook'], ['windowLook']]);
+          if (a.plan.gates.breaker || !a.plan.gates.lightFalters || !a.plan.gates.tvReflection) return 'wrong gates ' + JSON.stringify(a.plan.gates);
+          if (!getIn(a) || !lockUp(a)) return 'could not get in and lock up';
+          ctl.teleport(19.3, 4.9, 0, -0.1); // behind the couch, facing the dark TV
+          var dread = a.mods.dread.state;
+          if (!(await waitFor(function () { return dread.tv === 'showing'; }, 90))) return 'the TV never showed it (' + dread.tv + ')';
+          var tvHeard = await listen(20, 'p8.knew.tv');
+          var iTv = tvHeard.indexOf(g.t('p8.knew.tv'));
+          if (iTv < 0) return 'no TV line (heard: ' + tvHeard.join(' / ') + ')';
+          if (tvHeard.indexOf(g.t('n2.gate.tv2')) > iTv) return 'the TV line came before the reflection was gone';
+          ctl.teleport(6, 18, Math.PI, 0); // the dark end of the hall, light on
+          if (!(await waitFor(function () { ctl.light.on = true; return dread.faltered; }, 120))) return 'the light never faltered';
+          var lightHeard = await listen(12, 'p8.knew.light');
+          if (lightHeard.indexOf(g.t('p8.knew.light')) < 0) return 'no light line (heard: ' + lightHeard.join(' / ') + ')';
+          var said = g.habits.entries().filter(function (e) { return e.action === 'knew'; }).map(function (e) { return e.detail.kind; });
+          if (said.join() !== 'tvReflection,lightFalters') return 'said ' + said.join();
+          var notes = a.mods.under.notebookPages().filter(function (p) { return p.title === 'WHAT HE DOES'; })[0];
+          if (!notes || notes.body !== [OC.noticed.GATES.lightFalters.note, OC.noticed.GATES.tvReflection.note].join('\n')) return 'the notebook page reads ' + (notes && notes.body);
+          return true;
+        });
+        await flow('quirks', async function () {
+          var a = freshNight();
+          var tb = a.mods.talkback;
+          var heard = await listen(13); // the opening voice-over first
+          async function react(id, secs) {
+            var h = await listen(secs || 10, id);
+            heard = heard.concat(h);
+            return h.indexOf(g.t(id)) >= 0;
+          }
+          var i;
+          // flushing five times
+          for (i = 0; i < 4; i++) {
+            if (!D.use('toilet')) return 'could not flush (' + i + ')';
+            D.advance(2.7);
+          }
+          if (tb.state.queued.flush || tb.state.said.flush) return 'four flushes were already a joke';
+          D.use('toilet');
+          if (!(await react('p8.quirk.flush'))) return 'nothing after five flushes';
+          for (i = 0; i < 3; i++) {
+            D.advance(2.7); // the line can come before the last flush is done, and the toilet waits for it
+            if (!D.use('toilet')) return 'could not flush again (' + (6 + i) + ')';
+          }
+          // the fridge, over and over (before dinner it asks what to make: close it)
+          for (i = 0; i < 6; i++) {
+            D.use('fridge');
+            await tick();
+            D.choose(6);
+            await tick();
+            D.advance(1);
+          }
+          if (!(await react('p8.quirk.fridge'))) return 'nothing after six fridges';
+          // the padlocked hatch, again and again
+          for (i = 0; i < 4; i++) {
+            D.use('hatch');
+            D.advance(1.5);
+          }
+          if (!(await react('p8.quirk.hatch', 14))) return 'nothing after four tries at the hatch';
+          // petting Cooper for a full minute
+          for (i = 0; i < 15; i++) {
+            if (!D.use('cooper')) {
+              D.advance(1);
+              continue;
+            }
+            await tick();
+            D.choose(1);
+            await tick();
+            D.advance(4.5);
+          }
+          if (!(await react('p8.quirk.pet', 40))) return 'nothing after a minute of petting (' + OC.noticed.progress(g.habits.entries(), OC.noticed.quirk('pet')) + ' s)';
+          // walking into the treeline
+          ctl.teleport(-12, -18, 0, 0);
+          if (!(await react('p8.quirk.treeline'))) return 'nothing in the trees';
+          ctl.teleport(2.5, -3, Math.PI, 0);
+          D.advance(3);
+          // each one once, however many more times he does it
+          var once = {};
+          g.habits.entries().forEach(function (e) {
+            if (e.action === 'quirk') once[e.detail.kind] = (once[e.detail.kind] || 0) + 1;
+          });
+          if (Object.keys(once).sort().join() !== 'flush,fridge,hatch,pet,treeline') return 'said ' + JSON.stringify(once);
+          if (Object.keys(once).some(function (k) { return once[k] !== 1; })) return 'a joke repeated: ' + JSON.stringify(once);
+          // and Wes counted them
+          g.habits.startChapter('dayTwo');
+          var notes = OC.noticed.noteLines(g.habits.entries());
+          var want = ['flushed 8 times. the pipes go right past my head', 'opened the fridge 6 times. hungry boy', 'tried my door 4 times. i heard every one'];
+          for (var w = 0; w < want.length; w++) if (notes.indexOf(want[w]) < 0) return 'notebook is missing "' + want[w] + '" (has ' + notes.join(' | ') + ')';
+          report.quirks = heard.filter(function (h) { return /./.test(h); });
+          return true;
+        });
+
         // ---- 12:30 AM and 12:35 AM, played through ------------------------------------------------
         async function answerUntil(pick, pred, max) {
           var t = 0;

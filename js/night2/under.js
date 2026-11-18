@@ -118,8 +118,10 @@
       });
     }
 
+    // his pages, with WHAT HE DOES (the habits tonight's gates learned, and what he counted) before the plan
     function notebookPages() {
-      return OC.habits.notebookPages(g.habits.entries(), 9).map(function (p) {
+      var src = OC.noticed || OC.habits;
+      return src.notebookPages(g.habits.entries(), 9).map(function (p) {
         return { title: p.title, body: p.lines.join('\n') };
       });
     }
@@ -177,6 +179,9 @@
             ctx.log('readNotebook');
             ctx.tension.peak(7);
             say('n2.crawl.notebookThought', 6500);
+            // a gate already got him tonight, and here it is in the book, written down first (P5)
+            var tb = ctx.mods.talkback;
+            if (tb && tb.knewAny()) ctx.later(6.8, function () { say('p8.knew.book', 5000); });
             ctx.later(6.8, function () {
               if (!flags.inCrawl) return afterBook('leave');
               phone
@@ -230,6 +235,8 @@
             ctx.log('lightFaltered', { kind: 'crawl' });
             ctx.later(0.7, function () { say('n2.crawl.lightDies', 2600); });
             ctx.later(3.6, function () { say('n2.crawl.lightBack', 2400); });
+            // down here there is no room for it: he thinks it once he is back up (P5)
+            if (ctx.mods.talkback) ctx.mods.talkback.knew('lightFalters', 4, { wait: 240, when: function () { return !flags.inCrawl; } });
           } else ctl.light.falter(0.5);
         });
         ctx.tension.peak(9);
@@ -275,6 +282,7 @@
       overhead: overhead,
       enter: enter,
       exit: exit,
+      notebookPages: notebookPages,
       // took the notebook up with him?
       tookNotebook: function () {
         return st.book === 'took';

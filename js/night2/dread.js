@@ -316,6 +316,11 @@
     }
 
     // ---- the gates ------------------------------------------------------------------------------------
+    // a gate fired: if it learned a habit from last night, Mason says so (js/talkback.js). True if he will.
+    function knew_(gate, delay, opts) {
+      var tb = ctx.mods && ctx.mods.talkback;
+      return tb ? tb.knew(gate, delay, opts) : false;
+    }
     function tripBreaker() {
       st.breaker = 'tripped';
       st.hatchWasShut = !props.hatch.ajar;
@@ -329,8 +334,10 @@
         ctx.sfx('breaker', { pos: ch.breaker.at, gain: 1.4, ref: 3 });
         if (g.state.tvSound) g.state.tvSound.stop();
       });
-      ctx.later(2.2, function () { say('n2.gate.breaker', 4000); });
-      ctx.later(7, function () {
+      // he slept with every light on last night: in the dark, Mason works out that this was meant (P5)
+      var knew = knew_('breaker', 5.4, { ms: 5200, wait: 4 });
+      ctx.later(2.2, function () { say('n2.gate.breaker', knew ? 3000 : 4000); });
+      ctx.later(knew ? 10.8 : 7, function () {
         ctx.reveal('breaker');
         say('n2.gate.breaker2', 7000);
       });
@@ -528,6 +535,7 @@
               cooper.stare(null);
               say('n2.gate.tv2', 5000);
             });
+            knew_('tvReflection', 12.6, { ms: 6000 });
           }
         } else if (st.tv === 'showing') {
           st.tvT += dt;
@@ -546,6 +554,7 @@
           ctx.log('lightFaltered', { kind: 'house' });
           ctx.later(0.7, function () { say('n2.crawl.lightDies', 2600); });
           ctx.later(3.5, function () { say('n2.crawl.lightBack', 2400); });
+          knew_('lightFalters', 6.2);
         }
 
         // ---- the mirror -----------------------------------------------------------------------------------

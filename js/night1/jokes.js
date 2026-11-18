@@ -55,6 +55,7 @@
           g.read(t('n1.joke.magnetsTitle'), t('n1.joke.magnets'), function () {
             if (!found.magnets) say('n1.joke.magnetsThought');
             collect('magnets');
+            ctx.log('readMagnets');
           });
         },
       },
@@ -91,6 +92,7 @@
         fishCount++;
         decor.fish.sing();
         ctx.sfx('fish', { pos: f, gain: 0.9 });
+        if (byMason) ctx.log('fishSet');
         if (fishCount === 1) {
           ctx.later(3.2, function () { say('n1.joke.fish1', 6000); });
           ctx.log('fish');

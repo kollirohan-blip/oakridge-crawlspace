@@ -450,6 +450,25 @@
     'n2.thought.pillow': "It was in my waistband. It was IN my WAISTBAND.",
     'n2.notify.petcam': "Camera offline",
     'n2.thought.petcam': "The pet cam's offline. 11:58. Probably the storm. Probably.",
+    // ---- P5 and P6: what gets noticed (js/engine/noticed.js, js/talkback.js) ------------------------
+    // P5: a night-two gate fired because of what Mason did last night, and he knows it
+    'p8.knew.breaker': "I left every light on last night. Every single one. He was counting.",
+    'p8.knew.light': "I had this light on half of last night. He knows it's all I've got.",
+    'p8.knew.tv': "I kept checking Dave's window last night. So tonight he gave me something else to look at.",
+    'p8.knew.book': "He wrote it down. Last night he wrote it down, and tonight he did it.",
+    // P6: Mason talks back to his own silly play (each at most once a night)
+    'p8.quirk.treeline': "I'm in the woods. At night. On purpose. This is how true crime podcasts start.",
+    'p8.quirk.treeline2': "No. Absolutely not. Not tonight.",
+    'p8.quirk.flush': "Five flushes. It works. I don't know what I was trying to prove.",
+    'p8.quirk.pet': "That's a full minute. Neither of us has moved. Best job I've ever had.",
+    'p8.quirk.fridge': "I keep opening the fridge like something new will be in there. It's Dave's fridge. Nothing new is ever in there.",
+    'p8.quirk.hatch': "Dave's note said don't mess with the hatch. I keep messing with the hatch.",
+    'p8.quirk.fish': "That fish again. I'm going to hear that song when I'm eighty.",
+    'p8.quirk.magnets': "Third time reading these. \"Brie-lieve in yourself.\" I hate that it's working.",
+    'p8.quirk.channels': "Same four channels, around and around. It's not going to grow a fifth.",
+    'p8.quirk.switches': "On, off, on, off. If anybody's out there watching the house, I just sent them Morse code.",
+    'p8.quirk.fetch': "He's not tired. I'm tired. He's still not tired.",
+    'p8.quirk.mirror': "Okay, that's enough mirror. I look like I haven't slept, and I haven't even gone to bed.",
     // ---- The Call and the Search ---------------------------------------------------------------------
     'act3.thought.callLost': "Call failed. One bar. Then none. The storm.",
     'act3.taps.prompt': "Three taps. Soft. From the inside of the closet door.",

@@ -502,6 +502,7 @@
             return;
           }
           say('act1.thought.hatch');
+          ctx.log('hatchTry');
         },
       },
       {

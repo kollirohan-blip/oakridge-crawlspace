@@ -10,7 +10,7 @@
   OC.acts = OC.acts || {};
   var N2 = OC.night2 || {};
 
-  var MODULES = ['arrival', 'changes', 'under', 'dread'];
+  var MODULES = ['arrival', 'changes', 'under', 'dread', 'talkback'];
   var BASE_TEXT = ['act2.vo.open', 'act2.vo.end'];
   var TEXT = MODULES.reduce(function (all, m) {
     return N2[m] ? all.concat(N2[m].TEXT) : all;

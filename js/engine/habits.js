@@ -189,11 +189,18 @@
     if (kind === 'mac') familiar = 'kettle';
     else if (kind === 'pizza') familiar = 'oven';
     else if (kind === 'cereal' && entries.some(function (e) { return e.action === 'tvOn' || e.action === 'watchedTv'; })) familiar = 'tv';
+    var breaker = g.lightsOn || (!g.heavyLight && !g.windowWatcher);
     return {
       gates: {
-        breaker: g.lightsOn || (!g.heavyLight && !g.windowWatcher),
+        breaker: breaker,
         lightFalters: g.heavyLight,
         tvReflection: g.windowWatcher,
+      },
+      // which habit set each gate; the breaker can also fire with nothing learned ('fallback')
+      why: {
+        breaker: g.lightsOn ? 'lightsOn' : breaker ? 'fallback' : null,
+        lightFalters: g.heavyLight ? 'heavyLight' : null,
+        tvReflection: g.windowWatcher ? 'windowWatcher' : null,
       },
       familiar: familiar,
     };

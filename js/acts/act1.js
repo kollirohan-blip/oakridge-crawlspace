@@ -8,7 +8,7 @@
   OC.acts = OC.acts || {};
   var N1 = OC.night1 || {};
 
-  var MODULES = ['dinner', 'cooperPlay', 'chores', 'jokes', 'tv'];
+  var MODULES = ['dinner', 'cooperPlay', 'chores', 'jokes', 'tv', 'talkback'];
   var BASE_TEXT = [
     'act1.vo.open', 'act1.vo.end', 'act1.sms.dave1', 'act1.sms.ethan1', 'act1.sms.mason1', 'act1.sms.dave2',
     'act1.thought.allDone', 'act1.thought.late',
@@ -172,6 +172,7 @@
       });
       ctx.mods = mods;
       var dread = N1.dread ? N1.dread.create(g, ctx) : null;
+      ctx.dread = dread; // talkback waits for the dread to be between beats
       var all = MODULES.map(function (m) { return mods[m]; }).concat(dread ? [dread] : []);
       all.forEach(function (m) {
         m.items.forEach(function (it) { g.interact.add(it); });

@@ -145,6 +145,7 @@
 
     // ---- the fridge ----------------------------------------------------------------------------
     function openFridge() {
+      ctx.log('fridge');
       if (dinner.state === 'fridge') {
         var opts = DISH_IDS.map(function (id) { return { id: id, text: t('n1.din.opt.' + id) }; });
         opts.push({ id: 'close', text: t('n1.din.close') });
