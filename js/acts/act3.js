@@ -30,7 +30,8 @@
     clockDef: { startMin: 24 * 60 + 30, endMin: 24 * 60 + 36, durationSec: 420 },
     requiredText: TEXT,
 
-    create: function (g) {
+    // resume: a retry from a checkpoint (Phase 8), { beat, data, hint }, or null for a fresh start
+    create: function (g, resume) {
       var hud = g.hud;
       var t = g.t;
       var props = g.props;
@@ -307,18 +308,24 @@
         flags.phase = 'fail';
         g.state.cutscene = true;
         zoomTo(g.baseFov || 72);
-        props.closet.burst();
+        // Phase 8: the closet burst (jump scare 2) plays once; after that, black and his hum from the closet
+        var once = g.retry ? g.retry.fail('act3', reason) : { scare: true };
+        flags.scared = once.scare;
+        if (once.scare) props.closet.burst();
+        else {
+          hud.cut();
+          loops.push(sfx('lullaby', { pos: EYE, gain: 1.3, ref: 1.2 }));
+        }
         beat.stop();
-        sfx('thud', { pos: EYE, gain: 1.6 });
-        sfx('sting', { gain: 0.9 });
+        if (once.scare) sfx('thud', { pos: EYE, gain: 1.6 });
+        if (once.scare) sfx('sting', { gain: 0.9 });
         phone.endCall();
         tension(1);
         g.after(function () {
           hud.failScreen("YOU DIDN'T MAKE IT", t('act3.fail.' + reason), function () {
-            hud.fadeIn();
-            if (g.onEnd) g.onEnd('act3', 'retry');
+            if (g.onEnd) g.onEnd('act3', 'retry'); // back to the last checkpoint, in the dark
           });
-        }, 700);
+        }, once.scare ? 700 : 1800);
       }
 
       function survive() {
@@ -419,7 +426,47 @@
         g.after(function () { if (g.onEnd) g.onEnd('act3'); }, 2600);
       }
 
+      // ---- the checkpoint (Phase 8) ---------------------------------------------------------------------
+      // Saved once the closet-tap choice has played out into the flash photo of the eye ('photo'). Not
+      // at the choice itself: nothing can fail between the two, and coming back before the photo would
+      // show jump scare 1 a second time. A failed bluff, or a look back on the walk, comes back here: two
+      // seconds in the dark with the rain on the roof and Cooper growling low at the closet, then Ethan
+      // calls again (after Mason thinks back, if he has failed there twice).
+      var saved = {};
+      function saveBeats() {
+        if (!g.checkpoint || saved.photo || flags.phase !== 'photoSeen') return;
+        saved.photo = true;
+        var taps = g.habits.last('closetTaps');
+        g.checkpoint('photo', { t: flags.elapsed, battery: ctl.light.battery, taps: taps ? taps.detail.kind : 'leave' });
+      }
+      function resumeAt(cp) {
+        var d = cp.data || {};
+        if (cp.beat === 'photo') {
+          queue.length = 0; // Dave has already called; the taps and the photo are behind him
+          saved.photo = true;
+          flags.elapsed = d.t || 0;
+          flags.phase = 'photoSeen';
+          reveal('photo');
+          director.complete('photo');
+          if (typeof d.battery === 'number') ctl.light.battery = d.battery;
+          if (d.taps === 'cooper') cooper.setPos(3.0, 15.9); // where calling him over left him
+          cooper.stay();
+          cooper.stare(EYE);
+          tension(0.85);
+        }
+        g.state.cutscene = true;
+        sfx('growl', { pos: { x: cooper.pos.x, y: 0.6, z: cooper.pos.z }, duration: 2.2, gain: 0.7 });
+        later(2, function () {
+          hud.fadeIn();
+          g.state.cutscene = false;
+          if (cp.hint) say(cp.hint, 7500);
+          if (cp.beat === 'photo') later(cp.hint ? 7 : 2.5, ethan);
+        });
+      }
+      if (resume) resumeAt(resume);
+
       return {
+        resumes: true, // opens a retry on its own beat in the dark
         flags: flags,
         items: items,
         director: director,
@@ -457,6 +504,7 @@
             }
             if (flags.room === 'bath') finish();
           }
+          saveBeats();
         },
         dispose: function () {
           if (talk) talk.stop();

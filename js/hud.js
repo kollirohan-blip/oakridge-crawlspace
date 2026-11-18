@@ -136,6 +136,14 @@
     fadeIn: function () {
       el('fade').classList.remove('on');
     },
+    // a hard cut to black, no fade (a second fail: no scare, just his hum in the dark)
+    cut: function () {
+      var f = el('fade');
+      el('fadeText').textContent = '';
+      f.classList.add('cut', 'on');
+      void f.offsetWidth; // apply it now, then let later fades ease again
+      f.classList.remove('cut');
+    },
     // Read something (a note, a letter, a clipping) full screen until the player closes it with E,
     // Space or Esc. onClose runs once it is put away.
     // closed captions from the TV (null hides them); alert: the red emergency style

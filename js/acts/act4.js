@@ -58,7 +58,8 @@
     ROOMS: ROOMS,
     HIDES: HIDES,
 
-    create: function (g) {
+    // resume: a retry from a checkpoint (Phase 8), { beat, data, hint }, or null for a fresh start
+    create: function (g, resume) {
       var hud = g.hud;
       var t = g.t;
       var props = g.props;
@@ -182,6 +183,7 @@
         hides: HIDES.map(function (h) { return { id: h.id, at: h.at, room: h.room }; }),
         start: { x: 5.45, z: 21.5 },
         path: function (from, to) { return ctl.nav ? ctl.nav.findPath(from, to) : null; },
+        uses: resume && resume.data ? resume.data.uses : null, // where Mason hid before the checkpoint
       });
 
       // ---- the light under the bathroom door, and his feet in it -------------------------------------------
@@ -258,21 +260,26 @@
         stopLoops();
         stopHouse();
         hud.setNoise(null);
-        sfx('sting', { gain: 0.9 });
-        if (reason === 'door') {
+        // Phase 8: each fail's scare plays once; seen before, it cuts to black on his hum instead
+        var once = g.retry ? g.retry.fail('act4', reason) : { scare: true };
+        flags.scared = once.scare;
+        if (!once.scare) {
+          hud.cut();
+          loop('lullaby', { gain: 1.1 });
+        } else sfx('sting', { gain: 0.9 });
+        if (once.scare && reason === 'door') {
           props.bathDoor.open(true);
           sfx('thud', { pos: DOOR, gain: 1.6 });
-        } else if (reason === 'noise' || reason === 'seen') {
+        } else if (once.scare && (reason === 'noise' || reason === 'seen')) {
           sfx('glassSmash', { pos: { x: 11, y: 1.2, z: -9.9 }, gain: 1.2 });
           props.car.breakWindow();
         }
         tension(1);
         g.after(function () {
           hud.failScreen("YOU DIDN'T MAKE IT", t('act4.fail.' + reason), function () {
-            hud.fadeIn();
-            if (g.onEnd) g.onEnd('act4', 'retry');
+            if (g.onEnd) g.onEnd('act4', 'retry'); // back to the last checkpoint, in the dark
           });
-        }, 700);
+        }, once.scare ? 700 : 1800);
       }
 
       function win() {
@@ -578,8 +585,9 @@
           him.pose('stand', true);
           later(2.5, function () {
             if (flags.phase !== 'hide') return;
-            weather.strike(1, 0.3);
-            sfx('sting', { gain: 1.0 });
+            flags.faceScare = !g.retry || g.retry.scare('act4', 'faceAtGlass'); // seen on an earlier try: no jump (Phase 8)
+            weather.strike(flags.faceScare ? 1 : 0.45, 0.3);
+            if (flags.faceScare) sfx('sting', { gain: 1.0 });
             tension(1);
             g.habits.log('faceAtGlass', {}, { clock: g.clock.label(), t: flags.elapsed });
             later(0.6, function () { say('act4.thought.face', 4000); });
@@ -726,7 +734,119 @@
       });
       items.forEach(function (it) { g.interact.add(it); });
 
+      // ---- checkpoints (Phase 8) --------------------------------------------------------------------------
+      // Saved at three beats: out of the bathroom ('search', once he has walked away), at the front door
+      // ('door', the chain still on) and in the car ('car'). A fail comes back to the last one, with the
+      // habit log as it was then (main.js puts that back), on two seconds in the dark first: Cooper
+      // whimpering somewhere in the house, or the rain on the car roof. Then, if this is the second fail
+      // in the same spot, Mason thinks back to what went wrong.
+      var saved = {};
+      function saveBeats() {
+        if (!g.checkpoint) return;
+        var beat = flags.phase === 'car' ? 'car' : flags.phase === 'door' ? 'door' : flags.phase === 'bath' && flags.unlockReady ? 'search' : null;
+        if (!beat || saved[beat]) return;
+        saved[beat] = true;
+        var uses = {};
+        HIDES.forEach(function (h) {
+          if (search.uses(h.id)) uses[h.id] = search.uses(h.id);
+        });
+        var wp = search.pos();
+        g.checkpoint(beat, {
+          t: flags.elapsed,
+          lockedAt: flags.lockedAt,
+          heLeftAt: flags.heLeftAt,
+          showerOn: flags.showerOn,
+          done: director.list().filter(function (x) { return x.done; }).map(function (x) { return x.id; }),
+          revealed: Object.keys(revealed),
+          battery: ctl.light.battery,
+          uses: uses,
+          wes: { x: wp.x, z: wp.z },
+          at: { x: ctl.pos.x, z: ctl.pos.z, yaw: ctl.yaw },
+          cooper: { x: cooper.pos.x, z: cooper.pos.z, follow: cooper.mode === 'follow' },
+        });
+      }
+      function resumeAt(cp) {
+        var d = cp.data || {};
+        if (cp.beat !== 'start') {
+          queue.length = 0; // the opening line is for the first time through
+          flags.elapsed = d.t || 0;
+          if (typeof d.battery === 'number') ctl.light.battery = d.battery;
+          (d.revealed || []).forEach(function (id) { revealed[id] = true; });
+          (d.done || []).forEach(function (id) { director.complete(id); });
+          phone.setTasks(visible());
+          // the bathroom is behind him: locked, he came and went
+          flags.doorLocked = true;
+          flags.lockedAt = d.lockedAt;
+          flags.seq = true;
+          flags.heLeftAt = d.heLeftAt;
+          flags.unlockReady = true;
+          saved.search = true;
+          if (d.showerOn) {
+            flags.showerOn = true;
+            loop('shower', { pos: SHOWER, gain: 1 });
+          }
+        }
+        if (cp.beat === 'search') {
+          // back on the bathroom floor, the door locked; his steps going away down the hall again
+          ctl.teleport(3.9, 21.5, -Math.PI / 2, 0);
+          props.bathDoor.close(ctl.pos);
+          if (ctl.nav) ctl.nav.rebuild();
+          search.place({ x: 5.45, z: 21.5 });
+          search.start();
+          search.send('office');
+        } else if (cp.beat === 'door' || cp.beat === 'car') {
+          flags.unlocked = true;
+          gap.show(false);
+          saved.door = true;
+          if (d.cooper) {
+            cooper.setPos(d.cooper.x, d.cooper.z);
+            if (d.cooper.follow) cooper.follow();
+          }
+        }
+        if (cp.beat === 'door') {
+          // in the foyer, the chain on; he is where he was, searching, and holds while Mason fumbles
+          ctl.teleport(d.at.x, d.at.z, d.at.yaw, 0);
+          search.place(d.wes);
+          search.start();
+          him.setPos(d.wes.x, d.wes.z);
+          him.pose('stand');
+          him.show(true);
+          atTheDoor();
+        } else if (cp.beat === 'car') {
+          // in the driver's seat: the chain is off and the front door stands open behind him
+          saved.car = true;
+          flags.chainTries = 2;
+          props.frontDoor.open();
+          if (ctl.nav) ctl.nav.rebuild();
+          flags.phase = 'car';
+          ctl.sprintAllowed = false;
+          ctl.seat(10.4, -9.95, Math.PI, -0.6);
+        }
+        lastPos.x = ctl.pos.x;
+        lastPos.z = ctl.pos.z;
+        // two seconds in the dark, then the house (main.js keeps the screen black until now)
+        g.state.cutscene = true;
+        var frozen = ctl.frozen;
+        ctl.frozen = true;
+        if (cp.beat === 'car') {
+          var roof = sfx('rain');
+          if (roof.set) roof.set(1, 'in', true);
+          later(2.4, function () { if (roof.set) roof.set(0, 'in'); });
+          later(3.4, function () { roof.stop(); });
+        } else sfx('whine', { pos: { x: cooper.pos.x, y: 0.5, z: cooper.pos.z }, count: 2, gain: 0.7, ref: 4 });
+        later(2, function () {
+          hud.fadeIn();
+          g.state.cutscene = false;
+          ctl.frozen = frozen;
+          if (cp.hint) say(cp.hint, 7500);
+          else if (cp.beat === 'search') say('act4.thought.go', 8000);
+          else if (cp.beat === 'car') say('act4.thought.inCar');
+        });
+      }
+      if (resume) resumeAt(resume);
+
       return {
+        resumes: true, // opens a retry on its own beat in the dark
         director: director,
         flags: flags,
         noise: noise,
@@ -862,6 +982,7 @@
             hud.setNoise(noise.level());
             if (noise.exceeded()) fail('noise');
           }
+          saveBeats();
           director.tick(dt, flags);
         },
       };

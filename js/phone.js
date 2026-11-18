@@ -34,7 +34,17 @@
     });
   }
 
+  // the checkpoint mark: a cloud with a tick (Phase 8)
+  var SAVED_ICON = '<svg class="saved-icon" viewBox="0 0 20 16" role="img" aria-label="Saved"><path d="M5.2 13.2h9.6a3.7 3.7 0 0 0 .5-7.4A5.2 5.2 0 0 0 5.4 6.3a3.5 3.5 0 0 0-.2 6.9z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7.4 9.3l1.9 1.8 3.5-3.7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+
   function create(ctl) {
+    var savedTimer = null;
+    var top = document.querySelector('#phone .phone-top');
+    if (top && el('phoneBatt')) {
+      var mark = document.createElement('span');
+      mark.innerHTML = SAVED_ICON;
+      top.insertBefore(mark, el('phoneBatt'));
+    }
     var messages = []; // { thread, from, text, mine, time }
     var tasks = [];
     var time = '';
@@ -224,6 +234,13 @@
         n.classList.add('on');
         clearTimeout(notifTimer);
         notifTimer = setTimeout(function () { n.classList.remove('on'); }, 5200);
+      },
+      // a checkpoint (Phase 8): a small cloud-and-tick for a few seconds, in the phone's status bar and
+      // beside TAB PHONE, the way a phone shows a backup finishing. No words.
+      saved: function () {
+        document.body.classList.add('just-saved');
+        clearTimeout(savedTimer);
+        savedTimer = setTimeout(function () { document.body.classList.remove('just-saved'); }, 4500);
       },
       // a text Mason sends
       send: function (thread, text) {
@@ -670,7 +687,7 @@
       var h = el('phoneHint');
       if (!h) return;
       var n = api.unread();
-      h.innerHTML = '<b>TAB</b> PHONE' + (n ? ' <span class="badge">' + n + ' NEW</span>' : '');
+      h.innerHTML = '<b>TAB</b> PHONE' + (n ? ' <span class="badge">' + n + ' NEW</span>' : '') + SAVED_ICON;
     }
     updateHint();
 

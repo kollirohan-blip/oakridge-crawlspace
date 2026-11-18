@@ -139,6 +139,26 @@ test('if you leave the place before he gets there, he finds it empty', () => {
   assert.equal(ev.filter((e) => e.type === 'checkHide' && e.hide === 'couch').length, 1, 'he looked there and found nothing');
 });
 
+test('a retry from a checkpoint remembers where Mason already hid: the next time there, he checks it', () => {
+  const s = fresh({ uses: { couch: 1 } });
+  assert.equal(s.uses('couch'), 1);
+  assert.equal(s.uses('masterBed'), 0);
+  run(s, 1, { seen: false, noise: null, hidden: 'couch' });
+  assert.equal(s.job(), 'checkHide', 'the couch was used before the checkpoint');
+  // a place not used before the checkpoint is still safe the first time
+  const t = fresh({ uses: { couch: 1 } });
+  const ev = run(t, 20, { seen: false, noise: null, hidden: 'masterBed' });
+  assert.equal(ev.filter((e) => e.type === 'checkHide' || e.type === 'caught').length, 0);
+});
+
+test('the remembered hiding places are copied, not shared', () => {
+  const uses = { couch: 1 };
+  const s = fresh({ uses });
+  run(s, 1, { seen: false, noise: null, hidden: 'couch' });
+  assert.equal(uses.couch, 1);
+  assert.equal(s.uses('couch'), 2);
+});
+
 test('hold() stops him where he is, and go() lets him carry on', () => {
   const s = fresh();
   run(s, 3, quiet);

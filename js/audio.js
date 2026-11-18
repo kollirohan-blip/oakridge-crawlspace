@@ -699,6 +699,9 @@
     lullaby: function (c, out, o, t) {
       var notes = [[57, 0.9], [60, 0.9], [64, 1.4], [62, 0.9], [60, 0.9], [57, 1.4], [55, 0.9], [57, 2.6]];
       var at = t;
+      var hushed = gain(c, 1); // so a retry can stop him mid-hum
+      hushed.connect(out);
+      out = hushed;
       notes.forEach(function (n) {
         var v = osc(c, 'triangle', mtof(n[0] - 12));
         var v2 = osc(c, 'sine', mtof(n[0]));
@@ -721,6 +724,7 @@
         });
         at += n[1] * 0.92;
       });
+      return { stop: function () { hushed.gain.setTargetAtTime(0, c.currentTime, 0.05); } };
     },
     // Ethan's mixtape: three cheap loops (opts.track 0..2)
     mixtape: function (c, out, o) {

@@ -560,5 +560,16 @@
     // ---- Phase 6: the later visit --------------------------------------------------------------------
     'ep.stamp.later': "TWO WEEKS LATER",
     'epilogue.credit': 'A game by Rohan',
+    // ---- Phase 8: checkpoints and fair fails (P1, P2): Mason thinking back, after a second fail ----
+    'retry.hint.act3.scream': "He wants me to think I dreamed it. So I didn't see anything. Say something boring, something that gets me out of this room.",
+    'retry.hint.act3.confront': "Yelling at him didn't make him leave. It told him I knew. Play dumb. Give Ethan a dull reason to hang up and go.",
+    'retry.hint.act3.freeze': "Saying nothing told him I was listening. Answer Ethan. Something normal. Something that walks me out the door.",
+    'retry.hint.act3.look': "Not even a glance at the closet. Eyes on the door, then the hall light, until I'm out of the room.",
+    'retry.hint.act4.door': "He went to the office. That was my chance, and I sat on the floor. When he walks away, unlock it and go.",
+    'retry.hint.act4.caught': "He tilts his head before he turns. Watch for the tilt. Light off, out of the lit rooms, never where he's facing.",
+    'retry.hint.act4.checked': "He remembers where I've been. Bed, desk, couch. A new one every time, or none at all.",
+    'retry.hint.act4.outside': "Outside isn't safe just because it's outside. Straight across the grass to the car. Don't stop.",
+    'retry.hint.act4.seen': "When the front door opens, get down. Right then. Don't wait to see him.",
+    'retry.hint.act4.noise': "Down in the footwell I don't move. I don't look around. Light off. Not until the sirens are here.",
   };
 })();

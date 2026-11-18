@@ -37,7 +37,7 @@
     var lastRoom = null;
     var seenT = 0;
     var walkT = 0;
-    var uses = {};
+    var uses = Object.assign({}, opts.uses || {}); // hiding places already used (a retry from a checkpoint)
     var wasHidden = null;
     var hideTarget = null;
 

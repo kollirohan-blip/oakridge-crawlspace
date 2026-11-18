@@ -15,6 +15,7 @@
       var def = id === 'epilogue' ? OC.epilogue : OC.acts && OC.acts[id];
       if (def && def.requiredText) required = required.concat(def.requiredText);
     });
+    if (OC.checkpoint) required = required.concat(OC.checkpoint.TEXT); // the second-fail hints (Phase 8)
     var content = OC.content.createContent(OC.textData || {}, required);
     var missing = content.missing();
     if (missing.length) throw new Error('The game is missing story text for:\n' + missing.join('\n'));
@@ -122,6 +123,21 @@
       announce(achievements.noteEntry(e));
       return e;
     };
+    // ---- checkpoints inside an act, and failing fairly (Phase 8) -----------------------------------------
+    // An act saves at its beats with g.checkpoint(beat, data); the habit log (the evidence, whether Ray
+    // was called, everything the nights read) is kept with it. A fail goes back to the act's last one and
+    // puts the log back as it was there. js/engine/checkpoint.js counts the fails and the scares seen.
+    var retry = OC.checkpoint.createRetry();
+    g.retry = retry;
+    g.checkpoint = function (beat, data) {
+      if (!current.id) return;
+      retry.save(current.id, beat, Object.assign({}, data, { habits: g.habits.entries() }));
+      phone.saved(); // a small mark on the phone
+    };
+    function restoreHabits(entries) {
+      g.habits.reset();
+      entries.forEach(function (e) { logHabit(e.action, e.detail, { clock: e.at, t: e.t }); }); // no achievement toasts again
+    }
     // when the player really started: the last line of his notebook, in the epilogue
     var bootTime = Date.now();
     function saveBegan() {
@@ -202,7 +218,9 @@
       actTimers = [];
     }
 
-    function startAct(id) {
+    // opts (Phase 8): { retry: true, resume: { beat, data, hint } } when a fail sends the act back to a checkpoint
+    function startAct(id, opts) {
+      opts = opts || {};
       var def = OC.acts[id];
       clearActTimers();
       if (current.act && current.act.dispose) current.act.dispose(); // stop the last act's loops and listeners
@@ -240,9 +258,25 @@
       OC.hud.setCrosshair(true);
       current.id = id;
       current.def = def;
-      current.act = def.create(g);
-      OC.hud.fadeIn();
+      if (!opts.retry) {
+        // a fresh start of the act (the one before it, chapter select, Restart): its checkpoints and fails go
+        retry.enter(id);
+        retry.save(id, 'start', { habits: g.habits.entries() });
+      } else if (opts.resume && opts.resume.data && opts.resume.data.t) {
+        for (var k = Math.round(opts.resume.data.t * 10); k > 0; k--) g.clock.tick(0.1); // the clock as it was
+      }
+      current.act = def.create(g, opts.resume || null);
+      if (opts.retry && opts.resume && current.act.resumes) OC.hud.setFadeText(''); // it opens on its own beat in the dark
+      else OC.hud.fadeIn();
       saveCheckpoint(id);
+    }
+    // a fail: back to the act's last checkpoint, the habit log as it was there, and the hint if this was
+    // the second fail in the same spot
+    function retryAct(id) {
+      var cp = retry.checkpoint(id);
+      if (cp && cp.data.habits) restoreHabits(cp.data.habits);
+      var lf = retry.lastFail(id);
+      startAct(id, { retry: true, resume: cp ? { beat: cp.beat, data: cp.data, hint: lf ? lf.hint : null } : null });
     }
 
     // a checkpoint at the start of each act, so closing the tab does not mean starting over
@@ -292,7 +326,7 @@
       world.setDaylight(0, r.renderer); // the title is at night, even if he quit in the afternoon visit
     }
     g.onEnd = function (id, outcome) {
-      if (outcome === 'retry') return startAct(id);
+      if (outcome === 'retry') return retryAct(id);
       saveHabits(); // every chapter adds to the log the later ones read
       if ((outcome === 'gag' || outcome === 'bad') && OC.epilogue) return startEpilogue(outcome);
       var next = ACT_ORDER[ACT_ORDER.indexOf(id) + 1];
@@ -538,6 +572,7 @@
       unlock: function () { ctl.setLocked(false); },
       teleport: function (x, z, yaw, pitch) { ctl.teleport(x, z, yaw, pitch); },
       startAct: startAct,
+      retry: function () { return retry; }, // checkpoints and fail counts (Phase 8)
       // run the simulation forward by `seconds` in fixed steps, independent of the browser's frame rate
       advance: function (seconds, step) {
         step = step || 0.05;
@@ -1308,6 +1343,171 @@
           if (!D.use('down')) return 'could not get down';
           if (!(await waitFor(function () { return a.flags.atWindow; }, 40))) return 'he never came to the window';
           if (!(await waitFor(function () { return a.flags.phase === 'won'; }, 50))) return 'never saved (' + a.flags.phase + ')';
+          return true;
+        });
+
+        // ---- Phase 8: checkpoints and fair fails, played through ------------------------------------
+        function dark() {
+          return document.getElementById('fade').classList.contains('on');
+        }
+        function hinted(id) {
+          var s = document.getElementById('subtitle');
+          return s.classList.contains('on') && s.textContent === content.t(id);
+        }
+        // the fail screen comes up (in real time), then a click on it, the way a player retries
+        async function retryByClick() {
+          var t0 = Date.now();
+          while (!document.querySelector('#fadeText .fail-retry') && Date.now() - t0 < 5000) await new Promise(function (res) { setTimeout(res, 50); });
+          if (!document.querySelector('#fadeText .fail-retry')) return false;
+          await new Promise(function (res) { setTimeout(res, 1300); }); // it takes clicks after 1.2 s
+          document.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
+          return true;
+        }
+        await flow('act4CarRetry', async function () {
+          // a fail at the car comes back to the car, not to the bathroom; the face at the glass and the
+          // smashed window are not shown twice; the second fail there earns Mason's hint
+          g.habits.reset(); // the flows before this one leave a face at the glass in the log
+          startAct('act4');
+          ctl.setLocked(true);
+          var a = current.act;
+          a.flags.phase = 'run'; // straight to outside: the house part is checked above
+          ctl.teleport(11.5, -9.6, 0, 0);
+          if (!D.use('car')) return 'could not get in the car';
+          D.advance(0.1);
+          var cp = retry.checkpoint('act4');
+          if (!cp || cp.beat !== 'car') return 'no checkpoint in the car (' + (cp && cp.beat) + ')';
+          if (!document.body.classList.contains('just-saved')) return 'no saved mark on the phone';
+          var logAtCar = g.habits.entries().length;
+          async function toTheGlass(b) {
+            if (!D.use('ignition')) return 'no ignition';
+            if (!(await waitFor(function () { return b.flags.phase === 'exposed'; }, 12))) return 'he never came out of the house';
+            if (!D.use('down')) return 'could not get down';
+            if (!(await waitFor(function () { return b.flags.atWindow; }, 40))) return 'he never came to the window';
+            D.advance(3.2); // the lightning on his face
+            if (!g.habits.has('faceAtGlass')) return 'no face at the glass';
+            b.noise.poke(1); // and Mason makes a sound
+            D.advance(0.1);
+            return b.flags.phase === 'fail' ? true : 'a sound in the car did not fail (' + b.flags.phase + ')';
+          }
+          var r1 = await toTheGlass(a);
+          if (r1 !== true) return 'first try: ' + r1;
+          if (!a.flags.faceScare) return 'the face at the glass was not a scare the first time';
+          if (!a.flags.scared || dark()) return 'the first fail had no smashed window';
+          if (!(await retryByClick())) return 'no fail screen to click';
+          var b = current.act;
+          if (b === a) return 'the retry did not start';
+          if (b.flags.phase !== 'car') return 'came back at ' + b.flags.phase + ', not the car';
+          if (Math.hypot(ctl.pos.x - 10.4, ctl.pos.z + 9.95) > 0.3) return 'not in the driver seat';
+          if (!props.frontDoor.isOpen || b.flags.chainTries !== 2) return 'the chain and the front door came back';
+          if (g.habits.entries().length !== logAtCar || g.habits.has('faceAtGlass')) return 'the habit log was not put back to the car';
+          if (!dark()) return 'no beat in the dark: the retry opened at once';
+          D.advance(1);
+          if (!g.state.cutscene || !dark()) return 'the beat in the dark was cut short';
+          D.advance(1.2);
+          if (dark() || g.state.cutscene) return 'still dark after the beat';
+          if (hinted('retry.hint.act4.noise')) return 'a hint after only one fail';
+          var r2 = await toTheGlass(b);
+          if (r2 !== true) return 'second try: ' + r2;
+          if (b.flags.faceScare) return 'the face at the glass jumped out a second time';
+          if (b.flags.scared) return 'the smashed window played a second time';
+          if (!dark()) return 'the second fail did not cut to black';
+          if (!(await retryByClick())) return 'no second fail screen';
+          var c = current.act;
+          D.advance(2.2);
+          if (c.flags.phase !== 'car') return 'the second retry came back at ' + c.flags.phase;
+          if (!hinted('retry.hint.act4.noise')) return 'no hint after the second fail (' + document.getElementById('subtitle').textContent + ')';
+          return true;
+        });
+        await flow('act3BluffRetry', async function () {
+          // a failed bluff comes back after the photo, not to Dave's call; the second failed bluff cuts to
+          // black on his hum with no closet burst; then Mason thinks back, and the calm bluff still works
+          startAct('act3');
+          ctl.setLocked(true);
+          var a = current.act;
+          if (!(await answerUntil(1, function () { return a.flags.phase === 'taps'; }, 140))) return 'never reached the taps';
+          if (!(await waitFor(function () { return phone.choosing(); }, 6))) return 'no choice at the taps';
+          D.choose(2); // call Cooper over
+          await tick();
+          if (!(await waitFor(function () { return a.flags.phase === 'photo'; }, 20))) return 'never asked for the photo';
+          aimAt(props.closet.eyeAt);
+          D.phoneApp('camera');
+          var p = D.shoot();
+          D.phoneApp(null);
+          if (!p || p.subject !== 'eye') return 'the photo did not show him';
+          D.advance(0.1);
+          var cp = retry.checkpoint('act3');
+          if (!cp || cp.beat !== 'photo') return 'no checkpoint after the photo (' + (cp && cp.beat) + ')';
+          var logAtPhoto = g.habits.entries().length;
+          async function bluff(b, pick) {
+            if (!(await waitFor(function () { return b.flags.phase === 'choice' && phone.choosing(); }, 40))) return 'Ethan never got the bluff choice (' + b.flags.phase + ')';
+            D.choose(pick);
+            await tick();
+            D.advance(0.1);
+            return b.flags.phase === 'fail' ? true : 'the bluff did not fail (' + b.flags.phase + ')';
+          }
+          var r1 = await bluff(a, 2); // "Who's there? Get out of here!"
+          if (r1 !== true) return 'first bluff: ' + r1;
+          if (!a.flags.scared || dark()) return 'no closet burst the first time';
+          if (!(await retryByClick())) return 'no fail screen to click';
+          var b = current.act;
+          if (b === a || b.flags.phase !== 'photoSeen') return 'came back at ' + b.flags.phase + ', not after the photo';
+          if (g.habits.entries().length !== logAtPhoto || !g.habits.has('photoEye')) return 'the habit log was not put back to the photo';
+          if (Math.hypot(cooper.pos.x - 3.0, cooper.pos.z - 15.9) > 0.3) return 'Cooper is not where calling him over left him';
+          if (!dark()) return 'no beat in the dark';
+          D.advance(2.2);
+          if (dark()) return 'still dark after the beat';
+          var r2 = await bluff(b, 2);
+          if (r2 !== true) return 'second bluff: ' + r2;
+          if (b.flags.scared) return 'the closet burst played a second time';
+          if (!dark()) return 'the second fail did not cut to black';
+          if (!(await retryByClick())) return 'no second fail screen';
+          var c = current.act;
+          D.advance(2.2);
+          if (!hinted('retry.hint.act3.confront')) return 'no hint after the second failed bluff (' + document.getElementById('subtitle').textContent + ')';
+          if (!(await waitFor(function () { return c.flags.phase === 'choice' && phone.choosing(); }, 40))) return 'no third bluff choice';
+          D.choose(3);
+          await tick();
+          if (!(await waitFor(function () { return c.flags.phase === 'walk'; }, 40))) return 'the calm bluff did not get him up';
+          return true;
+        });
+        await flow('act4DoorRetry', async function () {
+          // out of the bathroom, a hide behind the couch, the front door: a fail outside comes back to the
+          // door with the chain on again, and he still remembers the couch
+          startAct('act4');
+          ctl.setLocked(true);
+          var a = current.act;
+          act4Out(a);
+          if (!(await waitFor(function () { return a.flags.unlockReady; }, 60))) return 'he never left';
+          D.advance(0.1);
+          if ((retry.checkpoint('act4') || {}).beat !== 'search') return 'no checkpoint out of the bathroom';
+          ctl.teleport(4.2, 21.5, -Math.PI / 2, 0);
+          D.use('bathDoor');
+          var couch = OC.acts.act4.HIDES.filter(function (h) { return h.id === 'couch'; })[0];
+          a.search.send('master');
+          a.hide(couch);
+          D.advance(2);
+          a.unhide();
+          ctl.teleport(2.5, 1.2, 0, 0); // the foyer, at the chain
+          D.advance(0.2);
+          if (a.flags.phase !== 'door') return 'not at the front door (' + a.flags.phase + ')';
+          var cp = retry.checkpoint('act4');
+          if (!cp || cp.beat !== 'door') return 'no checkpoint at the front door';
+          if ((cp.data.uses || {}).couch !== 1) return 'the couch was not kept with the checkpoint';
+          D.use('chain');
+          D.advance(3.4);
+          D.use('chain');
+          if (a.flags.phase !== 'run') return 'the chain did not come off (' + a.flags.phase + ')';
+          D.advance(61); // standing in the open
+          if (a.flags.phase !== 'fail') return 'dawdling outside did not fail (' + a.flags.phase + ')';
+          if (!(await retryByClick())) return 'no fail screen to click';
+          var b = current.act;
+          if (b.flags.phase !== 'door') return 'came back at ' + b.flags.phase + ', not the front door';
+          if (b.flags.chainTries !== 0 || props.frontDoor.isOpen) return 'the chain was not back on';
+          if (b.search.uses('couch') !== 1) return 'he forgot the couch';
+          if (!g.habits.entries().some(function (e) { return e.action === 'hid' && e.detail.kind === 'couch'; })) return 'the hide is missing from the habit log';
+          if (OC.layout.roomAt(OC.house, ctl.pos.x, ctl.pos.z) !== 'foyer') return 'not in the foyer';
+          D.advance(2.2);
+          if (dark()) return 'still dark after the beat';
           return true;
         });
 
