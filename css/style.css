@@ -146,7 +146,23 @@ body.phone-open #phoneHint { opacity: 0.4; }
   background: #0c0e12; border: 3px solid #23262c; border-radius: 22px; padding: 14px 14px 10px;
   display: flex; flex-direction: column; text-shadow: none; box-shadow: 0 0 40px rgba(0,0,0,0.8);
   font-size: clamp(12px, 1.8vmin, 15px);
+  pointer-events: auto; /* so the cursor can find what it is over (the HUD around it lets clicks through) */
 }
+/* the cursor on the phone: drawn by js/phone.js, faded while the mouse is off the phone turning the view */
+#phoneCursor { position: absolute; left: 0; top: 0; z-index: 12; display: none; line-height: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.7)); }
+#phoneCursor svg { display: block; }
+body.phone-cursor #phoneCursor { display: block; }
+#phoneCursor.out { opacity: 0.3; }
+/* what the cursor is over */
+.phone-apps span { padding: 1px 3px; border-radius: 5px; }
+.phone-apps span.hover { background: #1b2638; color: #e8e6df; }
+#msgHeader[data-hit] { border-radius: 8px; margin-left: -4px; padding: 2px 4px; }
+#msgHeader.hover { background: #1b2638; color: #e8e6df; }
+#msgHeader.hover .back { color: #ffffff; }
+.bubble.link.hover { background: #253247; color: #cfe0ff; }
+.phone-line.hover { color: #ffffff; text-decoration: underline; }
+#trackList li, #contactList li { border-radius: 6px; padding: 2px 4px; }
+#trackList li.hover, #contactList li.hover { background: #1b2638; color: #e8e6df; }
 #phone.hidden, #call.hidden, #choice.hidden { display: none; }
 .phone-top { display: flex; justify-content: space-between; color: var(--dim); margin-bottom: 10px; }
 .phone-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
@@ -273,7 +289,7 @@ body.sub-large #subtitle { font-size: clamp(17px, 3.3vmin, 34px); }
 
 /* ---- night one ---------------------------------------------------------------------------------- */
 /* phone apps */
-.phone-apps { display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 0.78em; color: #5d636c; margin-bottom: 6px; }
+.phone-apps { display: flex; flex-wrap: wrap; gap: 2px 2px; font-size: 0.78em; color: #5d636c; margin-bottom: 6px; }
 .phone-apps span.on { color: #9fc3ff; }
 .phone-body.hidden { display: none; }
 .phone-line { color: #b7bcc4; margin: 3px 0; font-size: 0.92em; }

@@ -111,11 +111,32 @@
     window.addEventListener('blur', function () {
       keys = {};
     });
+    // is the browser really holding the mouse? (api.locked is "the game is running": the automated checks
+    // run the game without the browser's pointer lock)
+    api.captured = function () {
+      return document.pointerLockElement === document.body;
+    };
+    // turn the view by a mouse movement, in pixels
+    api.look = function (dx, dy) {
+      api.yaw -= dx * SENSITIVITY * api.sensitivity;
+      api.pitch -= dy * SENSITIVITY * api.sensitivity;
+      api.pitch = Math.max(-PITCH_MAX, Math.min(PITCH_MAX, api.pitch));
+    };
+    // mouseFilter(dx, dy, abs) -> { x, y }: the phone takes the movement for its cursor and hands back
+    // the part that still turns the view. abs is where a real pointer is when the mouse is not captured.
+    api.mouseFilter = null;
     document.addEventListener('mousemove', function (e) {
       if (!api.locked) return;
-      api.yaw -= (e.movementX || 0) * SENSITIVITY * api.sensitivity;
-      api.pitch -= (e.movementY || 0) * SENSITIVITY * api.sensitivity;
-      api.pitch = Math.max(-PITCH_MAX, Math.min(PITCH_MAX, api.pitch));
+      var dx = e.movementX || 0;
+      var dy = e.movementY || 0;
+      if (api.mouseFilter) {
+        var d = api.mouseFilter(dx, dy, e.isTrusted && !api.captured() ? { x: e.clientX, y: e.clientY } : null);
+        if (d) {
+          dx = d.x;
+          dy = d.y;
+        }
+      }
+      if (dx || dy) api.look(dx, dy);
     });
     document.addEventListener('pointerlockchange', function () {
       setLocked(document.pointerLockElement === document.body);

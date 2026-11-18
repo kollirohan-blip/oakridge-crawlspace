@@ -1,10 +1,13 @@
 // Mason's phone: Tab opens it, and the game goes on while it is out (walk, look, use things with E).
-// Apps, switched with keys 1 to 8 while it is open: Home (the to-do list, Dave-isms, the shopping list),
-// Texts (a chat for each person: the list, then the conversation; 2 again goes back), Camera (with
-// flash), the Pet Cam, Photos, Flappy Cooper, Ethan's mixtape and Calls. The mouse wheel scrolls, or
-// picks in a list; a click (or Space, or Enter) opens or does the app's thing. No instructions sit on
-// the phone: each app says how it works once, the first time it is opened. It buzzes with a preview
-// when a text comes in, and runs the choices (keys 1, 2, 3...) and the calls.
+// Apps: Home (the to-do list, Dave-isms, the shopping list), Texts (a chat for each person: the list,
+// then the conversation), Camera (with flash), the Pet Cam, Photos, Flappy Cooper, Ethan's mixtape and
+// Calls. While it is out, the mouse is a cursor on it (js/engine/cursor.js): point at an app, a chat, the
+// back arrow, a link, a song or a name and click it; push the mouse off the phone and the view turns as
+// usual. The camera puts the phone down: there the mouse looks and a click takes the photo. The keys
+// still work: 1 to 8 switch apps (2 again goes back), Space or Enter does the picked thing, Backspace goes
+// back, and the wheel scrolls (or moves the pick in a list). No instructions sit on the phone: each app
+// says how it works once, the first time it is opened. It buzzes with a preview when a text comes in, and
+// runs the choices (keys 1, 2, 3...) and the calls.
 (function () {
   var OC = (window.OC = window.OC || {});
   var APPS = ['home', 'messages', 'camera', 'petcam', 'photos', 'flappy', 'music', 'calls'];
@@ -15,11 +18,11 @@
   var COLORS = { dave: '#d9a01a', ethan: '#6ab0ff', mom: '#e88aa8' };
   // said once, the first time each app is opened (nothing stays written on the phone)
   var TIPS = {
-    messages: 'Scroll to pick, click to open. 2 goes back.',
+    messages: 'Click a chat to open it.',
     camera: 'Click to take a photo.',
-    calls: 'Scroll to pick, click to call.',
+    calls: 'Click a name to call.',
     flappy: 'Click to flap.',
-    music: 'Click for the next track.',
+    music: 'Click a song to play it.',
   };
 
   function el(id) {
@@ -52,6 +55,13 @@
     var tipped = {};
     var wheelAcc = 0;
     var picked = 0;
+    // the cursor on the phone
+    var cur = OC.cursor.create();
+    var placed = false; // put on the phone since it last came out
+    var cursorAt = { fx: 0.5, fy: 0.5 }; // where it was across the phone, for next time
+    var hoverEl = null; // what it is over (an element with data-hit)
+    var hoverKey = null; // which thing that is ('chat:dave'), so a re-render does not count as a new one
+    var hoverDirty = false;
 
     var api = {
       isOpen: false,
@@ -71,10 +81,12 @@
         if (OC.audio) OC.audio.play('click', { gain: 0.6 });
       },
       close: function () {
+        forgetCursor();
         api.isOpen = false;
         el('phone').classList.add('hidden');
         el('viewfinder').classList.add('hidden');
         document.body.classList.remove('phone-open');
+        drawCursor(null);
       },
       toggle: function () {
         if (api.isOpen) api.close();
@@ -132,8 +144,10 @@
       },
       // the phone held up in front of everything (the 2:13 AM pet cam alert)
       raise: function (v) {
+        forgetCursor(); // the phone moves: the cursor goes back to the same spot on it
         el('phone').classList.toggle('raised', !!v);
         document.body.classList.toggle('phone-raised', !!v); // the HUD goes above the fade, for this
+        drawCursor(phoneRect());
       },
       stopMusic: function () {
         if (track >= 0) {
@@ -304,7 +318,14 @@
       flappy: function () {
         return flappy;
       },
+      // the cursor, for checks: is it showing, where it is drawn, is the mouse off the phone, what it is over
+      cursor: function () {
+        var r = phoneRect();
+        var p = r ? OC.cursor.point(cur, r) : null;
+        return { on: !!r, x: p ? p.x : null, y: p ? p.y : null, out: p ? p.out : true, hover: hoverKey };
+      },
       update: function (dt) {
+        if (hoverDirty) refreshHover();
         if (api.isOpen && app === 'flappy' && flappy) {
           flappy.tick(dt);
           drawFlappy();
@@ -345,6 +366,118 @@
         }
       }
       return null;
+    }
+
+    // ---- the cursor ---------------------------------------------------------------------------------
+    // the phone on screen, or null when it is put away or down (the camera)
+    function phoneRect() {
+      if (!api.isOpen) return null;
+      var r = el('phone').getBoundingClientRect();
+      return r.width > 1 && r.height > 1 ? r : null;
+    }
+    function drawCursor(r) {
+      if (r && !placed) {
+        OC.cursor.place(cur, r, cursorAt.fx, cursorAt.fy);
+        placed = true;
+      }
+      document.body.classList.toggle('phone-cursor', !!r);
+      var c = el('phoneCursor');
+      if (!r || !c) return;
+      var p = OC.cursor.point(cur, r);
+      c.style.transform = 'translate(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px)';
+      c.classList.toggle('out', p.out);
+    }
+    // remember where it is on the phone (the phone is going away, or moving), and let go of what it is over
+    function forgetCursor() {
+      var r = phoneRect();
+      if (r && placed) cursorAt = OC.cursor.where(cur, r);
+      placed = false;
+      if (hoverEl) hoverEl.classList.remove('hover');
+      hoverEl = null;
+      hoverKey = null;
+    }
+    // the mouse moved (the controller asks): the cursor takes what it can, the rest turns the view
+    ctl.mouseFilter = function (dx, dy, abs) {
+      var r = phoneRect();
+      if (!r) return null; // put away, or the camera: the mouse looks
+      if (!placed) drawCursor(r);
+      var look = OC.cursor.move(cur, dx, dy, r, abs);
+      drawCursor(r);
+      hoverDirty = true;
+      return look;
+    };
+    // what clickable thing on the phone is at this point (the top one there), or null
+    function hitAt(x, y) {
+      if (!document.elementsFromPoint) return null;
+      var phoneEl = el('phone');
+      var list = document.elementsFromPoint(x, y);
+      for (var i = 0; i < list.length; i++) {
+        if (phoneEl.contains(list[i])) return list[i] === phoneEl ? null : list[i].closest('[data-hit]');
+      }
+      return null;
+    }
+    function under() {
+      var r = phoneRect();
+      if (!r) return null;
+      var p = OC.cursor.point(cur, r);
+      return p.out ? null : hitAt(p.x, p.y);
+    }
+    function keyOf(n) {
+      return n ? n.getAttribute('data-hit') + ':' + (n.getAttribute('data-arg') || '') : null;
+    }
+    // light up what the cursor is over; a chat or a name it moves onto becomes the pick (Space, Enter)
+    function refreshHover() {
+      hoverDirty = false;
+      var n = under();
+      if (hoverEl && hoverEl !== n) hoverEl.classList.remove('hover');
+      hoverEl = n;
+      if (n) n.classList.add('hover');
+      var key = keyOf(n);
+      if (key === hoverKey) return;
+      hoverKey = key;
+      if (!n) return;
+      var kind = n.getAttribute('data-hit');
+      var arg = n.getAttribute('data-arg');
+      if (kind === 'chat') {
+        var i = threads().indexOf(arg);
+        if (i < 0 || i === chatSel) return;
+        chatSel = i;
+        var rows = el('phoneMsgs').querySelectorAll('.chat-row');
+        for (var k = 0; k < rows.length; k++) rows[k].classList.toggle('on', rows[k] === n);
+      } else if (kind === 'contact' && Number(arg) !== picked) {
+        picked = Number(arg);
+        render();
+      }
+    }
+    // a click on the thing under the cursor
+    function use(n) {
+      var kind = n.getAttribute('data-hit');
+      var arg = n.getAttribute('data-arg');
+      if (OC.audio) OC.audio.play('click', { gain: 0.3 });
+      if (kind === 'app') api.app(arg);
+      else if (kind === 'chat') api.openChat(arg);
+      else if (kind === 'back') api.back();
+      else if (kind === 'texts') api.app('messages');
+      else if (kind === 'link') openLinkAt(Number(arg));
+      else if (kind === 'song') {
+        track = track === Number(arg) ? -1 : Number(arg); // the playing one again: stop
+        if (api.onMusic) api.onMusic(track);
+        render();
+      } else if (kind === 'contact' && contacts[Number(arg)]) api.call(contacts[Number(arg)].id);
+    }
+    function click() {
+      var r = phoneRect();
+      if (!r) return api.act(); // the camera: the shutter
+      var n = under();
+      if (n) return use(n);
+      if (app === 'flappy') api.act(); // Flappy flaps on any click
+    }
+    function openLinkAt(i) {
+      var m = chat ? inThread(chat)[i] : null;
+      if (!m || !m.link) return;
+      m.link.opened = true;
+      if (api.onLink) api.onLink(m.link);
+      if (api.isOpen) render();
     }
 
     function finishChoice(id) {
@@ -396,7 +529,7 @@
       if (collected) extras += '<div class="phone-line">' + esc(collected.label) + ': ' + collected.n + ' / ' + collected.total + '</div>';
       if (shopping.length) extras += '<div class="phone-line">Shopping list: ' + esc(shopping.join(', ')) + '</div>';
       var unread = api.unread();
-      if (unread) extras += '<div class="phone-line unread">' + unread + ' new text' + (unread > 1 ? 's' : '') + '</div>';
+      if (unread) extras += '<div class="phone-line unread" data-hit="texts">' + unread + ' new text' + (unread > 1 ? 's' : '') + '</div>';
       el('phoneExtras').innerHTML = extras;
     }
 
@@ -411,12 +544,13 @@
         var list = threads();
         chatSel = Math.max(0, Math.min(chatSel, list.length - 1));
         el('msgHeader').innerHTML = 'TEXTS';
+        el('msgHeader').removeAttribute('data-hit');
         list.forEach(function (th, i) {
           var msgs = inThread(th);
           var last = msgs[msgs.length - 1];
           var n = unreadIn(th);
           var preview = (last.mine ? 'You: ' : '') + (last.link && !last.mine ? last.link.title : last.text);
-          html += '<div class="chat-row' + (i === chatSel ? ' on' : '') + (n ? ' unread' : '') + '">' + avatar(th) +
+          html += '<div class="chat-row' + (i === chatSel ? ' on' : '') + (n ? ' unread' : '') + '" data-hit="chat" data-arg="' + esc(th) + '">' + avatar(th) +
             '<div class="chat-main"><div class="chat-top"><span class="chat-name">' + esc(nameOf(th)) + '</span><span class="chat-time">' + esc(last.time || '') + '</span></div>' +
             '<div class="chat-preview">' + esc(preview) + '</div></div>' + (n ? '<b class="badge">' + n + '</b>' : '') + '</div>';
         });
@@ -427,6 +561,7 @@
       }
       // one conversation
       el('msgHeader').innerHTML = '<span class="back">&#8249;</span>' + avatar(chat) + ' ' + esc(nameOf(chat));
+      el('msgHeader').setAttribute('data-hit', 'back'); // the whole top line goes back, not just the arrow
       var atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
       var lastTime = null;
       inThread(chat).forEach(function (m, i) {
@@ -436,7 +571,7 @@
         }
         var fresh = i >= (freshFrom[chat] || 0) && !m.mine ? ' fresh' : '';
         html += '<div class="bubble ' + (m.mine ? 'mine' : '') + fresh + '">' + esc(m.text) + '</div>';
-        if (m.link) html += '<div class="bubble link' + (m.link.opened ? ' opened' : '') + '">&#128279; ' + esc(m.link.title) + '</div>';
+        if (m.link) html += '<div class="bubble link' + (m.link.opened ? ' opened' : '') + '" data-hit="link" data-arg="' + i + '">&#128279; ' + esc(m.link.title) + '</div>';
       });
       box.innerHTML = html;
       if (atBottom) box.scrollTop = 1e6;
@@ -446,7 +581,7 @@
       var unread = api.unread();
       el('phoneApps').innerHTML = APPS.map(function (a, i) {
         var badge = a === 'messages' && unread ? ' <b class="badge">' + unread + '</b>' : '';
-        return '<span class="' + (a === app ? 'on' : '') + '">' + (i + 1) + ' ' + APP_LABELS[a] + badge + '</span>';
+        return '<span class="' + (a === app ? 'on' : '') + '" data-hit="app" data-arg="' + a + '">' + (i + 1) + ' ' + APP_LABELS[a] + badge + '</span>';
       }).join('');
       ['home', 'messages', 'petcam', 'photos', 'flappy', 'music', 'calls'].forEach(function (a) {
         el('app' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('hidden', a !== app);
@@ -465,15 +600,17 @@
       if (app === 'music') {
         var names = (OC.audio && OC.audio.tracks) || [];
         el('trackList').innerHTML = names.map(function (n, i) {
-          return '<li class="' + (i === track ? 'on' : '') + '">' + (i === track ? '&#9654; ' : '') + esc(n) + '</li>';
+          return '<li class="' + (i === track ? 'on' : '') + '" data-hit="song" data-arg="' + i + '">' + (i === track ? '&#9654; ' : '') + esc(n) + '</li>';
         }).join('');
       }
       if (app === 'flappy' && flappy) drawFlappy();
       if (app === 'calls') {
         el('contactList').innerHTML = contacts.length
-          ? contacts.map(function (c, i) { return '<li class="' + (i === picked ? 'on' : '') + '">' + (i === picked ? '&#9654; ' : '') + esc(c.name) + '</li>'; }).join('')
+          ? contacts.map(function (c, i) { return '<li class="' + (i === picked ? 'on' : '') + '" data-hit="contact" data-arg="' + i + '">' + (i === picked ? '&#9654; ' : '') + esc(c.name) + '</li>'; }).join('')
           : '<li class="empty">No one to call.</li>';
       }
+      drawCursor(phoneRect()); // the camera puts the phone down, every other app brings it back
+      refreshHover(); // what is under the cursor was just redrawn
     }
 
     window.addEventListener('keydown', function (e) {
@@ -501,15 +638,27 @@
         api.act();
       }
     });
+    // a click does what is under the cursor
     document.addEventListener('mousedown', function (e) {
       if (!ctl.locked || !api.isOpen || e.button !== 0) return;
-      api.act();
+      var r = phoneRect();
+      if (r && e.isTrusted && !ctl.captured()) {
+        // a real pointer the browser is not holding: it is where it is
+        if (!placed) drawCursor(r);
+        OC.cursor.move(cur, 0, 0, r, { x: e.clientX, y: e.clientY });
+        drawCursor(r);
+      }
+      click();
     });
     // the mouse wheel scrolls the open app (the pointer is locked, so nothing else would)
     document.addEventListener('wheel', function (e) {
       if (!ctl.locked || !api.isOpen) return;
       api.scroll(e.deltaY * (e.deltaMode === 1 ? 18 : 0.7));
+      hoverDirty = true; // something else may be under the cursor now
     }, { passive: true });
+    window.addEventListener('resize', function () {
+      if (api.isOpen) drawCursor(phoneRect());
+    });
     window.addEventListener('keydown', function (e) {
       if (!ctl.locked || !api.isOpen) return;
       if (e.code === 'PageDown') api.scroll(120);

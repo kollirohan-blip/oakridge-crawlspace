@@ -873,6 +873,121 @@
           if (g.state.music) return 'the mixtape is still playing';
           return true;
         });
+        // the phone's cursor, with real mouse events: take the phone out, point at Texts and a chat and
+        // click them, keep walking and using things, look by pushing off the phone, put it away, look again
+        await flow('phoneMouse', async function () {
+          freshNight();
+          D.advance(76); // Dave's first text (at 18 s) and Ethan's (at 75 s): two chats
+          if (phone.threads().length < 2) return 'expected two chats, got ' + phone.threads().length;
+          var SENS = 0.0022 * ctl.sensitivity; // the controller's turn per pixel
+          function move(dx, dy) {
+            document.dispatchEvent(new MouseEvent('mousemove', { movementX: dx, movementY: dy }));
+          }
+          // move in steps a real mouse would send, then let a frame go by (the highlight is per frame)
+          function glide(dx, dy) {
+            var n = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 12));
+            var sx = 0;
+            var sy = 0;
+            for (var i = 1; i <= n; i++) {
+              var tx = Math.round((dx * i) / n);
+              var ty = Math.round((dy * i) / n);
+              move(tx - sx, ty - sy);
+              sx = tx;
+              sy = ty;
+            }
+            D.advance(0.05);
+          }
+          function pointAt(node) {
+            var b = node.getBoundingClientRect();
+            var c = phone.cursor();
+            glide(b.left + b.width / 2 - c.x, b.top + b.height / 2 - c.y);
+          }
+          function clickHere() {
+            document.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
+            document.dispatchEvent(new MouseEvent('mouseup', { button: 0 }));
+          }
+          key('Tab');
+          key('Tab', true);
+          if (!phone.isOpen) return 'Tab did not take the phone out';
+          if (!phone.cursor().on || !document.body.classList.contains('phone-cursor')) return 'no cursor on the phone';
+          var yaw = ctl.yaw;
+          var pitch = ctl.pitch;
+          var tab = document.querySelector('#phoneApps [data-arg="messages"]');
+          pointAt(tab);
+          if (ctl.yaw !== yaw || ctl.pitch !== pitch) return 'moving the cursor on the phone turned the view';
+          if (phone.cursor().hover !== 'app:messages' || !document.querySelector('#phoneApps [data-arg="messages"]').classList.contains('hover')) {
+            return 'Texts did not light up under the cursor (' + phone.cursor().hover + ')';
+          }
+          clickHere();
+          if (phone.currentApp() !== 'messages') return 'clicking Texts opened ' + phone.currentApp();
+          // the second chat (not the one picked already): it lights up and becomes the pick; a click opens it
+          var want = phone.threads()[1];
+          var row = document.querySelector('#phoneMsgs .chat-row[data-arg="' + want + '"]');
+          if (!row) return 'no row for ' + want;
+          pointAt(row);
+          if (phone.cursor().hover !== 'chat:' + want || !row.classList.contains('on')) return 'the ' + want + ' chat did not light up (' + phone.cursor().hover + ')';
+          if (document.querySelectorAll('#phoneMsgs .chat-row.on').length !== 1) return 'more than one chat lit up';
+          clickHere();
+          if (phone.openThread() !== want) return 'clicking the ' + want + ' chat opened ' + phone.openThread();
+          pointAt(document.getElementById('msgHeader'));
+          if (phone.cursor().hover !== 'back:') return 'the top line of the chat did not light up (' + phone.cursor().hover + ')';
+          clickHere();
+          if (phone.openThread() !== null) return 'clicking the top line did not go back to the chats';
+
+          // the game goes on with the phone out: the clock, walking, E
+          if (!ctl.locked || document.getElementById('pause').classList.contains('on')) return 'the phone paused the game';
+          var m0 = g.clock.minutes();
+          ctl.teleport(10, -13.5, Math.PI, 0); // the driveway, facing the house: open ground
+          var p0 = { x: ctl.pos.x, z: ctl.pos.z };
+          key('KeyW');
+          D.advance(0.6);
+          key('KeyW', true);
+          if (!(g.clock.minutes() > m0)) return 'the clock stopped with the phone out';
+          if (Math.hypot(ctl.pos.x - p0.x, ctl.pos.z - p0.z) < 0.3) return 'could not walk with the phone out';
+          D.goto('fridge', 0);
+          D.aim(12.55, 1.4, 0.9);
+          D.advance(0.2);
+          if (!interact.target || interact.target.id !== 'note') return 'E had nothing to use with the phone out';
+
+          // pushing off the phone turns the view by what went past the edge; the cursor waits there
+          var rect = document.getElementById('phone').getBoundingClientRect();
+          yaw = ctl.yaw;
+          pitch = ctl.pitch;
+          var cx = phone.cursor().x;
+          var push = Math.round(rect.left - cx) - 100; // whole pixels, like a real mouse
+          var past = rect.left - (cx + push); // the part of it beyond the phone's left edge (100)
+          glide(push, 0);
+          if (!phone.cursor().out) return 'the cursor did not leave the phone';
+          if (Math.abs(ctl.yaw - yaw - past * SENS) > 1e-6) return 'pushing ' + past.toFixed(1) + ' px off the phone turned ' + ((ctl.yaw - yaw) / SENS).toFixed(1) + ' px';
+          if (ctl.pitch !== pitch) return 'pushing sideways off the phone tipped the view';
+          if (phone.cursor().hover !== null) return 'something stayed lit with the mouse off the phone';
+          clickHere(); // a click off the phone opens nothing
+          if (phone.openThread() !== null) return 'a click off the phone opened ' + phone.openThread();
+          // and coming back is short: the cursor is on the phone again within cursor.OUT
+          yaw = ctl.yaw;
+          glide(OC.cursor.OUT + 20, 0);
+          if (phone.cursor().out) return 'the cursor did not come back onto the phone';
+          if (ctl.yaw - yaw < -OC.cursor.OUT * SENS - 1e-6) return 'coming back turned the view too far';
+
+          // Esc pauses with the phone out, and it is still out after Resume
+          var m1 = g.clock.minutes();
+          ctl.setLocked(false);
+          if (!document.getElementById('pause').classList.contains('on')) return 'Esc did not pause with the phone out';
+          D.advance(2);
+          if (g.clock.minutes() !== m1) return 'the clock ran in the pause menu';
+          ctl.setLocked(true);
+          if (!phone.isOpen || !phone.cursor().on) return 'the phone or its cursor was gone after Resume';
+
+          // Tab puts it away, and the mouse looks again
+          key('Tab');
+          key('Tab', true);
+          if (phone.isOpen) return 'Tab did not put the phone away';
+          if (document.body.classList.contains('phone-cursor')) return 'the cursor stayed on screen';
+          yaw = ctl.yaw;
+          move(50, 0);
+          if (Math.abs(yaw - ctl.yaw - 50 * SENS) > 1e-6) return 'the mouse did not look after the phone was put away';
+          return true;
+        });
         await flow('petcamCooperStays', async function () {
           // go to bed as soon as it is allowed: nothing left over from the relief may move Cooper
           var a = freshNight();
