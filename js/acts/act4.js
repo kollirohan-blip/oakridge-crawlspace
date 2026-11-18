@@ -277,6 +277,7 @@
         tension(1);
         g.after(function () {
           hud.failScreen("YOU DIDN'T MAKE IT", t('act4.fail.' + reason), function () {
+            if (!ctl.locked) return false; // paused or on the title: a click there is not "try again"
             if (g.onEnd) g.onEnd('act4', 'retry'); // back to the last checkpoint, in the dark
           });
         }, once.scare ? 700 : 1800);

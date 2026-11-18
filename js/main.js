@@ -223,6 +223,7 @@
       opts = opts || {};
       var def = OC.acts[id];
       clearActTimers();
+      OC.hud.clearFail(); // a fail card left up (quit to title from it, then New game) is not this act's
       if (current.act && current.act.dispose) current.act.dispose(); // stop the last act's loops and listeners
       interact.clear();
       props.reset();
@@ -299,6 +300,7 @@
     // an ending: the epilogue ('main'), or the Tupperware ('gag') or the closet ('bad'), which count as finishing
     function startEpilogue(variant) {
       clearActTimers();
+      OC.hud.clearFail();
       if (current.act && current.act.dispose) current.act.dispose();
       interact.clear();
       saveCheckpoint(null); // finished: the next visit starts fresh
@@ -1355,11 +1357,15 @@
           return s.classList.contains('on') && s.textContent === content.t(id);
         }
         // the fail screen comes up (in real time), then a click on it, the way a player retries
-        async function retryByClick() {
+        async function failCardArmed() {
           var t0 = Date.now();
           while (!document.querySelector('#fadeText .fail-retry') && Date.now() - t0 < 5000) await new Promise(function (res) { setTimeout(res, 50); });
           if (!document.querySelector('#fadeText .fail-retry')) return false;
           await new Promise(function (res) { setTimeout(res, 1300); }); // it takes clicks after 1.2 s
+          return true;
+        }
+        async function retryByClick() {
+          if (!(await failCardArmed())) return false;
           document.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
           return true;
         }
@@ -1510,6 +1516,56 @@
           if (dark()) return 'still dark after the beat';
           return true;
         });
+        // caught at the bathroom door (he tries the handle while it's unlocked): the quickest fail in The Search
+        async function failAtBathDoor() {
+          startAct('act4');
+          ctl.setLocked(true);
+          var a = current.act;
+          act4Out(a);
+          if (!(await waitFor(function () { return a.flags.unlockReady; }, 60))) return null;
+          ctl.teleport(4.2, 21.5, -Math.PI / 2, 0);
+          D.use('bathDoor');
+          a.search.send('bath');
+          for (var i = 0; i < 120 && a.flags.phase !== 'fail'; i++) D.advance(0.25);
+          if (a.flags.phase !== 'fail' || !(await failCardArmed())) return null;
+          return a;
+        }
+        await flow('failCardPause', async function () {
+          try {
+            return await failCardPause();
+          } finally {
+            ctl.setLocked(true); // the flows after this one play with the game running
+          }
+        });
+        async function failCardPause() {
+          // Esc on the fail card, then Quit to title: pressing the menu's buttons is not "try again", a click
+          // on the title does not start the retry behind it, Continue brings the card back, and New game
+          // leaves it behind for good
+          var press = function (el) { el.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true })); };
+          var a = await failAtBathDoor();
+          if (!a) return 'no fail at the bathroom door';
+          ctl.setLocked(false); // Esc: the pause menu
+          var quit = document.querySelector('button[data-act="quit"]');
+          if (!quit || !quit.offsetParent) return 'no Quit to title on the pause menu';
+          press(quit);
+          if (current.act !== a) return 'pressing Quit to title also tried again';
+          quit.click();
+          press(document.body); // a click on the title screen
+          if (current.act !== a) return 'a click on the title started the retry behind it';
+          ctl.setLocked(true); // Continue
+          if (!document.querySelector('#fadeText .fail-retry')) return 'Continue did not come back to the fail card';
+          press(document.body);
+          if (current.act === a) return 'the fail card did nothing after Continue';
+          var b = await failAtBathDoor();
+          if (!b) return 'no second fail';
+          ctl.setLocked(false);
+          document.querySelector('button[data-act="quit"]').click();
+          startAct('act1'); // New game
+          ctl.setLocked(true);
+          press(document.body);
+          if (current.id !== 'act1') return 'a click in the new game went back to ' + current.id;
+          return true;
+        }
 
 
         // ---- the epilogue: the evidence tiers, played through on dt ----------------------------------------

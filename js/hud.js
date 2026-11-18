@@ -10,6 +10,7 @@
   var toastTimer = null;
   var flashImageTimer = null;
   var reading = false;
+  var failOff = null; // stops the fail card that is up from listening
   var achQueue = [];
 
   // the achievement corner: one at a time, each for a few seconds
@@ -217,8 +218,10 @@
     isReading: function () {
       return reading;
     },
-    // a failure: black screen, a title, a line, and "click to try again"
+    // a failure: black screen, a title, a line, and "click to try again". onRetry can return false for
+    // "not now" (paused, or on the title): the card keeps waiting for the next click or E
     failScreen: function (title, line, onRetry) {
+      hud.clearFail();
       var f = el('fade');
       el('fadeText').innerHTML = '';
       var h = document.createElement('div');
@@ -239,12 +242,21 @@
       function go(e) {
         if (!armed) return;
         if (e.type === 'keydown' && e.code !== 'KeyE' && e.code !== 'Space') return;
+        if (onRetry() === false) return;
+        off();
+      }
+      function off() {
         document.removeEventListener('mousedown', go);
         document.removeEventListener('keydown', go);
-        onRetry();
+        if (failOff === off) failOff = null;
       }
+      failOff = off;
       document.addEventListener('mousedown', go);
       document.addEventListener('keydown', go);
+    },
+    // stop listening to a fail card that was never used (a new act or an ending started over it)
+    clearFail: function () {
+      if (failOff) failOff();
     },
     error: function (msg) {
       OC.showError(msg);
