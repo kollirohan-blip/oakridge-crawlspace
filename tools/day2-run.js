@@ -1,8 +1,9 @@
 // A scripted run of Day 2, start to finish, for the Playwright MCP's browser_run_code tool (its body is
 // the function below; it gets `page`). Serve the game first: node tools/serve.js
 // It plays the morning (Cooper's nap, coffee, the bowl, the pet cam clip, every call), calls Ray and
-// takes his tour, reads Ethan's link, does the afternoon lore, drives to the Gas-N-Go, shops, meets
-// the hooded shopper, pays, and drives home past the deer and the man at the roadside into Night 2.
+// takes his tour, reads Ethan's link, does the afternoon lore, drives to the Gas-N-Go (W held: the car
+// only goes when Mason drives it), shops, meets the hooded shopper, pays, and drives home past the deer
+// and the man at the roadside into Night 2.
 // Screenshots go to .playwright-mcp/day2-*.png. Returns the beats reached and every console error.
 async (page) => {
   const errs = [];
@@ -66,6 +67,8 @@ async (page) => {
         return pred() ? max : 'timed out';
       },
       done: (id) => OC.game.act.director.done(id),
+      // hold a key down, or let it go (the car's W, A, S and D)
+      key: (code, up) => window.dispatchEvent(new KeyboardEvent(up ? 'keyup' : 'keydown', { code: code, bubbles: true })),
     };
   });
 
@@ -203,12 +206,14 @@ async (page) => {
     D.goto('car', 0);
     D.use('car');
     await T.until(() => T.act().mods.trip.state.stage === 'driveOut', 4);
+    T.key('KeyW'); // floor it: the road is straight
     D.advance(14);
     return T.act().mods.trip.state.stage + ' at ' + Math.round(T.act().mods.trip.state.speed) + ' m/s';
   });
   await shot('drive');
   await ev('shop', async () => {
     await T.until(() => T.act().mods.trip.state.stage === 'shop', 70);
+    T.key('KeyW', true);
     OC.debug.advance(1.5);
     return T.act().flags.phase + ' ' + OC.game.clock.label();
   });
@@ -267,6 +272,7 @@ async (page) => {
     D.teleport(394.8, -10.2, Math.PI, 0);
     D.use('shopCar');
     await T.until(() => T.act().mods.trip.state.stage === 'driveHome', 4);
+    T.key('KeyW'); // home; the deer makes him brake whatever his foot says
     return T.act().flags.phase + ' ' + OC.game.clock.label();
   });
   await ev('deer', async () => {
@@ -283,6 +289,7 @@ async (page) => {
   await shot('roadside');
   await ev('night2', async () => {
     const r = await T.until(() => T.act().mods.trip.state.stage === 'ending', 40);
+    T.key('KeyW', true);
     await new Promise((res) => setTimeout(res, 13500));
     return r + ' s, now ' + OC.game.current.id;
   });

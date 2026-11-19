@@ -495,7 +495,18 @@
       f.connect(g).connect(out);
       road.connect(rf).connect(rg).connect(out);
       [a, b, road].forEach(function (n) { n.start(); });
-      return { stop: function () { [a, b, road].forEach(function (n) { try { n.stop(); } catch (e) {} }); } };
+      return {
+        stop: function () { [a, b, road].forEach(function (n) { try { n.stop(); } catch (e) {} }); },
+        // metres a second: the engine climbs and the road gets louder as he speeds up
+        setSpeed: function (v) {
+          var k = Math.min(1, v / 22);
+          var at = c.currentTime;
+          a.frequency.setTargetAtTime(46 + 60 * k, at, 0.15);
+          b.frequency.setTargetAtTime(23 + 30 * k, at, 0.15);
+          f.frequency.setTargetAtTime(260 + 380 * k, at, 0.15);
+          rg.gain.setTargetAtTime(0.03 + 0.14 * k, at, 0.2);
+        },
+      };
     },
     // a phone ringing on the other end, twice, before they pick up
     ring: function (c, out, o, t) {

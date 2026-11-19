@@ -108,6 +108,10 @@
     window.addEventListener('keyup', function (e) {
       keys[e.code] = false;
     });
+    // is this key down? (the car on Day 2 drives on the same keys he walks with)
+    api.held = function (code) {
+      return !!keys[code];
+    };
     window.addEventListener('blur', function () {
       keys = {};
     });

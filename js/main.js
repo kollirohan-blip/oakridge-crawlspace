@@ -2209,6 +2209,154 @@
           }
         });
 
+        // ---- Day 2: the Gas-N-Go, and driving there and back yourself -------------------------------------
+        function letGo() {
+          ['KeyW', 'KeyA', 'KeyS', 'KeyD'].forEach(function (k) { key(k, true); });
+        }
+        // the errand: into the car at the house, on the road
+        async function toTheRoad() {
+          startAct('day2');
+          ctl.setLocked(true);
+          var a = current.act;
+          a.flags.phase = 'errand';
+          if (!D.use('car')) throw new Error('the car would not take him');
+          if (!(await waitFor(function () { return a.mods.trip.state.stage === 'driveOut'; }, 4))) throw new Error('the drive did not start');
+          return a.mods.trip;
+        }
+        // W held to the Gas-N-Go
+        async function toTheShop(trip) {
+          key('KeyW');
+          var got = await waitFor(function () { return trip.state.stage === 'shop'; }, 90);
+          key('KeyW', true);
+          if (!got) throw new Error('never reached the shop (' + trip.state.stage + ', z ' + Math.round(trip.state.z) + ')');
+          D.advance(1.5);
+        }
+        function hold(code, secs) {
+          key(code);
+          D.advance(secs);
+          key(code, true);
+        }
+        await flow('storeUsable', async function () {
+          // at the Gas-N-Go after the drive, the shop's things can be looked at and used: the drive's
+          // cutscene ends when he gets out of the car
+          try {
+            var trip = await toTheRoad();
+            await toTheShop(trip);
+            var spots = [[396.6, 4.6], [395.6, 5.75], [397.6, 5.75], [396.6, 6.9], [395.8, 4.8], [397.4, 4.8]];
+            var seen = null;
+            for (var i = 0; i < spots.length && !seen; i++) {
+              ctl.teleport(spots[i][0], spots[i][1], 0, 0);
+              D.aim(396.62, 0.35, 5.75);
+              D.advance(0.2);
+              if (interact.target && interact.target.id === 'grabDogFood') seen = spots[i];
+            }
+            if (!seen) return 'nothing to pick up looking at the dog food (prompt: ' + (interact.target ? interact.target.id : 'none') + ', cutscene ' + g.state.cutscene + ')';
+            key('KeyE');
+            key('KeyE', true);
+            D.advance(0.2);
+            if (!trip.state.picked.dogFood) return 'E did not pick up the dog food';
+            return true;
+          } finally {
+            letGo();
+          }
+        });
+        await flow('driveYourself', async function () {
+          // the car goes where Mason drives it: nowhere by itself, W to go, A and D to steer (the view turns
+          // with it), S to stop, the trees as the edge, and the keys on screen the whole way
+          try {
+            var trip = await toTheRoad();
+            var s = trip.state;
+            if (!document.body.classList.contains('driving') || getComputedStyle(document.getElementById('driveHint')).display === 'none') return 'no driving keys on screen';
+            var z0 = s.z;
+            D.advance(4);
+            if (Math.abs(s.z - z0) > 0.5) return 'the car drove itself ' + (s.z - z0).toFixed(1) + ' m';
+            var heard = await listen(22);
+            if (heard.indexOf(content.t('day2.thought.driveNudgeOut')) < 0) return 'sitting still on the road, Mason said nothing';
+            hold('KeyW', 4);
+            if (!(s.speed > 8) || !(s.z > z0 + 15)) return 'W did not drive it (speed ' + s.speed.toFixed(1) + ')';
+            var x0 = s.x;
+            var yaw0 = ctl.yaw;
+            var cy0 = s.cy;
+            key('KeyW');
+            hold('KeyA', 0.6);
+            key('KeyW', true);
+            if (!(s.x > x0 + 0.2)) return 'A did not steer left (x moved ' + (s.x - x0).toFixed(2) + ')';
+            if (Math.abs(ctl.yaw - yaw0 - (s.cy - cy0)) > 1e-6) return 'the view did not turn with the car';
+            key('KeyW');
+            hold('KeyA', 6);
+            key('KeyW', true);
+            if (Math.abs(s.x - OC.places.ROAD_X) > 6.6) return 'drove off into the trees (x ' + s.x.toFixed(1) + ')';
+            hold('KeyS', 4);
+            if (s.speed > 0.5) return 'S did not stop it (speed ' + s.speed.toFixed(1) + ')';
+            await toTheShop(trip);
+            if (document.body.classList.contains('driving')) return 'the driving keys stayed up at the shop';
+            if (g.state.cutscene) return 'still in the cutscene at the shop';
+            return true;
+          } finally {
+            letGo();
+          }
+        });
+        // to the shop, pay, and back in the car for the drive home
+        async function toTheDriveHome() {
+          var trip = await toTheRoad();
+          await toTheShop(trip);
+          trip.state.paid = true;
+          if (!D.use('shopCar')) throw new Error('could not get back in the car');
+          if (!(await waitFor(function () { return trip.state.stage === 'driveHome'; }, 4))) throw new Error('the drive home did not start');
+          return trip;
+        }
+        // floored toward the deer: Mason brakes for it whatever the keys say, and stops short of it
+        async function throughTheDeer(trip) {
+          var s = trip.state;
+          var minAhead = Infinity;
+          key('KeyW');
+          if (!(await waitFor(function () { return s.deer === 'standing'; }, 60))) return 'no deer';
+          var passed = await waitFor(function () {
+            minAhead = Math.min(minAhead, s.z - trip.DEER_Z);
+            return s.deer === 'passing';
+          }, 20);
+          if (!passed) return 'the deer never moved on (' + s.deer + ')';
+          if (!(minAhead >= 10)) return 'came within ' + minAhead.toFixed(1) + ' m of the deer';
+          return true;
+        }
+        await flow('driveHomeDeer', async function () {
+          // the drive home is his too: nowhere by itself, the deer, the man at the roadside, and the house
+          try {
+            var trip = await toTheDriveHome();
+            var s = trip.state;
+            var z0 = s.z;
+            D.advance(3);
+            if (Math.abs(s.z - z0) > 0.5) return 'the car drove itself home';
+            var deer = await throughTheDeer(trip);
+            if (deer !== true) return deer;
+            if (!(await waitFor(function () { return s.deer === 'past'; }, 30))) return 'never got past the man at the roadside (' + s.deer + ')';
+            if (!(await waitFor(function () { return current.act.flags.ending; }, 40))) return 'never got home';
+            return true;
+          } finally {
+            letGo();
+          }
+        });
+        await flow('roadsideStare', async function () {
+          // stop and stare at the man at the roadside, and he backs into the trees
+          try {
+            var trip = await toTheDriveHome();
+            var s = trip.state;
+            var deer = await throughTheDeer(trip);
+            if (deer !== true) return deer;
+            key('KeyW', true);
+            hold('KeyS', 1.5);
+            if (!props.intruder.visible()) return 'he was gone before the car stopped';
+            var heard = await listen(20, 'day2.thought.roadsideStare');
+            if (props.intruder.visible()) return 'he is still standing there';
+            if (s.deer !== 'past') return 'staring did not move things on (' + s.deer + ')';
+            if (heard.indexOf(content.t('day2.thought.roadsideStare')) < 0) return 'Mason said nothing about him';
+            if (!(props.intruder.pos.x > OC.places.ROAD_X + 9)) return 'he vanished on the spot instead of backing into the trees';
+            return true;
+          } finally {
+            letGo();
+          }
+        });
+
         // ---- the epilogue: the evidence tiers, played through on dt ----------------------------------------
         function playEpilogue(list) {
           g.habits.reset();

@@ -13,7 +13,7 @@ Double-click `index.html`. It opens in your browser; click to start.
 
 | Key | What it does |
 |---|---|
-| W A S D | walk (Shift runs, but only when you need to) |
+| W A S D | walk (Shift runs, but only when you need to). In the car: W gas, S brake (and then back up), A and D steer |
 | Mouse | look |
 | E | use (some things need E held down) |
 | F | phone light (it drains the battery) |
@@ -50,7 +50,7 @@ loud about where the thing he was meant to do is.
 - **Day 2, "Daylight".** Sun, coffee, Cooper asleep in a patch of light, and a pet cam clip from
   3:40 AM of the camera being turned to the wall. Calls to Mom, Dave and Ethan, an article about
   phrogging, and an optional visit from Deputy Ray, who explains everything away. The guest closet's
-  pencil marks, the shed, Dave's email. A drive to the Gas-N-Go at dusk, and the drive home.
+  pencil marks, the shed, Dave's email. A drive to the Gas-N-Go at dusk, and the drive home: you drive both.
 - **Night 2, "The House Has Changed".** The deadbolt is thrown from the inside. Seven small things
   are wrong in the house, the food you bought vanishes, the hatch stands open, and a storm comes in.
   The night reads how you spent the last one: sleep with every light on and the breaker trips; use a

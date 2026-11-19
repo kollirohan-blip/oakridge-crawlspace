@@ -3,7 +3,8 @@
 // (who knows "the Dave place"), the bulletin board (a 1998 clipping, a faded MISSING poster), and a
 // hooded shopper who watches Mason from the end of an aisle and leaves without buying anything. The
 // drive home: a deer in the headlights, and after it bolts, a person-shaped silhouette at the roadside
-// that stays a beat too long, facing the car. Then Night 2.
+// that stays a beat too long, facing the car. Then Night 2. Mason drives both ways himself (W, S, A, D):
+// only the deer takes the wheel from him, for the few seconds he stands on the brake.
 (function () {
   var OC = (window.OC = window.OC || {});
   OC.day2 = OC.day2 || {};
@@ -53,7 +54,7 @@
       'day2.thought.arrive', 'day2.thought.wait', 'day2.thought.snack', 'day2.snack.a',
       'day2.snack.b', 'day2.snack.c', 'day2.note.boardTitle', 'day2.note.board', 'day2.thought.board',
       'day2.thought.shopper', 'day2.thought.shopperGone', 'day2.thought.deer', 'day2.thought.roadside',
-      'day2.thought.noSignal',
+      'day2.thought.noSignal', 'day2.thought.roadsideStare', 'day2.thought.driveNudgeOut', 'day2.thought.driveNudgeHome',
     ].concat(RADIO),
     create: function (g, ctx) {
       var t = g.t;
@@ -124,28 +125,101 @@
         ctx.sfx('rustle', { gain: 0.6 });
       }
 
-      // ---- driving: the car on the road, Mason in the driver's seat ---------------------------------
-      function seatAt(x, z, dir) {
-        // the car faces +z (dir 1) or -z (dir -1); the driver sits on its left side going forward
+      // ---- driving: Mason drives the road between the house and the Gas-N-Go (W gas, S brake and then
+      // back up, A and D steer). The ditch before the trees is the edge. The deer takes the wheel for a few
+      // seconds: he stands on the brake.
+      var GAS = 4.5; // metres a second, each second
+      var BRAKE = 10;
+      var DRAG = 0.8; // coasting
+      var TOP = 22; // about 50 mph
+      var GRAVEL = 9; // the most the shoulder allows
+      var BACK = 4; // backing up
+      var STEER = 0.9; // radians a second at speed
+      var MAX_TURN = 0.55; // never more than this off the road's line
+      var LANE = 4; // the asphalt, either side of the line
+      var EDGE = 6.3; // the ditch, before the trees
+      function wrap(a) {
+        while (a > Math.PI) a -= 2 * Math.PI;
+        while (a < -Math.PI) a += 2 * Math.PI;
+        return a;
+      }
+      // the car at (x, z) facing cy (0 is +z), and Mason in the driver's seat: 0.4 m to its left, a little back
+      function seatAt(x, z, cy) {
         car.group.position.set(x, 0, z);
-        car.group.rotation.y = dir > 0 ? 0 : Math.PI;
-        ctl.teleport(x + 0.4 * dir, z - 0.05 * dir);
+        car.group.rotation.y = cy;
+        ctl.teleport(x + 0.4 * Math.cos(cy) - 0.05 * Math.sin(cy), z - 0.4 * Math.sin(cy) - 0.05 * Math.cos(cy));
       }
       function startDrive(dir) {
         st.dir = dir;
+        st.base = dir > 0 ? 0 : Math.PI; // the road's line, the way he is going
+        st.cy = st.base;
         st.x = dir > 0 ? P.ROAD_X + 1.9 : P.ROAD_X - 1.9;
         st.z = dir > 0 ? P.ROAD_Z0 + 10 : P.ROAD_Z1 - 10;
         st.speed = 0;
-        g.state.cutscene = true;
-        ctl.seat(st.x + 0.4 * dir, st.z - 0.05 * dir, dir > 0 ? Math.PI : 0, -0.6);
-        seatAt(st.x, st.z, dir);
-        loop('engine');
+        st.idleT = 0;
+        st.nudged = false;
+        g.state.cutscene = true; // no prompts from the driver's seat
+        ctl.seat(st.x, st.z, dir > 0 ? Math.PI : 0, -0.6);
+        seatAt(st.x, st.z, st.cy);
+        st.engine = loop('engine');
+        document.body.classList.add('driving');
         hud.fadeIn();
       }
+      // out of the car: prompts work again, and the car's keys go away
+      function stopDriving() {
+        g.state.cutscene = false;
+        document.body.classList.remove('driving');
+        st.engine = null;
+      }
+      // turn the car by d, within MAX_TURN of the road's line; the view turns with it
+      function turn(d) {
+        var was = wrap(st.cy - st.base);
+        var rel = Math.max(-MAX_TURN, Math.min(MAX_TURN, was + d));
+        st.cy += rel - was;
+        ctl.yaw += rel - was;
+      }
+      function move(dt) {
+        st.x += st.speed * Math.sin(st.cy) * dt;
+        st.z += st.speed * Math.cos(st.cy) * dt;
+        var off = st.x - P.ROAD_X;
+        if (Math.abs(off) > EDGE) {
+          // the ditch: scraping along it slows him down, the harder he hits it the more, and straightens him
+          // out (all the way: a car a hair off straight would grind along it for ever)
+          st.x = P.ROAD_X + Math.sign(off) * EDGE;
+          var rel = wrap(st.cy - st.base);
+          st.speed *= Math.pow(0.35, dt * Math.min(1, Math.abs(Math.sin(rel)) * 4));
+          turn(Math.abs(rel) < 0.01 ? -rel : -rel * Math.min(1, dt * 3));
+        }
+        st.z = Math.max(P.ROAD_Z0 + 6, Math.min(P.ROAD_Z1 - 6, st.z));
+        seatAt(st.x, st.z, st.cy);
+        if (st.engine && st.engine.setSpeed) st.engine.setSpeed(Math.abs(st.speed));
+      }
+      // Mason at the wheel
+      function wheel(dt) {
+        var gas = ctl.held('KeyW') || ctl.held('ArrowUp');
+        var brake = ctl.held('KeyS') || ctl.held('ArrowDown');
+        var steer = (ctl.held('KeyA') || ctl.held('ArrowLeft') ? 1 : 0) - (ctl.held('KeyD') || ctl.held('ArrowRight') ? 1 : 0);
+        var top = Math.abs(st.x - P.ROAD_X) > LANE ? GRAVEL : TOP;
+        if (gas && st.speed < -0.1) st.speed = Math.min(0, st.speed + BRAKE * dt); // rolling back: W brakes first
+        else if (gas) st.speed += GAS * dt;
+        else if (brake && st.speed > 0.1) st.speed = Math.max(0, st.speed - BRAKE * dt);
+        else if (brake) st.speed = Math.max(-BACK, st.speed - 2 * dt); // stopped: S backs up, slowly
+        else st.speed -= Math.sign(st.speed) * Math.min(Math.abs(st.speed), DRAG * dt);
+        if (st.speed > top) st.speed = Math.max(top, st.speed - BRAKE * 0.5 * dt); // the gravel holds him back
+        turn(steer * STEER * Math.max(-1, Math.min(1, st.speed / 6)) * dt); // steering needs speed, and swaps backing up
+        move(dt);
+        // parked on the road a while: Mason says so, once a drive
+        st.idleT = Math.abs(st.speed) < 0.5 ? st.idleT + dt : 0;
+        if (st.idleT > 20 && !st.nudged) {
+          st.nudged = true;
+          hud.say(t(st.dir > 0 ? 'day2.thought.driveNudgeOut' : 'day2.thought.driveNudgeHome'), 5000);
+        }
+      }
+      // the car drives itself (the deer: Mason on the brake), straightening up as it goes
       function driveStep(dt, target) {
         st.speed += Math.max(-9 * dt, Math.min(4 * dt, target - st.speed));
-        st.z += st.speed * st.dir * dt;
-        seatAt(st.x, st.z, st.dir);
+        turn(-wrap(st.cy - st.base) * Math.min(1, dt * 2));
+        move(dt);
       }
 
       function goShop() {
@@ -153,6 +227,7 @@
         hud.fadeOut('');
         ctx.later(1.4, function () {
           stopSounds();
+          stopDriving(); // out of the car: the shop's prompts work again
           hud.cc(null);
           ctx.setPhase('shop');
           car.group.position.set(PARKED.x, 0, PARKED.z);
@@ -352,8 +427,8 @@
       function driveHome(dt) {
         var ahead = st.z - DEER_Z; // the car drives -z: distance to the deer
         if (st.deer === 'none') {
-          driveStep(dt, 15);
-          if (ahead < 48) {
+          wheel(dt);
+          if (ahead < 48 && ahead > 0) {
             st.deer = 'standing';
             st.deerT = 0;
             deer.group.visible = true;
@@ -366,7 +441,8 @@
         }
         if (st.deer === 'standing') {
           st.deerT += dt;
-          driveStep(dt, ahead > 13 ? Math.max(0, (ahead - 13) * 0.9) : 0);
+          // Mason stands on the brake, whatever he was doing: slowing to a stop 13 m short, never speeding up
+          driveStep(dt, Math.min(Math.max(0, st.speed), ahead > 13 ? Math.max(0, (ahead - 13) * 0.9) : 0));
           if (st.deerT > 4.2) {
             st.deer = 'bolting';
             st.deerT = 0;
@@ -398,22 +474,36 @@
           return;
         }
         if (st.deer === 'passing') {
-          driveStep(dt, 9);
+          wheel(dt); // the wheel is his again
+          if (st.wesGo) {
+            // stared at, he backs off the shoulder into the trees, still facing the car
+            wes.stepTo(P.ROAD_X + 14, wes.pos.z, 1.4, dt);
+            wes.faceTo(ctl.pos.x, ctl.pos.z);
+            if (wes.pos.x > P.ROAD_X + 11) {
+              wes.show(false);
+              hud.say(t('day2.thought.roadsideStare'), 6500);
+              st.deer = 'past';
+              st.pastZ = st.z;
+            }
+            return;
+          }
           wes.faceTo(ctl.pos.x, ctl.pos.z); // his head turns to follow the car
+          st.stareT = Math.abs(st.speed) < 0.5 ? (st.stareT || 0) + dt : 0;
+          if (st.stareT > 5) st.wesGo = true; // stopped to look at him: he goes
           if (wes.visible() && st.z < DEER_Z - 30) {
             wes.show(false);
             hud.say(t('day2.thought.roadside'), 6000);
             st.deer = 'past';
-            st.endT = 0;
+            st.pastZ = st.z;
           }
           return;
         }
         if (st.deer === 'past') {
-          driveStep(dt, 15);
-          st.endT += dt;
-          if (st.endT > 9 && st.stage === 'driveHome') {
+          wheel(dt);
+          if (st.stage === 'driveHome' && (st.pastZ - st.z > 110 || st.z < P.ROAD_Z0 + 12)) {
             st.stage = 'ending';
             stopSounds();
+            st.engine = null;
             ctx.finish();
           }
         }
@@ -424,10 +514,11 @@
         state: st,
         list: LIST,
         allPicked: allPicked,
+        DEER_Z: DEER_Z,
         update: function (dt) {
           cashier.update(dt);
           if (st.stage === 'driveOut') {
-            driveStep(dt, 15);
+            wheel(dt);
             st.radioT -= dt;
             if (st.radioT <= 0 && st.radioI < RADIO.length - 1) {
               st.radioI++;
@@ -451,7 +542,7 @@
           car.group.rotation.y = home.ry;
           car.headlights(false);
           wes.show(false);
-          g.state.cutscene = false;
+          stopDriving();
         },
       };
     },

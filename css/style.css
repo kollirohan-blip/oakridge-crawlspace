@@ -133,6 +133,15 @@ body.camera-up #toast { top: 17vmin; } /* below the viewfinder's PHOTO label */
 .bubble.fresh { box-shadow: inset 3px 0 0 #9fc3ff; }
 #phoneHint .badge, .phone-apps .badge { background: #c8102e; color: #fff; border-radius: 8px; padding: 0 0.45em; font-weight: bold; }
 body.phone-open #phoneHint { opacity: 0.4; }
+/* the car's keys, bottom right, while he drives on Day 2 */
+#driveHint {
+  display: none; position: absolute; right: 3.5vmin; bottom: calc(3.5vmin - 0.3vmin); font-size: clamp(11px, 1.8vmin, 16px);
+  color: rgba(232,230,223,0.78); letter-spacing: 0.1em; white-space: nowrap;
+}
+#driveHint b { color: var(--ink); font-weight: normal; border: 1px solid rgba(255,255,255,0.45); padding: 0 0.35em; margin: 0 0.3em 0 0.6em; }
+#driveHint b + b { margin-left: 0; }
+body.driving #driveHint { display: block; }
+body.phone-open #driveHint { opacity: 0.4; }
 
 /* Phone */
 #notif {
