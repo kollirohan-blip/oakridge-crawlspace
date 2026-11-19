@@ -85,6 +85,11 @@
       open: function () {
         if (!api.enabled) return;
         api.isOpen = true;
+        // it opens on the screen it was put away on: a chat left open shows its new texts, so they are read
+        if (app === 'messages' && chat) {
+          freshFrom[chat] = readBy[chat] || 0;
+          readBy[chat] = inThread(chat).length;
+        }
         el('phone').classList.remove('hidden');
         document.body.classList.add('phone-open');
         render();
@@ -96,6 +101,7 @@
         el('phone').classList.add('hidden');
         el('viewfinder').classList.add('hidden');
         document.body.classList.remove('phone-open');
+        document.body.classList.remove('camera-up');
         drawCursor(null);
       },
       toggle: function () {
@@ -610,6 +616,7 @@
       var camera = app === 'camera' && api.isOpen;
       el('phone').classList.toggle('camera-mode', camera);
       el('viewfinder').classList.toggle('hidden', !camera);
+      document.body.classList.toggle('camera-up', camera); // toasts move below the viewfinder's label
       if (app === 'home') renderHome();
       if (app === 'messages') renderMessages();
       updateHint();

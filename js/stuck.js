@@ -96,8 +96,11 @@
       if (!asked) {
         var since = cur.act.director.sinceTask ? cur.act.director.sinceTask() : 0;
         if (since < S.NUDGE_EVERY || st.t - st.lastNudge < S.NUDGE_EVERY) return null;
+      } else if (st.t < S.MIN_AGE) {
+        return null; // the night just began and the list is on his phone: he is wedged, not lost
       }
-      return S.pickHint({ tasks: o.phone.tasks(), seenAt: st.seenAt, hints: hints, given: st.given, now: st.t, minAge: S.MIN_AGE });
+      // the nudge gives a new task a minute first; "I'm stuck" talks about the newest one straight away
+      return S.pickHint({ tasks: o.phone.tasks(), seenAt: st.seenAt, hints: hints, given: st.given, now: st.t, minAge: asked ? 0 : S.MIN_AGE });
     }
     function give(id) {
       st.given[id] = true;

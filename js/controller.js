@@ -23,8 +23,8 @@
     var expoTarget = 1;
 
     var spot = new THREE.SpotLight(0xfff2d8, 0, 22, 0.55, 0.6, 1.4);
-    spot.position.set(0.12, -0.12, 0);
-    spot.target.position.set(0, 0, -1);
+    spot.position.set(0.12, -0.12, 0); // held low and to the right
+    spot.target.position.set(0, 0, -3); // aimed where you look: the beam crosses the crosshair about 3 m out
     camera.add(spot);
     camera.add(spot.target);
 
@@ -187,7 +187,7 @@
       }
 
       var L = api.light;
-      if (L.on) {
+      if (L.on && api.locked) { // a paused game keeps its battery
         L.battery = Math.max(0, L.battery - (dt * (L.drain || 1)) / BATTERY_SECONDS);
         if (L.battery === 0) {
           L.on = false;

@@ -485,6 +485,11 @@
         showTitle();
       }
     };
+    // the browser would not capture the mouse (too soon after Esc, or one that never does): night one has
+    // started behind the brightness check, so put up the pause menu, whose Resume asks again
+    document.addEventListener('pointerlockerror', function () {
+      if (!ctl.locked && menu.current() === 'bright') menu.showPause();
+    });
 
 
     // ---- the title screen's picture: the house from the side yard at night, calm. After any ending, a
@@ -1944,6 +1949,172 @@
           if (more.length || Object.keys(help.state().given).length !== 1) return 'nudged again a minute later: ' + JSON.stringify(more);
           report.nudge = heard[0];
           return true;
+        });
+
+        // ---- the first stranger playtest (2026-11-18): what a new player ran into -------------------------
+        await flow('batteryPaused', async function () {
+          // the phone light drains only while the game is running: paused with it on, the battery holds
+          freshNight();
+          try {
+            ctl.light.available = true;
+            ctl.light.on = true;
+            D.advance(0.5);
+            var was = ctl.light.battery;
+            ctl.setLocked(false);
+            D.advance(6);
+            if (ctl.light.battery < was - 1e-9) return 'drained ' + ((was - ctl.light.battery) * 100).toFixed(2) + '% while paused';
+            ctl.setLocked(true);
+            D.advance(6);
+            if (!(ctl.light.battery < was)) return 'it no longer drains while playing';
+            return true;
+          } finally {
+            ctl.light.on = false;
+            ctl.setLocked(true);
+          }
+        });
+        await flow('stuckAskedNewest', async function () {
+          // "I'm stuck" just after a new task shows up talks about that task: asking is not waiting
+          var a = freshNight();
+          try {
+            D.advance(100); // the evening's chores are old news
+            a.ctx.reveal('hatch');
+            D.advance(2);
+            ctl.setLocked(false);
+            clickEl('#pause button[data-act="stuck"]');
+            var note = document.getElementById('stuckNote');
+            if (!note.hidden) return 'refused: ' + note.textContent;
+            var want = content.t(OC.stuck.hintText('act1', 'hatch'));
+            if (subEl.textContent !== want) return 'he said "' + subEl.textContent + '"';
+            return true;
+          } finally {
+            ctl.setLocked(true);
+          }
+        });
+        await flow('unreadReopen', async function () {
+          // the phone opens back on the chat it was left on: a text that came in while it was away is read
+          freshNight();
+          try {
+            phone.deliver('ethan', 'Ethan', 'one');
+            phone.open();
+            phone.app('messages');
+            phone.openChat('ethan');
+            if (phone.unread('ethan')) return 'opening the chat did not read it';
+            phone.close();
+            phone.deliver('ethan', 'Ethan', 'two');
+            if (phone.unread('ethan') !== 1) return 'a text to a put-away phone is not new';
+            phone.open();
+            if (phone.openThread() !== 'ethan' || phone.currentApp() !== 'messages') return 'the phone did not open on the chat it was left on';
+            if (phone.unread('ethan')) return 'still ' + phone.unread('ethan') + ' new with the text on screen';
+            phone.app('home');
+            phone.close();
+            phone.deliver('ethan', 'Ethan', 'three');
+            phone.open();
+            if (phone.unread('ethan') !== 1) return 'a text counted as read with the phone on Home';
+            return true;
+          } finally {
+            phone.close();
+          }
+        });
+        await flow('fridgeLineOrder', async function () {
+          // the small fridge note says pipes: Mason compares it only with what he has read tonight
+          async function putDown() {
+            await wait(300);
+            document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' }));
+            await tick();
+          }
+          async function bigNote() {
+            D.use('note');
+            await putDown();
+          }
+          async function daveText() {
+            phone.deliver('dave', 'Uncle Dave', content.t('act1.sms.dave2'));
+          }
+          var cases = [
+            ['n1.joke.pipesThoughtFirst', []],
+            ['n1.joke.pipesThoughtNote', [bigNote]],
+            ['n1.joke.pipesThoughtText', [daveText]],
+            ['n1.joke.pipesThought', [daveText, bigNote]],
+          ];
+          for (var i = 0; i < cases.length; i++) {
+            freshNight();
+            for (var j = 0; j < cases[i][1].length; j++) await cases[i][1][j]();
+            D.use('sticky.pipes');
+            await putDown();
+            if (subEl.textContent !== content.t(cases[i][0])) return 'wanted ' + cases[i][0] + ', got "' + subEl.textContent + '"';
+          }
+          return true;
+        });
+        await flow('beamAim', async function () {
+          // the phone light lands on what you look at: its beam passes the crosshair a few metres out
+          freshNight();
+          try {
+            ctl.light.on = true;
+            D.advance(0.1);
+            var a = new THREE.Vector3();
+            var b = new THREE.Vector3();
+            var c = new THREE.Vector3();
+            var f = new THREE.Vector3();
+            ctl.light.spot.getWorldPosition(a);
+            ctl.light.spot.target.getWorldPosition(b);
+            r.camera.getWorldPosition(c);
+            r.camera.getWorldDirection(f);
+            var dir = b.clone().sub(a).normalize();
+            var worst = 0;
+            [2, 3, 4].forEach(function (d) {
+              var p = c.clone().addScaledVector(f, d);
+              var along = p.clone().sub(a).dot(dir);
+              worst = Math.max(worst, p.distanceTo(a.clone().addScaledVector(dir, along)));
+            });
+            if (worst > 0.1) return 'the beam misses the crosshair by up to ' + worst.toFixed(2) + ' m between 2 and 4 m out';
+            return true;
+          } finally {
+            ctl.light.on = false;
+          }
+        });
+        await flow('toastCamera', async function () {
+          // with the camera up, a toast ("Done: ...") sits clear of the viewfinder's label
+          freshNight();
+          try {
+            D.phoneApp('camera');
+            OC.hud.toast('Done: Send Ethan a hallway pic', 3000);
+            var t = document.getElementById('toast').getBoundingClientRect();
+            var l = document.querySelector('#viewfinder .vf-label').getBoundingClientRect();
+            if (!l.width || !t.width) return 'no viewfinder label or no toast';
+            if (t.left < l.right && l.left < t.right && t.top < l.bottom && l.top < t.bottom) return 'the toast covers the viewfinder label';
+            return true;
+          } finally {
+            D.phoneApp(null);
+          }
+        });
+        await flow('brightRefused', async function () {
+          // the browser won't capture the mouse after "That's him" (too soon after Esc, say): the check does
+          // not stay up over night one; the pause menu's Resume asks again
+          var had = null;
+          try {
+            had = localStorage.getItem(BRIGHT_KEY);
+            localStorage.removeItem(BRIGHT_KEY);
+          } catch (e) { /* the in-visit flag still works */ }
+          brightDoneHere = false;
+          try {
+            ctl.setLocked(false);
+            clickEl('#title button[data-act="new"]');
+            if (menu.current() !== 'bright') return 'no brightness check';
+            clickEl('#bright button[data-act="brightDone"]');
+            document.dispatchEvent(new Event('pointerlockerror'));
+            if (menu.current() !== 'pause') return 'with the mouse refused, the menu is ' + menu.current();
+            if (document.body.classList.contains('in-check')) return 'still showing the check';
+            if (current.id !== 'act1') return 'night one did not start';
+            return true;
+          } finally {
+            try {
+              if (had === null) localStorage.removeItem(BRIGHT_KEY);
+              else localStorage.setItem(BRIGHT_KEY, had);
+            } catch (e) { /* nothing to put back */ }
+            if (document.exitPointerLock) document.exitPointerLock();
+            await wait(600);
+            ctl.setLocked(true);
+            menu.hide();
+          }
         });
 
         // ---- the epilogue: the evidence tiers, played through on dt ----------------------------------------

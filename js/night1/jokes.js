@@ -8,7 +8,8 @@
 
   var STICKY_IDS = ['sink', 'thermostat', 'remote', 'mirror', 'dryer', 'frontDoor', 'kibble', 'pipes'];
   var TEXT = STICKY_IDS.map(function (id) { return 'sticky.' + id; }).concat([
-    'act1.note.fridge', 'n1.joke.stickyTitle', 'n1.joke.pipesTitle', 'n1.joke.pipesThought', 'n1.joke.magnetsTitle',
+    'act1.note.fridge', 'n1.joke.stickyTitle', 'n1.joke.pipesTitle', 'n1.joke.pipesThought', 'n1.joke.pipesThoughtNote',
+    'n1.joke.pipesThoughtText', 'n1.joke.pipesThoughtFirst', 'n1.joke.magnetsTitle',
     'n1.joke.magnets', 'n1.joke.magnetsThought', 'n1.joke.fish1', 'n1.joke.fishCooper', 'n1.joke.allFound',
   ]);
   var TOTAL = STICKY_IDS.length + 1; // and the magnets
@@ -21,6 +22,8 @@
     var ctl = g.ctl;
 
     var found = {};
+    var readBigNote = false;
+    var textsBefore = g.phone.messages().length; // the phone keeps texts from before tonight
     var fishCool = 0;
     var fishCount = 0;
     var fishCooperSaid = false;
@@ -46,7 +49,10 @@
       {
         id: 'note', x: 12.55, y: 1.4, z: 0.9, radius: 0.22,
         label: 'Read the note',
-        onUse: function () { g.read('Note on the fridge', t('act1.note.fridge')); },
+        onUse: function () {
+          readBigNote = true;
+          g.read('Note on the fridge', t('act1.note.fridge'));
+        },
       },
       {
         id: 'magnets', x: 12.74, y: 1.66, z: 0.87, radius: 0.1,
@@ -60,6 +66,15 @@
         },
       },
     ];
+    // "rats" on the big note, "rats" in Dave's text, "pipes" on this one: he only compares what he has seen
+    function pipesLine() {
+      var rats = t('act1.sms.dave2');
+      var texted = g.phone.messages().slice(textsBefore).some(function (m) { return m.text === rats; });
+      if (readBigNote && texted) return 'n1.joke.pipesThought';
+      if (readBigNote) return 'n1.joke.pipesThoughtNote';
+      if (texted) return 'n1.joke.pipesThoughtText';
+      return 'n1.joke.pipesThoughtFirst';
+    }
     OC.house.stickies.forEach(function (n) {
       items.push({
         id: 'sticky.' + n.id, x: n.x, y: n.y, z: n.z, radius: 0.1,
@@ -68,7 +83,7 @@
           var pipes = n.id === 'pipes';
           g.read(t(pipes ? 'n1.joke.pipesTitle' : 'n1.joke.stickyTitle'), t('sticky.' + n.id), function () {
             if (pipes && !found.pipes) {
-              say('n1.joke.pipesThought', 7500);
+              say(pipesLine(), 7500);
               ctx.log('readPipes');
             }
             collect(n.id);
