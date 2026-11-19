@@ -262,6 +262,20 @@
       messages: function () {
         return messages.slice();
       },
+      // the texts as they stand, to put back later (a checkpoint, Restart this chapter)
+      saveTexts: function () {
+        return JSON.parse(JSON.stringify({ messages: messages, readBy: readBy }));
+      },
+      // put saved texts back, or none (null): a new run, or a chapter picked from the menu
+      loadTexts: function (saved) {
+        messages = saved ? JSON.parse(JSON.stringify(saved.messages || [])) : [];
+        readBy = saved ? Object.assign({}, saved.readBy) : {};
+        freshFrom = {};
+        chat = null;
+        chatSel = 0;
+        updateHint();
+        if (api.isOpen) render();
+      },
       unread: function (thread) {
         if (thread) return unreadIn(thread);
         return threads().reduce(function (n, th) { return n + unreadIn(th); }, 0);

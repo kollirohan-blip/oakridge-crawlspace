@@ -132,7 +132,7 @@
     g.retry = retry;
     g.checkpoint = function (beat, data) {
       if (!current.id) return;
-      retry.save(current.id, beat, Object.assign({}, data, { habits: g.habits.entries() }));
+      retry.save(current.id, beat, Object.assign({}, data, { habits: g.habits.entries(), texts: phone.saveTexts() }));
       phone.saved(); // a small mark on the phone
     };
     function restoreHabits(entries) {
@@ -222,6 +222,8 @@
     }
 
     // opts (Phase 8): { retry: true, resume: { beat, data, hint } } when a fail sends the act back to a checkpoint
+    // the texts on the phone when this chapter began (each chapter carries on from the one before it)
+    var startTexts = null;
     function startAct(id, opts) {
       opts = opts || {};
       var def = OC.acts[id];
@@ -265,8 +267,9 @@
       current.def = def;
       if (!opts.retry) {
         // a fresh start of the act (the one before it, chapter select, Restart): its checkpoints and fails go
+        startTexts = phone.saveTexts(); // what Restart puts back
         retry.enter(id);
-        retry.save(id, 'start', { habits: g.habits.entries() });
+        retry.save(id, 'start', { habits: g.habits.entries(), texts: startTexts });
       } else if (opts.resume && opts.resume.data && opts.resume.data.t) {
         for (var k = Math.round(opts.resume.data.t * 10); k > 0; k--) g.clock.tick(0.1); // the clock as it was
       }
@@ -280,6 +283,7 @@
     function retryAct(id) {
       var cp = retry.checkpoint(id);
       if (cp && cp.data.habits) restoreHabits(cp.data.habits);
+      if (cp && cp.data.texts) phone.loadTexts(cp.data.texts); // no text arrives twice
       var lf = retry.lastFail(id);
       startAct(id, { retry: true, resume: cp ? { beat: cp.beat, data: cp.data, hint: lf ? lf.hint : null } : null });
     }
@@ -448,6 +452,7 @@
         if (action === 'new') {
           saveCheckpoint(null);
           saveBegan();
+          phone.loadTexts(null); // a new run: none of the last one's texts
           if (!brightChecked()) return showBrightCheck(); // the first time: Cooper at the end of the dark hall
           startAct('act1');
         } else if (action === 'brightDone' || action === 'brightSkip') {
@@ -460,10 +465,14 @@
           OC.hud.cut(); // a blink, not a fade: he is just somewhere else
           g.after(function () { OC.hud.fadeIn(); }, 350);
         } else if (action === 'chapter') {
+          phone.loadTexts(null); // starting here, not from the chapters before it
           startAct(arg);
         } else if (action === 'restart') {
           if (current.id === 'epilogue') startEpilogue(current.variant);
-          else startAct(current.id);
+          else {
+            phone.loadTexts(startTexts); // the texts this chapter began with, not the last try's
+            startAct(current.id);
+          }
         } else if (action === 'quit') {
           clearActTimers();
           leaveEnding();
@@ -2114,6 +2123,89 @@
             await wait(600);
             ctl.setLocked(true);
             menu.hide();
+          }
+        });
+
+        await flow('textsFresh', async function () {
+          // the phone's texts belong to one run: New game and a chapter picked from the menu start with none
+          // from before, Restart puts back the ones the chapter began with, and the next chapter keeps them
+          function has(text) {
+            return phone.messages().some(function (m) { return m.text === text; });
+          }
+          var hadBright = brightDoneHere;
+          brightDoneHere = true; // straight into the night, no brightness check
+          try {
+            startAct('act1');
+            phone.deliver('dave', 'Uncle Dave', 'from the last run');
+            ctl.setLocked(false);
+            clickEl('#title button[data-act="new"]');
+            if (has('from the last run')) return 'New game kept a text from the last run';
+            ctl.setLocked(true);
+            phone.deliver('dave', 'Uncle Dave', 'before the restart');
+            ctl.setLocked(false);
+            clickEl('#pause button[data-act="restart"]');
+            if (has('before the restart')) return 'Restart kept a text from the try before';
+            ctl.setLocked(true);
+            phone.deliver('ethan', 'Ethan', 'from night one');
+            startAct('day2'); // what the end of night one does
+            if (!has('from night one')) return 'the next chapter lost the texts from night one';
+            phone.deliver('ethan', 'Ethan', 'from day two');
+            ctl.setLocked(false);
+            clickEl('#pause button[data-act="restart"]');
+            if (!has('from night one')) return 'Restart on day two lost the texts the chapter began with';
+            if (has('from day two')) return 'Restart on day two kept a text from the try before';
+            clickEl('#chapters button[data-chapter="act2"]');
+            if (has('from night one')) return 'a chapter picked from the menu kept texts from another run';
+            return true;
+          } finally {
+            brightDoneHere = hadBright;
+            // the menu clicks asked the browser for the mouse: let its answer land here, not in the next flow
+            if (document.exitPointerLock) document.exitPointerLock();
+            await wait(600);
+            ctl.setLocked(true);
+            menu.hide();
+          }
+        });
+        await flow('textsRetry', async function () {
+          // a fail after the car's texts, then a retry from the car: Ethan's reply is on the phone once
+          try {
+            g.habits.reset();
+            startAct('act4');
+            ctl.setLocked(true);
+            var a = current.act;
+            a.flags.phase = 'run'; // straight to outside, as in act4CarRetry
+            ctl.teleport(11.5, -9.6, 0, 0);
+            if (!D.use('car')) return 'could not get in the car';
+            D.advance(0.1);
+            var reply = content.t('act4.sms.ethan1');
+            var replies = function () {
+              return phone.messages().filter(function (m) { return m.text === reply; }).length;
+            };
+            var before = replies();
+            var hideAndFail = async function (b) {
+              if (!D.use('ignition')) return 'no ignition';
+              if (!(await waitFor(function () { return b.flags.phase === 'exposed'; }, 12))) return 'he never came out of the house';
+              if (!D.use('down')) return 'could not get down';
+              if (!(await waitFor(function () { return b.flags.atWindow; }, 40))) return 'he never came to the window';
+              D.advance(3.2);
+              b.noise.poke(1);
+              D.advance(0.1);
+              return b.flags.phase === 'fail' ? true : 'a sound in the car did not fail (' + b.flags.phase + ')';
+            };
+            var r1 = await hideAndFail(a);
+            if (r1 !== true) return 'first try: ' + r1;
+            if (replies() !== before + 1) return 'Ethan replied ' + (replies() - before) + ' times on the first try';
+            if (!(await retryByClick())) return 'no fail screen to click';
+            var b = current.act;
+            if (b === a) return 'the retry did not start';
+            D.advance(2.4); // the beat in the dark
+            var r2 = await hideAndFail(b);
+            if (r2 !== true) return 'second try: ' + r2;
+            if (replies() !== before + 1) return 'after a retry from the car, Ethan replied ' + (replies() - before) + ' times';
+            return true;
+          } finally {
+            OC.hud.clearFail();
+            ctl.setLocked(true);
           }
         });
 
