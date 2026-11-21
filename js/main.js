@@ -51,8 +51,13 @@
       else OC.audio.play('step', { surface: surfaceAt(ctl.pos.x, ctl.pos.z), gain: 0.55 });
     };
     if (OC.audio) {
+      // muffled through a wall, or through the floor: under it while you stand in the house, or above it
+      // (the house overhead) while you are in the crawlspace
       OC.audio.setOcclusion(function (pos) {
-        return !OC.sightline.lineOfSight(ctl.boxes, { x: ctl.pos.x, z: ctl.pos.z }, pos, Math.max(0.3, pos.y || 1));
+        var y = pos.y === undefined ? 1 : pos.y;
+        var crawling = ctl.pos.x > OC.crawl.DX - 1 && ctl.pos.x < OC.crawl.DX + 27; // its footprint (the road is further east)
+        if (crawling ? y > OC.crawl.TOP : y < 0) return 'floor';
+        return OC.sightline.lineOfSight(ctl.boxes, { x: ctl.pos.x, z: ctl.pos.z }, pos, Math.max(0.3, y)) ? false : 'wall';
       });
     }
 
@@ -978,6 +983,41 @@
               key('Tab');
               key('Tab', true);
             }
+          }
+        });
+        await flow('muffleFollows', async function () {
+          // a sound that keeps playing is muffled while a wall or the floor is between it and you, and
+          // clears when you come round: it is checked as you move, not only when the sound starts
+          if (!OC.audio.live) return 'the audio keeps no list of playing sounds';
+          OC.audio.init();
+          if (!OC.audio.ready()) return 'no audio context';
+          freshNight();
+          ctl.teleport(19.4, 3.0, 0, 0); // the living room, the TV in front
+          D.advance(0.3);
+          var tvh = OC.audio.play('fridgeHum', { pos: { x: 19.5, y: 1, z: 0.5 } });
+          var under = OC.audio.play('fridgeHum', { pos: { x: 3.0, y: -0.2, z: 21.5 } }); // under the bathroom floor
+          function muffled(h) {
+            var r = OC.audio.live().filter(function (x) { return x.handle === h; })[0];
+            return r ? r.muffled : 'gone';
+          }
+          try {
+            if (muffled(tvh) !== false) return 'the TV is muffled with nothing in the way (' + muffled(tvh) + ')';
+            ctl.teleport(10, 20, 0, 0); // the master bedroom: walls between
+            D.advance(0.6);
+            if (muffled(tvh) !== 'wall') return 'not muffled by the walls from the bedroom (' + muffled(tvh) + ')';
+            ctl.teleport(19.4, 3.0, 0, 0);
+            D.advance(0.6);
+            if (muffled(tvh) !== false) return 'still muffled back in the living room';
+            ctl.teleport(3.0, 21.0, 0, 0); // standing right above the one under the floor
+            D.advance(0.6);
+            if (muffled(under) !== 'floor') return 'a sound under the floor is not muffled by it from right above (' + muffled(under) + ')';
+            tvh.stop();
+            under.stop();
+            if (muffled(tvh) !== 'gone') return 'a stopped sound stays on the list';
+            return true;
+          } finally {
+            tvh.stop();
+            under.stop();
           }
         });
         await flow('petcam', async function () {

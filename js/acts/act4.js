@@ -556,9 +556,21 @@
           ],
           1.15
         );
-        later(46, function () { loop('siren', { pos: { x: -25, y: 2, z: -30 }, gain: 0.5 }); });
+        // the siren comes up the road: far off to the left, then all the way to the end of the drive
+        later(46, function () {
+          var from = { x: -70, z: -50 };
+          var to = { x: 0, z: -24 };
+          var siren = loop('siren', { pos: { x: from.x, y: 2, z: from.z }, gain: 0.25, ref: 6 });
+          for (var k = 1; k <= 35; k++) {
+            (function (f) {
+              later(f * 7, function () {
+                var e = 1 - (1 - f) * (1 - f); // slowing as it arrives
+                siren.setPos(from.x + (to.x - from.x) * e, 2, from.z + (to.z - from.z) * e);
+              });
+            })(k / 35);
+          }
+        });
         later(49, function () { say('act4.thought.sirens'); });
-        later(51, function () { loop('siren', { pos: { x: 0, y: 2, z: -24 }, gain: 1.0 }); });
         later(52.5, function () {
           if (flags.phase !== 'hide') return;
           him.crouch = 0;

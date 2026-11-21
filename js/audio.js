@@ -1,6 +1,10 @@
 // Every sound in the game is synthesized with the Web Audio API: no audio files.
 // Builders take (ctx, out, opts, t) and connect into `out`; loops return { stop() }.
-// Positional sounds go through a panner placed in the world, and are muffled when a wall is in the way.
+// Positional sounds go through an HRTF panner placed in the world (so a sound has a direction: left, right,
+// behind, above, below), and are muffled while a wall is in the way (hard) or the floorboards (lightly, so
+// the scratching under your feet still carries). A sound that keeps going
+// (a loop) is checked again as you move, so the TV clears when you come round the corner, and it can be
+// moved (handle.setPos).
 (function () {
   var OC = (window.OC = window.OC || {});
 
@@ -795,6 +799,25 @@
   var volume = 0.9;
   var occluded = null; // function(pos) -> true when a wall is between the listener and pos
   var listenerPos = { x: 0, y: 1.6, z: 0 };
+  var live = []; // positional sounds that keep going: { name, pos, paths, muffled, handle, until }
+  var recheckT = 0;
+  // the ways out of a panner: straight, through a wall, through the floorboards (cutoff Hz, loudness)
+  // (the floor path is a little louder: the boards take the top off the scratching, not its weight)
+  var PATHS = { clear: null, wall: [900, 0.75], floor: [1800, 1.2] };
+  // m: false (nothing in the way), 'wall' or 'floor'; open that path and close the others
+  function setMuffled(rec, m, now) {
+    rec.muffled = m || false;
+    var open = m || 'clear';
+    Object.keys(rec.paths).forEach(function (k) {
+      var v = k === open ? (PATHS[k] ? PATHS[k][1] : 1) : 0;
+      if (now === undefined) rec.paths[k].gain.value = v;
+      else rec.paths[k].gain.setTargetAtTime(v, now, 0.08);
+    });
+  }
+  function kindOf(pos) {
+    var o = occluded ? occluded(pos) : false;
+    return o === true ? 'wall' : o || false;
+  }
 
   function init() {
     if (ctx) {
@@ -811,7 +834,7 @@
 
   function play(name, opts) {
     opts = opts || {};
-    var none = { stop: function () {} };
+    var none = { stop: function () {}, setPos: function () {} }; // no sound (no audio yet): a handle that does nothing
     if (!ctx || !B[name]) return none;
     var out = gain(ctx, opts.gain === undefined ? 1 : opts.gain);
     var tail = out;
@@ -829,20 +852,67 @@
       } else p.setPosition(opts.pos.x, opts.pos.y || 1, opts.pos.z);
       out.connect(p);
       tail = p;
-      if (occluded && occluded(opts.pos)) {
-        var m = filt(ctx, 'lowpass', 900);
-        var mg = gain(ctx, 0.75);
-        p.connect(m).connect(mg).connect(bus);
-      } else p.connect(bus);
+      // the ways out of the panner (straight, through a wall, through the floor); one of them is open
+      var paths = {};
+      Object.keys(PATHS).forEach(function (k) {
+        paths[k] = gain(ctx, 0);
+        if (PATHS[k]) p.connect(filt(ctx, 'lowpass', PATHS[k][0])).connect(paths[k]).connect(bus);
+        else p.connect(paths[k]).connect(bus);
+      });
+      var rec = { name: name, pos: { x: opts.pos.x, y: opts.pos.y === undefined ? 1 : opts.pos.y, z: opts.pos.z }, panner: p, paths: paths, muffled: false, handle: null, until: Infinity };
+      setMuffled(rec, kindOf(rec.pos));
     } else out.connect(bus);
     var handle = B[name](ctx, out, opts, ctx.currentTime + (opts.delay || 0));
+    if (handle && rec) {
+      // it keeps going: check it again as the listener moves, until it is stopped (or its duration is up)
+      rec.handle = handle;
+      if (opts.duration) rec.until = ctx.currentTime + (opts.delay || 0) + opts.duration + 0.5;
+      live.push(rec);
+      var stop = handle.stop;
+      handle.stop = function () {
+        var i = live.indexOf(rec);
+        if (i >= 0) live.splice(i, 1);
+        if (stop) stop.apply(handle, arguments);
+      };
+      handle.setPos = function (x, y, z) {
+        rec.pos.x = x;
+        rec.pos.y = y === undefined ? 1 : y;
+        rec.pos.z = z;
+        if (p.positionX) {
+          p.positionX.setTargetAtTime(x, ctx.currentTime, 0.03);
+          p.positionY.setTargetAtTime(rec.pos.y, ctx.currentTime, 0.03);
+          p.positionZ.setTargetAtTime(z, ctx.currentTime, 0.03);
+        } else p.setPosition(x, rec.pos.y, z);
+      };
+    }
     return handle || none;
   }
+  // walls and floors between the listener and each sound that keeps going, a few times a second
+  function recheck(dt) {
+    recheckT -= dt;
+    if (recheckT > 0 || !live.length) return;
+    recheckT = 0.2;
+    var now = ctx.currentTime;
+    for (var i = live.length - 1; i >= 0; i--) {
+      var rec = live[i];
+      if (now > rec.until) {
+        live.splice(i, 1);
+        continue;
+      }
+      var m = kindOf(rec.pos);
+      if (m !== rec.muffled) setMuffled(rec, m, now);
+    }
+  }
 
+  var lastListen = 0;
   function listen(camera) {
     if (!ctx) return;
     var L = ctx.listener;
     var p = camera.position;
+    var nowMs = performance.now();
+    // the simulation can run many steps a frame (checks): count each call as at least a 50 ms step
+    recheck(Math.max(0.05, Math.min(0.25, (nowMs - lastListen) / 1000)));
+    lastListen = nowMs;
     listenerPos.x = p.x;
     listenerPos.y = p.y;
     listenerPos.z = p.z;
@@ -888,11 +958,16 @@
     measure: measure,
     names: Object.keys(B),
     tracks: ['lo-fi beats to housesit to', "cooper's theme (dubstep remix)", 'slow jam for nobody'],
+    // fn(pos) -> false (nothing between), true or 'wall' (a wall), or 'floor' (the floorboards)
     setOcclusion: function (fn) { occluded = fn; },
     setVolume: function (v) {
       volume = v;
       if (bus) bus.gain.value = v;
     },
     ready: function () { return !!ctx; },
+    // the positional sounds that keep going, for checks: [{ name, handle, muffled, pos }]
+    live: function () {
+      return live.map(function (r) { return { name: r.name, handle: r.handle, muffled: r.muffled, pos: r.pos }; });
+    },
   };
 })();
