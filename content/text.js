@@ -126,7 +126,8 @@
     'n1.chore.washStart': "Dave's kitchen sink is clogged, so the dishes get done in the laundry room. Right next to the rat hatch. Great system.",
     'n1.chore.washed': 'Done. Every time I shut the water off, the house was quieter than before.',
     'n1.chore.brushStart': "Two minutes. Don't stare at the mirror too long, that's how every movie starts.",
-    'n1.chore.brush1': 'Something went past the door behind me. ...Cooper. It was Cooper.',
+    'n1.chore.brush1': "There was a head in the doorway behind me. In the mirror. Then there wasn't.",
+    'n1.chore.brush2': "Cooper's right here. He's looking at the door too.",
     'n1.chore.brushDone': 'Done. Minty. Scared of my own reflection. Normal night.',
     'n1.chore.latch': 'Locked. Dave said it sticks, so I pulled on it twice.',
 
@@ -179,7 +180,7 @@
     'n1.dread.cooper1': 'Cooper. Here, buddy. Come here.',
     'n1.dread.cooper2': 'He sniffed the floor right where it stopped. Then he wagged. Slowly. Then he lay down on the spot like he was keeping it warm.',
     'n1.dread.hatch1': 'The hatch. I have to look at the hatch.',
-    'n1.dread.hatch2': 'Still padlocked. But the padlock is swinging. Just a little. Like someone just let go of it.',
+    'n1.dread.hatch2': 'Still padlocked. But the padlock is rocking on the hasp. Tick. Tick. Like somebody just let go of it.',
     'n1.dread.froze': "I didn't move. I didn't breathe. After a while it just... stopped.",
     'n1.dread.cooperDoor': "Cooper? ...He's in the hall, staring at the laundry room door. When did that door close?",
     'n1.dread.knocks1': 'Three knocks. From inside the laundry room. Soft. Like someone asking to be let out.',

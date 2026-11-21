@@ -315,6 +315,11 @@ body.sub-large #subtitle { font-size: clamp(17px, 3.3vmin, 34px); }
 #photoGrid figure { margin: 0; }
 #photoGrid img { width: 100%; image-rendering: pixelated; display: block; border-radius: 4px; }
 #photoGrid figcaption { color: #5d636c; font-size: 0.75em; }
+#photoGrid figure.hover img { outline: 2px solid #d8dde3; }
+#photoGrid.viewing { display: block; }
+#photoGrid .photo-top { color: #9aa1aa; font-size: 0.8em; padding: 2px 0 6px; cursor: default; }
+#photoGrid .photo-top.hover { color: #e6e9ec; }
+#photoGrid .photo-view img { width: 100%; image-rendering: pixelated; display: block; border-radius: 4px; }
 #trackList { padding-left: 1.4em; margin: 4px 0; }
 #trackList li { margin: 6px 0; }
 #trackList li.on { color: #9fc3ff; }

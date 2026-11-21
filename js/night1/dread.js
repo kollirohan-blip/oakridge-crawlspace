@@ -322,7 +322,7 @@
       if (s === 'lampOn') {
         say('act1.thought.lampOn');
       } else if (s === 'figureA') {
-        ctx.sfx('sting', { gain: 0.45 });
+        // no sting: the three jump scares are saved for The Call and The Search. Cooper's growl carries it.
         say('act1.thought.silhouette1');
         stareFor(props.master.windows[0], 7);
         ctx.sfx('growl', { pos: { x: cooper.pos.x, y: 0.6, z: cooper.pos.z }, duration: 2.2 });

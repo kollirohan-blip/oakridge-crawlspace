@@ -441,8 +441,10 @@
         }
         if (st.deer === 'standing') {
           st.deerT += dt;
-          // Mason stands on the brake, whatever he was doing: slowing to a stop 13 m short, never speeding up
-          driveStep(dt, Math.min(Math.max(0, st.speed), ahead > 13 ? Math.max(0, (ahead - 13) * 0.9) : 0));
+          // Mason stands on the brake, whatever he was doing: slowing to a stop 13 m short, never speeding up.
+          // The speed follows a braking curve (8 m/s/s, inside driveStep's 9), so the car can keep to it at any
+          // frame rate; a straight line to 13 m asked for twice what the brakes give, and it stopped near 9 m.
+          driveStep(dt, Math.min(Math.max(0, st.speed), Math.sqrt(2 * 8 * Math.max(0, ahead - 13))));
           if (st.deerT > 4.2) {
             st.deer = 'bolting';
             st.deerT = 0;

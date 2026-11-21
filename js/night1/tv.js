@@ -97,8 +97,10 @@
       {
         id: 'couch', x: 19.25, y: 0.55, z: 4.0, radius: 0.6,
         label: 'Sit and watch TV',
-        enabled: function () { return tv.on && !st.seated && !st.watched; },
+        // the prompt shows with the TV off too (the remote is on the table): sitting down turns it on
+        enabled: function () { return !st.seated && !st.watched; },
         onUse: function () {
+          if (!tv.on) power(true);
           st.seated = true;
           st.seatT = 0;
           ctl.seat(19.25, 3.95, 0, -0.5);

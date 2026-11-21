@@ -116,7 +116,27 @@
       pivot.position.set(2.05, 0.045, 10.5);
       scene.add(pivot);
       box(0.9, 0.04, 0.9, 'wood', 0.45, 0, 0, pivot);
-      var padlock = box(0.1, 0.08, 0.06, 'metal', 0.8, 0.05, 0, pivot);
+      // the padlock: brass, big enough to see from standing, lying flat through a hasp near the east edge.
+      // It rocks on its shackle (rotation.z lifts the body off the boards), so 'swing' reads from above.
+      box(0.035, 0.03, 0.08, 'metal', 0.76, 0.035, 0, pivot); // the hasp's staple
+      var padlock = new THREE.Group();
+      padlock.position.set(0.76, 0.045, 0); // the shackle, through the staple
+      pivot.add(padlock);
+      var brass = new THREE.MeshLambertMaterial({ color: 0xb48d3e, emissive: 0x1a1408 });
+      var lockBody = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.03, 0.095), brass);
+      lockBody.position.set(0.07, 0.0, 0);
+      padlock.add(lockBody);
+      var shackleMat = mat('metal');
+      [-0.028, 0.028].forEach(function (z) {
+        var leg = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.012, 0.012), shackleMat);
+        leg.position.set(0.018, 0.0, z);
+        padlock.add(leg);
+      });
+      var shackleTop = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.068), shackleMat);
+      shackleTop.position.set(-0.004, 0.0, 0);
+      padlock.add(shackleTop);
+      var LOCK_AT = { x: 2.05 + 0.83, y: 0.08, z: 10.5 };
+      var lastRock = 0;
       box(0.96, 0.03, 0.03, 'metal', 2.5, 0.02, 10.0);
       box(0.96, 0.03, 0.03, 'metal', 2.5, 0.02, 11.0);
       var angle = 0;
@@ -130,15 +150,22 @@
         setPadlock: function (v) {
           padlock.visible = !!v;
         },
-        // the padlock swinging a little, as if someone just let go of it
+        // the padlock rocking on its hasp, as if someone just let go of it: it lifts and drops back onto
+        // the boards, each time a little less, with a small metal tick when it lands
         swing: function () {
-          swingT = 4;
+          swingT = 4.5;
+          lastRock = 0;
         },
+        lock: padlock,
         update: function (dt) {
           pivot.rotation.z += (angle - pivot.rotation.z) * Math.min(1, dt * 3);
           if (swingT > 0) {
             swingT = Math.max(0, swingT - dt);
-            padlock.rotation.x = Math.sin(swingT * 9) * 0.35 * (swingT / 4);
+            var k = swingT / 4.5;
+            var s = Math.sin(swingT * 7.5);
+            padlock.rotation.z = 0.6 * k * k * Math.abs(s);
+            if (lastRock && s * lastRock < 0 && OC.audio && padlock.visible) OC.audio.play('click', { pos: LOCK_AT, gain: 0.25 + 0.6 * k });
+            lastRock = s;
           }
         },
       };

@@ -54,6 +54,7 @@
     var collected = null; // { n, total }
     var shopping = [];
     var photos = [];
+    var viewing = -1; // the photo open full size in Photos (its index in photos), or -1 for the grid
     var reviewTimer = null;
     var flappy = OC.flappy ? OC.flappy.createFlappy({ w: 120, h: 180 }) : null;
     var track = -1;
@@ -111,6 +112,7 @@
       app: function (name) {
         if (APPS.indexOf(name) < 0) throw new Error('unknown app: ' + name);
         if (name === 'messages' && app === 'messages' && chat) chat = null; // 2 again: back to the chats
+        if (name === 'photos' || name !== app) viewing = -1; // 4 again, or another app: back to the grid
         else if (name !== app && name === 'messages') chat = null;
         app = name;
         if (api.isOpen && TIPS[name] && !tipped[name] && OC.hud) {
@@ -200,7 +202,8 @@
         return true;
       },
       back: function () {
-        chat = null;
+        if (app === 'photos' && viewing >= 0) viewing = -1;
+        else chat = null;
         if (api.isOpen) render();
       },
       openThread: function () {
@@ -505,6 +508,10 @@
         if (api.onMusic) api.onMusic(track);
         render();
       } else if (kind === 'contact' && contacts[Number(arg)]) api.call(contacts[Number(arg)].id);
+      else if (kind === 'photo' && photos[Number(arg)]) {
+        viewing = Number(arg);
+        render();
+      }
     }
     function click() {
       var r = phoneRect();
@@ -635,9 +642,16 @@
       if (app === 'messages') renderMessages();
       updateHint();
       if (app === 'photos') {
-        el('photoGrid').innerHTML = photos.length
-          ? photos.slice().reverse().map(function (p) { return '<figure><img src="' + p.url + '"><figcaption>' + esc(p.at) + '</figcaption></figure>'; }).join('')
-          : '<div class="empty">No photos yet.</div>';
+        var open = viewing >= 0 ? photos[viewing] : null;
+        el('photoGrid').classList.toggle('viewing', !!open);
+        if (open) {
+          // one photo, as big as the screen allows: the top line goes back to the grid
+          el('photoGrid').innerHTML = '<div class="photo-view"><div class="photo-top" data-hit="back"><span class="back">&#8249;</span> ' + esc(open.at) + '</div><img src="' + open.url + '"></div>';
+        } else {
+          el('photoGrid').innerHTML = photos.length
+            ? photos.map(function (p, i) { return '<figure data-hit="photo" data-arg="' + i + '"><img src="' + p.url + '"><figcaption>' + esc(p.at) + '</figcaption></figure>'; }).reverse().join('')
+            : '<div class="empty">No photos yet.</div>';
+        }
       }
       if (app === 'music') {
         var names = (OC.audio && OC.audio.tracks) || [];
@@ -671,7 +685,7 @@
       else if (e.code === 'Enter' && (app === 'calls' || (app === 'messages' && !chat))) {
         e.preventDefault();
         api.act();
-      } else if (e.code === 'Backspace' && app === 'messages' && chat) {
+      } else if (e.code === 'Backspace' && ((app === 'messages' && chat) || (app === 'photos' && viewing >= 0))) {
         e.preventDefault();
         api.back();
       }

@@ -305,6 +305,14 @@
       visible: function () {
         return root.visible;
       },
+      // light spilling on him from a lit room he is passing (0 = none, 1 = a bathroom doorway): his clothes
+      // glow faintly, so a figure in a black hall reads as a figure
+      spill: function (v) {
+        var k = Math.max(0, Math.min(1, v || 0));
+        mats.hoodie.emissive.setRGB(0.15 * k, 0.16 * k, 0.19 * k);
+        mats.print.emissive.setRGB(0.15 * k, 0.16 * k, 0.19 * k);
+        mats.pants.emissive.setRGB(0.13 * k, 0.13 * k, 0.14 * k);
+      },
       redEye: function (v) {
         redEyes.forEach(function (e) { e.visible = !!v; });
       },

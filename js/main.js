@@ -709,7 +709,8 @@
       // a player looking at it (through the real picker, not a shortcut); (2) walking through the doors
       // that close behind you, with real key presses, never traps you; (3) Night 1's flows, played
       // through the real items. Returns a promise of the report. Leaves the game in Act 1.
-      sweep: async function () {
+      // opts.only: run just these named flows (the item and door checks always run)
+      sweep: async function (opts) {
         var R = OC.controller.RADIUS;
         var report = { failures: [], items: {}, doors: {} };
         // the flows finish endings and earn achievements: put the player's own progress back afterwards
@@ -821,6 +822,7 @@
           return current.act;
         }
         async function flow(name, fn) {
+          if (opts && opts.only && opts.only.indexOf(name) < 0) return;
           var res;
           try {
             res = await fn();
@@ -893,6 +895,21 @@
           if (tv.alerting() || OC.tvData.alert.lines.indexOf(tv.caption()) >= 0) return 'the alert did not end';
           return true;
         });
+        await flow('couchBeforeTv', async function () {
+          // the playtest: standing between the TV and the couch with the TV off, there was no prompt at all
+          var a = freshNight();
+          var tv = a.mods.tv.tv;
+          if (tv.on) return 'the TV starts on';
+          ctl.teleport(19.25, 2.9, 0, 0);
+          D.aim(19.25, 0.55, 4.0);
+          D.advance(0.2);
+          if (!interact.target || interact.target.id !== 'couch') return 'no couch prompt with the TV off (target: ' + (interact.target ? interact.target.id : 'none') + ')';
+          D.use('couch');
+          D.advance(0.3);
+          if (!tv.on) return 'sitting down did not turn the TV on';
+          if (!ctl.frozen) return 'not sitting';
+          return true;
+        });
         await flow('photo', async function () {
           freshNight();
           ctl.teleport(6.1, 6.6, Math.PI, 0);
@@ -905,6 +922,63 @@
           var b = OC.camera.brightness(p.canvas);
           if (b < 10) return 'a black photo (' + b.toFixed(1) + ')';
           return true;
+        });
+        await flow('photoEnlarge', async function () {
+          // the playtest: Photos would not enlarge the hallway picture, so there was no staring at the figure
+          freshNight();
+          ctl.teleport(6.1, 6.6, Math.PI, 0);
+          D.advance(0.2);
+          D.phoneApp('camera');
+          D.shoot();
+          D.phoneApp(null);
+          D.advance(0.1);
+          function glide(dx, dy) {
+            var n = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 12));
+            var sx = 0;
+            var sy = 0;
+            for (var i = 1; i <= n; i++) {
+              var tx = Math.round((dx * i) / n);
+              var ty = Math.round((dy * i) / n);
+              document.dispatchEvent(new MouseEvent('mousemove', { movementX: tx - sx, movementY: ty - sy }));
+              sx = tx;
+              sy = ty;
+            }
+            D.advance(0.05);
+          }
+          function clickOn(node) {
+            var b = node.getBoundingClientRect();
+            var c = phone.cursor();
+            glide(b.left + b.width / 2 - c.x, b.top + b.height / 2 - c.y);
+            document.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
+            document.dispatchEvent(new MouseEvent('mouseup', { button: 0 }));
+            D.advance(0.05);
+          }
+          key('Tab');
+          key('Tab', true);
+          phone.app('photos');
+          D.advance(0.05);
+          try {
+            var fig = document.querySelector('#photoGrid [data-hit="photo"]');
+            if (!fig) return 'no photo to click in Photos';
+            var small = fig.getBoundingClientRect().width;
+            clickOn(fig);
+            var big = document.querySelector('#photoGrid .photo-view img');
+            if (!big) return 'clicking the photo did not enlarge it';
+            if (big.getBoundingClientRect().width < small * 1.6) return 'the photo is barely bigger (' + Math.round(big.getBoundingClientRect().width) + ' px vs ' + Math.round(small) + ')';
+            key('Backspace');
+            key('Backspace', true);
+            D.advance(0.05);
+            if (!document.querySelector('#photoGrid [data-hit="photo"]')) return 'Backspace did not go back to the photos';
+            clickOn(document.querySelector('#photoGrid [data-hit="photo"]'));
+            clickOn(document.querySelector('#photoGrid .photo-view [data-hit="back"]'));
+            if (!document.querySelector('#photoGrid [data-hit="photo"]')) return 'the back arrow did not go back to the photos';
+            return true;
+          } finally {
+            if (phone.isOpen) {
+              key('Tab');
+              key('Tab', true);
+            }
+          }
         });
         await flow('petcam', async function () {
           freshNight();
@@ -925,6 +999,93 @@
           if (!g.mirror.active || g.mirror.frames <= f) return 'the mirror is not rendering';
           var b = g.mirror.sample();
           if (b < 5) return 'a black mirror (' + b.toFixed(1) + ')';
+          return true;
+        });
+        // brushing your teeth: somebody crosses the hall behind you in the mirror only, and it is not Cooper
+        async function brushWatch(lookAway) {
+          var a = freshNight();
+          var ch = a.mods.chores;
+          var lines = [];
+          var say = OC.hud.say;
+          OC.hud.say = function (s) { lines.push(s); return say.apply(OC.hud, arguments); };
+          try {
+            ctl.teleport(3.95, 21.6, Math.PI, 0);
+            D.aim(3.95, 0.95, 23.45);
+            if (!D.use('vanity')) return { err: 'could not brush' };
+            if (lookAway) D.aim(3.95, 1.6, 15);
+            var inRoom = 0;
+            for (var i = 0; i < 200 && !ch.state.brushed; i++) {
+              D.advance(0.05);
+              if (lookAway) D.aim(3.95, 1.6, 15);
+              if (props.intruder.visible()) inRoom++;
+            }
+            D.advance(0.5);
+            return { ch: ch, lines: lines, inRoom: inRoom };
+          } finally {
+            OC.hud.say = say;
+          }
+        }
+        await flow('mirrorPass', async function () {
+          var r = await brushWatch(false);
+          if (r.err) return r.err;
+          if (!r.ch.state.brushed) return 'brushing never finished';
+          if (!(r.ch.state.passFrames > 5)) return 'nobody went past in the mirror (' + r.ch.state.passFrames + ' frames)';
+          if (r.inRoom) return 'he was visible in the room itself';
+          if (r.lines.indexOf(g.t('n1.chore.brush1')) < 0) return 'no line about it';
+          if (r.lines.some(function (l) { return /It was Cooper/.test(l); })) return 'still blamed on Cooper';
+          return true;
+        });
+        await flow('mirrorPassMissed', async function () {
+          var r = await brushWatch(true);
+          if (r.err) return r.err;
+          if (!r.ch.state.brushed) return 'brushing never finished';
+          if (r.ch.state.passFrames) return 'he went past while nobody was looking at the mirror';
+          if (r.lines.indexOf(g.t('n1.chore.brush1')) >= 0) return 'a line about something nobody saw';
+          return true;
+        });
+        await flow('padlockRocks', async function () {
+          // the playtest: "the padlock is swinging", but on screen it was a tiny dark square that never moved
+          var a = freshNight();
+          a.dread.state.hatchCheck = true;
+          var lock = props.hatch.lock;
+          if (!lock) return 'no padlock to check';
+          var size = new THREE.Box3().setFromObject(lock).getSize(new THREE.Vector3());
+          if (Math.max(size.x, size.z) < 0.085) return 'the padlock is too small to see (' + Math.max(size.x, size.z).toFixed(3) + ' m)';
+          var ticks = 0;
+          var play = OC.audio.play;
+          OC.audio.play = function (name) { if (name === 'click') ticks++; return play.apply(OC.audio, arguments); };
+          var peak = 0;
+          try {
+            if (!D.use('hatch')) return 'could not check the hatch';
+            for (var i = 0; i < 60; i++) {
+              D.advance(0.05);
+              peak = Math.max(peak, Math.abs(lock.rotation.z));
+            }
+          } finally {
+            OC.audio.play = play;
+          }
+          if (peak < 0.3) return 'it hardly moves (' + peak.toFixed(2) + ' rad)';
+          if (ticks < 3) return 'it rocks without a sound (' + ticks + ' ticks)';
+          D.advance(4);
+          if (Math.abs(lock.rotation.z) > 0.01) return 'it never settles';
+          return true;
+        });
+        await flow('dishesGlance', async function () {
+          // the playtest: the dishes were a long look at a dark wall. Now the creak behind turns him to the hatch.
+          var a = freshNight();
+          var ch = a.mods.chores;
+          a.mods.dinner.dinner = function () { return { state: 'eaten' }; };
+          ctl.teleport(1.55, 9.4, 0, 0);
+          D.aim(1.55, 0.95, 8.4);
+          if (!D.use('laundrySink')) return 'could not start the dishes';
+          var sawHatch = false;
+          for (var i = 0; i < 200 && !ch.state.washed; i++) {
+            D.advance(0.05);
+            if (OC.sightline.inView({ x: ctl.pos.x, z: ctl.pos.z, yaw: ctl.yaw }, { x: 2.5, z: 10.5 }, 0.35) && ctl.pitch < -0.4) sawHatch = true;
+          }
+          if (!ch.state.washed) return 'the dishes never finished';
+          if (!sawHatch) return 'nothing to watch: the view never turned to the hatch';
+          if (!OC.sightline.inView({ x: ctl.pos.x, z: ctl.pos.z, yaw: ctl.yaw }, { x: 1.55, z: 8.4 }, 0.5)) return 'left looking over his shoulder';
           return true;
         });
         await flow('laundryDoor', async function () {
