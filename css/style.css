@@ -258,6 +258,7 @@ body.just-saved .saved-icon { display: inline-block; }
 #epilogueLines .ep-vo { font-size: clamp(15px, 2.8vmin, 27px); line-height: 1.5; font-style: italic; animation: epIn 1.6s ease-out both; }
 #epilogueLines .ep-title { letter-spacing: 0.4em; font-size: clamp(20px, 5vmin, 54px); animation: epIn 2s ease-out both; }
 #epilogueLines .ep-credit { color: var(--dim); margin-top: 3vmin; letter-spacing: 0.2em; font-size: clamp(12px, 2vmin, 18px); animation: epIn 2.5s ease-out both; }
+#epilogueLines .ep-credit.ep-sub { margin-top: 0.8vmin; letter-spacing: 0.12em; font-size: clamp(10px, 1.6vmin, 14px); }
 #epilogueLines .ep-again { color: var(--dim); margin-top: 6vmin; font-size: clamp(11px, 1.8vmin, 16px); animation: blink 1.6s steps(1) infinite; }
 @keyframes epIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 

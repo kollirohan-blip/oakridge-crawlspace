@@ -9,7 +9,8 @@
   var OC = (window.OC = window.OC || {});
   var GAG = ['gag.1', 'gag.2', 'gag.3'];
   var BAD = ['bad.1', 'bad.2', 'bad.3'];
-  var CREDITS = ['epilogue.credit', 'ep.credit.models', 'ep.credit.tech', 'ep.credit.thanks'];
+  var CREDITS = ['epilogue.credit', 'ep.credit.models', 'ep.credit.kits', 'ep.credit.tech', 'ep.credit.sound', 'ep.credit.thanks'];
+  var CREDIT_SUB = { 'ep.credit.kits': true, 'ep.credit.sound': true }; // small lines that sit under the one before
   var TEXT = GAG.concat(BAD, CREDITS, [
     'epilogue.vo', 'epilogue.title', 'gag.title', 'bad.title',
     'ep.stamp', 'ep.stamp.later', 'ep.porch.1', 'ep.porch.ray', 'ep.porch.phone', 'ep.porch.nothing', 'ep.card.head', 'ep.card.photoWes',
@@ -381,7 +382,7 @@
       });
       CREDITS.forEach(function (id) {
         steps.push(function () {
-          add(t(id), 'credit');
+          add(t(id), CREDIT_SUB[id] ? 'credit ep-sub' : 'credit');
           return 1.6;
         });
       });
